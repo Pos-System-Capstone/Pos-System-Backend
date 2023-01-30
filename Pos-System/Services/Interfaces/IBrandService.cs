@@ -11,4 +11,6 @@ public interface IBrandService
     public Task<IPaginate<GetBrandResponse>> GetBrands(string? searchBrandName, int page, int size);
 
     public Task<GetBrandResponse> GetBrandById(Guid brandId);
+
+    public Task<bool> UpdateBrandInformation(Guid brandId, UpdateBrandRequest updateBrandRequest);
 }

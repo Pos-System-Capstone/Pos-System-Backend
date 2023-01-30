@@ -37,24 +37,41 @@ public class BrandService : BaseService<BrandService>, IBrandService
 
     public async Task<IPaginate<GetBrandResponse>> GetBrands(string? searchBrandName, int page, int size)
     {
-	    searchBrandName = searchBrandName?.Trim().ToLower();
-	    IPaginate<GetBrandResponse> brands = await _unitOfWork.GetRepository<Brand>().GetPagingListAsync(
-		    selector: x => new GetBrandResponse(x.Id, x.Name, x.Email, x.Address, x.Phone, x.PicUrl, EnumUtil.ParseEnum<BrandStatus>(x.Status), x.Stores.Count),
+        searchBrandName = searchBrandName?.Trim().ToLower();
+        IPaginate<GetBrandResponse> brands = await _unitOfWork.GetRepository<Brand>().GetPagingListAsync(
+            selector: x => new GetBrandResponse(x.Id, x.Name, x.Email, x.Address, x.Phone, x.PicUrl, EnumUtil.ParseEnum<BrandStatus>(x.Status), x.Stores.Count),
             predicate: string.IsNullOrEmpty(searchBrandName) ? x => true : x => x.Name.ToLower().Contains(searchBrandName),
             include: x => x.Include(x => x.Stores),
             page: page,
             size: size);
-	    return brands;
+        return brands;
     }
 
     public async Task<GetBrandResponse> GetBrandById(Guid brandId)
     {
-	    if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
-	    GetBrandResponse brandResponse = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
-		    selector: x => new GetBrandResponse(x.Id, x.Name, x.Email, x.Address, x.Phone, x.PicUrl, EnumUtil.ParseEnum<BrandStatus>(x.Status), x.Stores.Count),
+        if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
+        GetBrandResponse brandResponse = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
+            selector: x => new GetBrandResponse(x.Id, x.Name, x.Email, x.Address, x.Phone, x.PicUrl, EnumUtil.ParseEnum<BrandStatus>(x.Status), x.Stores.Count),
             predicate: x => x.Id.Equals(brandId),
             include: x => x.Include(x => x.Stores)
-		    );
+            );
         return brandResponse;
+    }
+
+    public async Task<bool> UpdateBrandInformation(Guid brandId, UpdateBrandRequest updateBrandRequest)
+    {
+        if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
+        Brand brandForUpdate = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
+        if (brandForUpdate == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+
+        brandForUpdate.Name = updateBrandRequest.Name;
+        brandForUpdate.Email = updateBrandRequest.Email;
+        brandForUpdate.Address = updateBrandRequest.Address;
+        brandForUpdate.Phone = updateBrandRequest.Phone;
+        brandForUpdate.PicUrl = updateBrandRequest.PicUrl;
+
+        _unitOfWork.GetRepository<Brand>().UpdateAsync(brandForUpdate);
+        bool isSuccessful = await _unitOfWork.CommitAsync() > 0;
+        return isSuccessful;
     }
 }
