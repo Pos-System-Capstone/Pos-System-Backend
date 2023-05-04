@@ -87,7 +87,7 @@ public static class MessageConstant
         public const string ProductNotInBrandMessage = "Bạn không thể thêm product của brand khác, product id: ";
         public const string MissingStoreIdMessage = "Bạn đang không thuộc về một store, không thể lấy menu";
         public const string BrandIdWithMenuIdIsNotExistedMessage = "BrandId và MenuId không tồn tại trong hệ thống";
-        public const string BaseMenuIsExistedInBrandMessage = "Brand đã tồn tại menu cơ bản, không thể cập nhật priority là 0";
+        public const string BaseMenuIsExistedInBrandMessage = "Nhãn hiệu đã tồn tại menu cơ bản, không thể cập nhật priority là 0";
         public const string UpdateMenuInformationSuccessfulMessage = "Cập nhật thông tin menu thành công";
         public const string UpdateMenuInformationFailedMessage = "Cập nhật thông tin menu thất bại";
         public const string EndTimeLowerThanStartTimeMessage = "Thời gian kết thúc không được nhỏ hơn thời gian bắt đầu";
