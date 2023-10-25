@@ -32,7 +32,7 @@ public static class ApiEndPointConstant
         public const string ExportStoreEndDateReport = BrandsEndpoint + "/day-report";
 
         public const string BrandMenuEndpoint = BrandsEndpoint + "/menus";
-        public const string StoresInBrandCodeEndpoint = BrandsEndpoint + "/brandcode/stores";
+        public const string StoresInBrandCodeEndpoint = BrandsEndpoint + "/stores";
     }
 
     public static class Store
