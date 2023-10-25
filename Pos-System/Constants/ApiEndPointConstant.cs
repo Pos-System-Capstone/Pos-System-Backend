@@ -125,4 +125,10 @@ public static class ApiEndPointConstant
         public const string UsersEndpoint = ApiEndpoint + "/users";
         public const string UserEndpoint = UsersEndpoint + "/{id}";
     }
+
+    public static class BlogPost
+    {
+        public const string BlogPostsEndpoint = ApiEndpoint + "/blogpost";
+        public const string BlogPostEndpoint = BlogPostsEndpoint + "/{id}";
+    }
 }

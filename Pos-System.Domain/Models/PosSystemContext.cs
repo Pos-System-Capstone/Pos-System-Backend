@@ -17,6 +17,7 @@ namespace Pos_System.Domain.Models
         }
 
         public virtual DbSet<Account> Accounts { get; set; } = null!;
+        public virtual DbSet<BlogPost> BlogPosts { get; set; } = null!;
         public virtual DbSet<Brand> Brands { get; set; } = null!;
         public virtual DbSet<BrandAccount> BrandAccounts { get; set; } = null!;
         public virtual DbSet<Category> Categories { get; set; } = null!;
@@ -30,6 +31,7 @@ namespace Pos_System.Domain.Models
         public virtual DbSet<Order> Orders { get; set; } = null!;
         public virtual DbSet<OrderDetail> OrderDetails { get; set; } = null!;
         public virtual DbSet<OrderSource> OrderSources { get; set; } = null!;
+        public virtual DbSet<Payment> Payments { get; set; } = null!;
         public virtual DbSet<Product> Products { get; set; } = null!;
         public virtual DbSet<ProductInGroup> ProductInGroups { get; set; } = null!;
         public virtual DbSet<Promotion> Promotions { get; set; } = null!;
@@ -74,6 +76,19 @@ namespace Pos_System.Domain.Models
                     .HasForeignKey(d => d.RoleId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Account_Role");
+            });
+
+            modelBuilder.Entity<BlogPost>(entity =>
+            {
+                entity.ToTable("BlogPost");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.Status)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Title).HasMaxLength(150);
             });
 
             modelBuilder.Entity<Brand>(entity =>
@@ -379,17 +394,37 @@ namespace Pos_System.Domain.Models
 
                 entity.Property(e => e.Id).ValueGeneratedNever();
 
-                entity.Property(e => e.Address).HasMaxLength(95);
+                entity.Property(e => e.CreatedAt).HasColumnType("datetime");
 
-                entity.Property(e => e.Name).HasMaxLength(50);
+                entity.Property(e => e.SourceType).HasMaxLength(50);
 
-                entity.Property(e => e.Phone).HasMaxLength(20);
+                entity.Property(e => e.Status).HasMaxLength(50);
 
-                entity.HasOne(d => d.Brand)
-                    .WithMany(p => p.OrderSources)
-                    .HasForeignKey(d => d.BrandId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_OrderSource_Brand");
+                entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<Payment>(entity =>
+            {
+                entity.ToTable("Payment");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.CurrencyCode)
+                    .HasMaxLength(10)
+                    .IsUnicode(false)
+                    .IsFixedLength();
+
+                entity.Property(e => e.Notes).HasMaxLength(250);
+
+                entity.Property(e => e.PayTime).HasColumnType("datetime");
+
+                entity.Property(e => e.Status)
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Type)
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<Product>(entity =>
