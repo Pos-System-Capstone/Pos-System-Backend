@@ -2,8 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
+using Pos_System.API.Payload.Response.BlogPost;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.API.Validators;
+using Pos_System.Domain.Paginate;
 
 namespace Pos_System.API.Controllers
 {
@@ -20,9 +22,11 @@ namespace Pos_System.API.Controllers
 
         [CustomAuthorize(RoleEnum.SysAdmin)]
         [HttpGet(ApiEndPointConstant.BlogPost.GetBlogPostByBrandCodeEndpoint)]
-        public async Task<IActionResult> GetBlogPostByBrandCode([FromQuery] string? brandCode)
+        [ProducesResponseType(typeof(IPaginate<GetBlogPostResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetBlogPostByBrandCode([FromQuery] string? brandCode, [FromQuery] int page, [FromQuery] int size)
         {
-            return Ok();
+            var blogPostInBrand = _blogPostService.GetBlogPostByBrandCode(brandCode, page, size);
+            return Ok(blogPostInBrand);
         }
     }
 }
