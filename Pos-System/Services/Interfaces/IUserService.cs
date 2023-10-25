@@ -8,5 +8,7 @@ namespace Pos_System.API.Services.Interfaces
         Task<CreateNewUserResponse> CreateNewUser(CreateNewUserRequest newUserRequest, string? brandCode);
         Task<bool> UpdateUserInformation(Guid userId, UpdateUserRequest updateUserRequest);
         Task<GetUserResponse> GetUserById(Guid userId);
+        Task<SignInResponse> LoginUser(SignInRequest req);
+        Task<SignInResponse> SignUpUser(CreateNewUserRequest newUserRequest, string? brandCode);
     }
 }

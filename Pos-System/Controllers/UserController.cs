@@ -34,6 +34,22 @@ namespace Pos_System.API.Controllers
             _logger.LogInformation($"Create new user successful with {newUserRequest.FullName}");
             return CreatedAtAction(nameof(CreateNewUser), response);
         }
+        [HttpPost(ApiEndPointConstant.User.UsersSignIn)]
+        [ProducesResponseType(typeof(SignInResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> LoginUser([FromBody] SignInRequest req)
+        {
+            SignInResponse response = await _userService.LoginUser(req);
+            return Ok(response);
+        }
+        [HttpPost(ApiEndPointConstant.User.UsersSignUp)]
+        [ProducesResponseType(typeof(SignInResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> SignUpUser([FromBody] CreateNewUserRequest req, [FromQuery] string? brandCode)
+        {
+            SignInResponse response = await _userService.SignUpUser(req, brandCode);
+            return Ok(response);
+        }
 
         [HttpPatch(ApiEndPointConstant.User.UserEndpoint)]
         public async Task<IActionResult> UpdateUserInformation(Guid id, [FromBody]UpdateUserRequest updateUserRequest)

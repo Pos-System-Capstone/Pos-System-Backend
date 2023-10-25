@@ -17,12 +17,5 @@ namespace Pos_System.API.Controllers
         {
             _blogPostService = blogPostService;
         }
-
-        [CustomAuthorize(RoleEnum.SysAdmin)]
-        [HttpGet(ApiEndPointConstant.BlogPost.GetBlogPostByBrandCodeEndpoint)]
-        public async Task<IActionResult> GetBlogPostByBrandCode([FromQuery] string? brandCode)
-        {
-            return Ok();
-        }
     }
 }

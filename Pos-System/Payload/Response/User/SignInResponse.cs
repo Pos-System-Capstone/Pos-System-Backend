@@ -1,9 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Pos_System.Domain.Models
+﻿namespace Pos_System.API.Payload.Response.User
 {
-    public partial class User
+    public class SignInResponse
+    {
+        public string message { get; set; }
+        public string AccessToken { get; set; }
+        public UserResponse UserInfo { get; set; }
+    }
+    public class UserResponse
     {
         public Guid Id { get; set; }
         public string PhoneNumber { get; set; } = null!;
@@ -17,7 +20,5 @@ namespace Pos_System.Domain.Models
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string? UrlImg { get; set; }
-
-        public virtual Brand Brand { get; set; } = null!;
     }
 }

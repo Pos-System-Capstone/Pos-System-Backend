@@ -104,6 +104,7 @@ public static class ApiEndPointConstant
     {
         public const string OrdersEndPoint = Store.StoresEndpoint + "/{storeId}/orders";
         public const string OrderEndPoint = OrdersEndPoint + "/{id}";
+        public const string PrepareOrderEndPoint = Store.StoresEndpoint + "/prepare-order";
     }
 
 
@@ -123,13 +124,9 @@ public static class ApiEndPointConstant
     public static class User
     {
         public const string UsersEndpoint = ApiEndpoint + "/users";
-        public const string UserEndpoint = UsersEndpoint + "/{id}";
-    }
+        public const string UsersSignIn = UsersEndpoint + "/sign-in";
+        public const string UsersSignUp = UsersEndpoint + "/sign-up";
 
-    public static class BlogPost
-    {
-        public const string BlogPostsEndpoint = ApiEndpoint + "/blogpost";
-        public const string BlogPostEndpoint = BlogPostsEndpoint + "/{id}";
-        public const string GetBlogPostByBrandCodeEndpoint = BlogPostsEndpoint + "/brandcode";
+        public const string UserEndpoint = UsersEndpoint + "/{id}";
     }
 }
