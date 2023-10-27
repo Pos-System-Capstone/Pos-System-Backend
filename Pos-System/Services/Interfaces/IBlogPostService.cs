@@ -9,11 +9,9 @@ namespace Pos_System.API.Services.Interfaces
     {
         Task<IPaginate<GetBlogPostResponse>> GetBlogPostByBrandCode(string? brandCode, int page, int size);
 
-        Task<GetBlogPostResponse> GetBlogPostById(Guid id);
+        Task<IPaginate<GetBlogPostResponse>> GetBlogPost(int page, int size);
 
-        Task<IPaginate<GetBlogPostResponse>> GetAllBlog();
-
-        Task<CreateBlogPostResponse> CreateNewBlogPost(CreateBlogPostRequest createNewBlogPostRequest, Guid? brandId);
+        Task<CreateBlogPostResponse> CreateNewBlogPost(CreateBlogPostRequest createNewBlogPostRequest);
 
         Task<bool> RemovedBlogPostById(Guid blogId);
 

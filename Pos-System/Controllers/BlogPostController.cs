@@ -23,38 +23,20 @@ namespace Pos_System.API.Controllers
         }
 
         [CustomAuthorize(RoleEnum.SysAdmin)]
-        [HttpGet(ApiEndPointConstant.BlogPost.GetBlogPostByBrandCodeEndpoint)]
+        [HttpGet(ApiEndPointConstant.BlogPost.BlogPostsEndpoint)]
         [ProducesResponseType(typeof(IPaginate<GetBlogPostResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetBlogPostByBrandCode([FromQuery] string? brandCode, [FromQuery] int page, [FromQuery] int size)
+        public async Task<IActionResult> GetBlogPostByBrandCode([FromQuery] int page, [FromQuery] int size)
         {
-            var blogPostInBrand = await _blogPostService.GetBlogPostByBrandCode(brandCode, page, size);
+            var blogPostInBrand = await _blogPostService.GetBlogPost(page, size);
             return Ok(blogPostInBrand);
         }
 
         [CustomAuthorize(RoleEnum.SysAdmin)]
-        [HttpGet(ApiEndPointConstant.BlogPost.BlogPostEndpoint)]
-        [ProducesResponseType(typeof(GetBlogPostResponse), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetBlogPostById(Guid id)
-        {
-            var getBlogById = await _blogPostService.GetBlogPostById(id);
-            return Ok(getBlogById);
-        }
-
-        [CustomAuthorize(RoleEnum.SysAdmin)]
-        [HttpGet(ApiEndPointConstant.BlogPost.BlogPostsEndpoint)]
-        [ProducesResponseType(typeof(IPaginate<GetBlogPostResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAllBlog()
-        {
-            var getAllBlog = await _blogPostService.GetAllBlog();
-            return Ok(getAllBlog);
-        }
-
-        [CustomAuthorize(RoleEnum.SysAdmin)]
         [HttpPost(ApiEndPointConstant.BlogPost.BlogPostsEndpoint)]
-        public async Task<IActionResult> CreateNewBlogPost([FromBody] CreateBlogPostRequest createNewBlogPostRequest, [FromQuery] Guid? brandId)
+        public async Task<IActionResult> CreateNewBlogPost([FromBody] CreateBlogPostRequest createNewBlogPostRequest)
         {
             _logger.LogInformation($"Start to create new blog post with {createNewBlogPostRequest}");
-            var response = await _blogPostService.CreateNewBlogPost(createNewBlogPostRequest, brandId);
+            var response = await _blogPostService.CreateNewBlogPost(createNewBlogPostRequest);
             if (response == null)
             {
                 _logger.LogInformation(
