@@ -54,5 +54,13 @@ namespace Pos_System.API.Controllers
             var response = await _orderService.UpdateOrder(storeId, id, updateOrderRequest);
             return Ok(response);
         }
+
+        [HttpPut("orders/{id}/payment")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdatePaymentOrder(Guid id)
+        {
+            var response = await _orderService.UpdatePaymentOrder(id);
+            return Ok(response);
+        }
     }
 }

@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Pos_System.API.Constants;
+using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Request.User;
 using Pos_System.API.Payload.Response.User;
 using Pos_System.API.Services.Implements;
 using Pos_System.API.Services.Interfaces;
+using Pos_System.Domain.Models;
 
 namespace Pos_System.API.Controllers
 {
@@ -76,11 +78,11 @@ namespace Pos_System.API.Controllers
             return Ok(userResponse);
         }
 
-        // [HttpPost("users/order")]
-        // // [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
-        // public async Task<IActionResult> CreateNewUserOrder([FromBody] CreateUserOrderRequest request)
-        // {
-        //     return Ok();
-        // }
+        [HttpPost("users/order")]
+        public async Task<IActionResult> CreateUserOrder([FromBody] CreateUserOrderRequest req)
+        {
+            var userResponse = await _userService.CreateNewUserOrder(req); 
+            return Ok(userResponse);
+        }
     }
 }

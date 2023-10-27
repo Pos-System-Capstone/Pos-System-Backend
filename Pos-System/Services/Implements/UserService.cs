@@ -267,8 +267,8 @@ namespace Pos_System.API.Services.Implements
                 && DateTime.Compare(x.EndDateTime, currentTime) > 0);
             if (currentUserSession == null)
                 throw new BadHttpRequestException(MessageConstant.Order.UserNotInSessionMessage);
-            if (!createNewOrderRequest.ProductsList.Any())
-                throw new BadHttpRequestException(MessageConstant.Order.NoProductsInOrderMessage);
+            //if (!createNewOrderRequest.ProductsList.Any())
+            //    throw new BadHttpRequestException(MessageConstant.Order.NoProductsInOrderMessage);
 
             string newInvoiceId = store.Code + currentTimeStamp;
             int defaultGuest = 1;
@@ -340,7 +340,7 @@ namespace Pos_System.API.Services.Implements
                     promotionMappingList.Add(new PromotionOrderMapping()
                     {
                         Id = Guid.NewGuid(),
-                        PromotionId =  product.PromotionId?? Guid.NewGuid() ,
+                        PromotionId = product.PromotionId ?? Guid.NewGuid(),
                         OrderId = newOrder.Id,
                         Quantity = 1,
                         DiscountAmount = product.Discount,
@@ -374,6 +374,16 @@ namespace Pos_System.API.Services.Implements
                 Status = "NEW",
                 UpdatedAt = currentTime
             };
+            Payment newPayment = new Payment()
+            {
+                Id = Guid.NewGuid(),
+                OrderId = newOrder.Id,
+                Amount = newOrder.FinalAmount,
+                CurrencyCode = "VND",
+                Type = createNewOrderRequest.PaymentType.GetDescriptionFromEnum(),
+                Status = PaymentStatusEnum.PENDING.GetDescriptionFromEnum()
+            };
+            await _unitOfWork.GetRepository<Payment>().InsertAsync(newPayment);
             newOrder.OrderSourceId = orderSource.Id;
             currentUserSession.NumberOfOrders++;
             await _unitOfWork.GetRepository<Order>().InsertAsync(newOrder);

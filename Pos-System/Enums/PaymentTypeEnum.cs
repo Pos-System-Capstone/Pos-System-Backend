@@ -7,7 +7,14 @@ namespace Pos_System.API.Enums
 		MOMO,
 		BANKING,
 		VISA,
-		W3W
+		W3W,
+		POINTIFY_WALLET
 	}
+	public enum PaymentStatusEnum
+	{
+        PENDING,
+        SUCCESS,
+        CANCELLED
+    }
 }
 
