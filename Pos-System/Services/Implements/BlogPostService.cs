@@ -18,6 +18,24 @@ namespace Pos_System.API.Services.Implements
         {
         }
 
+        public async Task<IPaginate<GetBlogPostResponse>> GetBlogPost(int page, int size)
+        {
+            Guid brandId = Guid.Parse(GetBrandIdFromJwt());
+            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
+            Brand brand = await _unitOfWork.GetRepository<Brand>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
+            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+
+            IPaginate<GetBlogPostResponse> blogPostResponse = await _unitOfWork.GetRepository<BlogPost>().GetPagingListAsync(
+                selector: x => new GetBlogPostResponse(x.Id, x.Title, x.BlogContent, x.BrandId, x.Image, x.IsDialog, x.MetaData, x.Status, x.Priority),
+                predicate: x => x.BrandId.Equals(brand.Id) && x.Status.Equals(BlogPostStatus.Active.GetDescriptionFromEnum()),
+                page: page,
+                size: size,
+                orderBy: x => x.OrderByDescending(x => x.Priority));
+
+            return blogPostResponse;
+        }
+
         public async Task<IPaginate<GetBlogPostResponse>> GetBlogPostByBrandCode(string? brandCode, int page, int size)
         {
             if (brandCode == null) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandCodeMessage);
@@ -35,35 +53,15 @@ namespace Pos_System.API.Services.Implements
             return blogPostResponse;
         }
 
-        public async Task<GetBlogPostResponse> GetBlogPostById(Guid id)
+        public async Task<CreateBlogPostResponse> CreateNewBlogPost(CreateBlogPostRequest createNewBlogPostRequest)
         {
-            if (id == Guid.Empty) throw new BadHttpRequestException(MessageConstant.BlogPost.EmptyBlogIdMessage);
-            GetBlogPostResponse blogResponse = await _unitOfWork.GetRepository<BlogPost>().SingleOrDefaultAsync(
-            selector: x => new GetBlogPostResponse(x.Id, x.Title, x.BlogContent, x.BrandId, x.Image, x.IsDialog, x.MetaData, x.Status, x.Priority),
-            predicate: x => x.Id.Equals(id) && x.Status.Equals(BlogPostStatus.Active.GetDescriptionFromEnum()),
-            orderBy: x => x.OrderByDescending(x => x.Priority)
-            );
-            if (blogResponse == null) throw new BadHttpRequestException(MessageConstant.BlogPost.BlogNotFoundMessage);
-            return blogResponse;
-        }
-
-        public async Task<IPaginate<GetBlogPostResponse>> GetAllBlog()
-        {
-            IPaginate<GetBlogPostResponse> blogResponse = await _unitOfWork.GetRepository<BlogPost>().GetPagingListAsync(
-            selector: x => new GetBlogPostResponse(x.Id, x.Title, x.BlogContent, x.BrandId, x.Image, x.IsDialog, x.MetaData, x.Status, x.Priority),
-            predicate: x => x.Status.Equals(BlogPostStatus.Active.GetDescriptionFromEnum()),
-            orderBy: x => x.OrderByDescending(x => x.Priority)
-            );
-            if (blogResponse == null) throw new BadHttpRequestException(MessageConstant.BlogPost.BlogNotFoundMessage);
-            return blogResponse;
-        }
-
-        public async Task<CreateBlogPostResponse> CreateNewBlogPost(CreateBlogPostRequest createNewBlogPostRequest, Guid? brandId)
-        {
+            Guid brandId = Guid.Parse(GetBrandIdFromJwt());
             _logger.LogInformation($"Start create new : {createNewBlogPostRequest}");
             if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
             Brand brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
                 predicate: x => x.Id.Equals(brandId));
+            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+
             BlogPost newBlogPost = new BlogPost()
             {
                 Id = Guid.NewGuid(),
@@ -89,6 +87,12 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<bool> RemovedBlogPostById(Guid blogId)
         {
+            Guid brandId = Guid.Parse(GetBrandIdFromJwt());
+            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
+            Brand brand = await _unitOfWork.GetRepository<Brand>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
+            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+
             if (blogId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.BlogPost.EmptyBlogIdMessage);
             BlogPost removedBlog = await _unitOfWork.GetRepository<BlogPost>()
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(blogId));
@@ -102,6 +106,12 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<bool> UpdateBlogPost(Guid id, UpdateBlogPostRequest request)
         {
+            Guid brandId = Guid.Parse(GetBrandIdFromJwt());
+            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
+            Brand brand = await _unitOfWork.GetRepository<Brand>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
+            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+
             if (id == Guid.Empty && id == null) throw new BadHttpRequestException(MessageConstant.BlogPost.EmptyBlogIdMessage);
             BlogPost blogpost = await _unitOfWork.GetRepository<BlogPost>().SingleOrDefaultAsync(
                 predicate: x => x.Id.Equals(id)
