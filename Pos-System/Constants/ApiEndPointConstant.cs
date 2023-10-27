@@ -129,9 +129,9 @@ public static class ApiEndPointConstant
 
     public static class BlogPost
     {
-        public const string BlogPostsEndpoint = ApiEndpoint + "/blogpost";
+        public const string BlogPostsEndpoint = ApiEndpoint + "/blogposts";
         public const string BlogPostEndpoint = BlogPostsEndpoint + "/{id}";
-        public const string GetBlogPostByBrandCodeEndpoint = BlogPostsEndpoint + "/brandcode";
+        public const string GetBlogPostByBrandCodeEndpoint = BlogPostsEndpoint + "/blogpost";
         public const string StatusBlogPostEndpoint = BlogPostEndpoint + "/status";
     }
 }
