@@ -434,16 +434,17 @@ namespace Pos_System.API.Services.Implements
             return responese;
         }
 
-        public async Task<string> UpdatePaymentOrder(Guid orderId)
+        public async Task<Guid> UpdatePaymentOrder(Guid orderId)
         {
             Order order = await _unitOfWork.GetRepository<Order>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId));
+            if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
             Payment payment = await _unitOfWork.GetRepository<Payment>().SingleOrDefaultAsync(predicate: x => x.OrderId.Equals(orderId));
             payment.Notes = (payment.Type.Equals("CASH") ? "Tiền mặt" : "Thẻ") + " - " + order.InvoiceId; 
             payment.PayTime = TimeUtils.GetCurrentSEATime();
             payment.Status = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
             _unitOfWork.GetRepository<Payment>().UpdateAsync(payment);
             await _unitOfWork.CommitAsync();
-            return "Thanh toán thành công";
+            return order.Id;
         }
     }
 }
