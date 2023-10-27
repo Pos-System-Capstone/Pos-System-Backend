@@ -81,7 +81,7 @@ namespace Pos_System.API.Controllers
 
         [CustomAuthorize(RoleEnum.SysAdmin)]
         [HttpPatch(ApiEndPointConstant.BlogPost.BlogPostEndpoint)]
-        public async Task<IActionResult> UpdateBlogPostInformation(Guid id, UpdateUserRequest updatelogpost)
+        public async Task<IActionResult> UpdateBlogPostInformation(Guid id, UpdateBlogPostRequest updatelogpost)
         {
             bool isSuccessfuly = await _blogPostService.UpdateBlogPost(id, updatelogpost);
             if (!isSuccessfuly) return BadRequest(MessageConstant.BlogPost.UpdateBlogPostFailedMessage);

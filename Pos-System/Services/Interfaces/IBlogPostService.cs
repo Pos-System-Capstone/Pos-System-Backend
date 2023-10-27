@@ -17,6 +17,6 @@ namespace Pos_System.API.Services.Interfaces
 
         Task<bool> RemovedBlogPostById(Guid blogId);
 
-        Task<bool> UpdateBlogPost(Guid id, UpdateUserRequest request);
+        Task<bool> UpdateBlogPost(Guid id, UpdateBlogPostRequest request);
     }
 }

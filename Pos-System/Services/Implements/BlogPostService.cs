@@ -94,7 +94,7 @@ namespace Pos_System.API.Services.Implements
             return isSuccessful;
         }
 
-        public async Task<bool> UpdateBlogPost(Guid id, UpdateUserRequest request)
+        public async Task<bool> UpdateBlogPost(Guid id, UpdateBlogPostRequest request)
         {
             if (id == Guid.Empty && id == null) throw new BadHttpRequestException(MessageConstant.BlogPost.EmptyBlogIdMessage);
             BlogPost blogpost = await _unitOfWork.GetRepository<BlogPost>().SingleOrDefaultAsync(
@@ -102,9 +102,13 @@ namespace Pos_System.API.Services.Implements
                 );
             if (blogpost == null) throw new BadHttpRequestException(MessageConstant.BlogPost.BlogNotFoundMessage);
 
-            BlogPost update = _mapper.Map<BlogPost>(blogpost);
-            _unitOfWork.GetRepository<BlogPost>().UpdateAsync(update);
-            return true;
+            blogpost.Title = request.Title;
+            blogpost.BlogContent = request.BlogContent;
+            blogpost.Image = request.Image;
+
+            _unitOfWork.GetRepository<BlogPost>().UpdateAsync(blogpost);
+            bool isSuccessful = await _unitOfWork.CommitAsync() > 0;
+            return isSuccessful;
 
         }
     }
