@@ -1,15 +1,16 @@
 ﻿using AutoMapper;
 using Pos_System.API.Payload.Request.User;
 using Pos_System.API.Payload.Response.User;
+using Pos_System.Domain.Models;
 
-namespace Pos_System.API.Mappers.User
+namespace Pos_System.API.Mappers.Users
 {
     public class UserMapper : Profile
     {
         public UserMapper()
         {
-            CreateMap<CreateNewUserRequest, Pos_System.Domain.Models.User>();
-            CreateMap<Pos_System.Domain.Models.User, CreateNewUserResponse>();
+            CreateMap<CreateNewUserRequest, User>();
+            CreateMap<User, CreateNewUserResponse>();
         }
     }
 }

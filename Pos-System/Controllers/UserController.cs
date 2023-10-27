@@ -3,10 +3,12 @@ using Microsoft.AspNetCore.Mvc;
 using Pos_System.API.Constants;
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Request.User;
+using Pos_System.API.Payload.Response.BlogPost;
 using Pos_System.API.Payload.Response.User;
 using Pos_System.API.Services.Implements;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.Domain.Models;
+using Pos_System.Domain.Paginate;
 
 namespace Pos_System.API.Controllers
 {
@@ -14,10 +16,12 @@ namespace Pos_System.API.Controllers
     public class UserController : BaseController<UserController>
     {
         private readonly IUserService _userService;
+        private readonly IBlogPostService _blogPostService;
 
-        public UserController(ILogger<UserController> logger, IUserService userService) : base(logger)
+        public UserController(ILogger<UserController> logger, IUserService userService, IBlogPostService blogPostService) : base(logger)
         {
             _userService = userService;
+            _blogPostService = blogPostService;
         }
 
 
@@ -81,8 +85,16 @@ namespace Pos_System.API.Controllers
         [HttpPost("users/order")]
         public async Task<IActionResult> CreateUserOrder([FromBody] CreateUserOrderRequest req)
         {
-            var userResponse = await _userService.CreateNewUserOrder(req); 
+            var userResponse = await _userService.CreateNewUserOrder(req);
             return Ok(userResponse);
         }
+        [HttpGet(ApiEndPointConstant.User.UserBlogPostEndpoint)]
+        [ProducesResponseType(typeof(IPaginate<GetBlogPostResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetBlogPost([FromQuery] string? brandCode, [FromQuery] int page, [FromQuery] int size)
+        {
+            var blogPostInBrand = await _blogPostService.GetBlogPostByBrandCode(brandCode, page, size);
+            return Ok(blogPostInBrand);
+        }
+
     }
 }

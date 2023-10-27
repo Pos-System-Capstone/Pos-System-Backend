@@ -152,4 +152,13 @@ public static class MessageConstant
         public const string UserNotFound = "User không tồn tại trong hệ thống";
 
     }
+
+    public static class BlogPost
+    {
+        public const string BlogNotFoundMessage = "Bài Blog không tồn tại trong hệ thống";
+        public const string EmptyBlogIdMessage = "Blog Id bị trống";
+        public const string CreateNewBlogPostFailedMessage = "Tạo BlogPost thất bại";
+        public const string UpdateBlogPostFailedMessage = "Cập nhật thông tin Blog thất bại";
+        public const string UpdateBlogPostSuccessfulMessage = "Cập nhật thông tin Blog thành công";
+    }
 }
