@@ -27,7 +27,10 @@ namespace Pos_System.API.Services.Implements
 
             IPaginate<GetBlogPostResponse> blogPostResponse = await _unitOfWork.GetRepository<BlogPost>().GetPagingListAsync(
                 selector: x => new GetBlogPostResponse(x.Id, x.Title, x.BlogContent, x.BrandId, x.Image, x.IsDialog, x.MetaData, x.Status, x.Priority),
-                predicate: x => x.BrandId.Equals(brand.Id));
+                predicate: x => x.BrandId.Equals(brand.Id) && x.Status.Equals(BlogPostStatus.Active),
+                page: page,
+                size: size,
+                orderBy: x => x.OrderByDescending(x => x.Priority));
 
             return blogPostResponse;
         }
@@ -37,7 +40,8 @@ namespace Pos_System.API.Services.Implements
             if (id == Guid.Empty) throw new BadHttpRequestException(MessageConstant.BlogPost.EmptyBlogIdMessage);
             GetBlogPostResponse blogResponse = await _unitOfWork.GetRepository<BlogPost>().SingleOrDefaultAsync(
             selector: x => new GetBlogPostResponse(x.Id, x.Title, x.BlogContent, x.BrandId, x.Image, x.IsDialog, x.MetaData, x.Status, x.Priority),
-            predicate: x => x.Id.Equals(id)
+            predicate: x => x.Id.Equals(id) && x.Status.Equals(BlogPostStatus.Active),
+            orderBy: x => x.OrderByDescending(x => x.Priority)
             );
             if (blogResponse == null) throw new BadHttpRequestException(MessageConstant.BlogPost.BlogNotFoundMessage);
             return blogResponse;
@@ -46,7 +50,9 @@ namespace Pos_System.API.Services.Implements
         public async Task<IPaginate<GetBlogPostResponse>> GetAllBlog()
         {
             IPaginate<GetBlogPostResponse> blogResponse = await _unitOfWork.GetRepository<BlogPost>().GetPagingListAsync(
-            selector: x => new GetBlogPostResponse(x.Id, x.Title, x.BlogContent, x.BrandId, x.Image, x.IsDialog, x.MetaData, x.Status, x.Priority)
+            selector: x => new GetBlogPostResponse(x.Id, x.Title, x.BlogContent, x.BrandId, x.Image, x.IsDialog, x.MetaData, x.Status, x.Priority),
+            predicate: x => x.Status.Equals(BlogPostStatus.Active),
+            orderBy: x => x.OrderByDescending(x => x.Priority)
             );
             if (blogResponse == null) throw new BadHttpRequestException(MessageConstant.BlogPost.BlogNotFoundMessage);
             return blogResponse;
