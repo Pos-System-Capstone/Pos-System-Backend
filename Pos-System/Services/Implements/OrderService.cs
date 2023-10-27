@@ -437,13 +437,11 @@ namespace Pos_System.API.Services.Implements
         public async Task<string> UpdatePaymentOrder(Guid orderId)
         {
             Order order = await _unitOfWork.GetRepository<Order>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId));
-            order.Status = OrderStatus.PAID.GetDescriptionFromEnum();
             Payment payment = await _unitOfWork.GetRepository<Payment>().SingleOrDefaultAsync(predicate: x => x.OrderId.Equals(orderId));
             payment.Notes = (payment.Type.Equals("CASH") ? "Tiền mặt" : "Thẻ") + " - " + order.InvoiceId; 
             payment.PayTime = TimeUtils.GetCurrentSEATime();
             payment.Status = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
             _unitOfWork.GetRepository<Payment>().UpdateAsync(payment);
-            _unitOfWork.GetRepository<Order>().UpdateAsync(order);
             await _unitOfWork.CommitAsync();
             return "Thanh toán thành công";
         }
