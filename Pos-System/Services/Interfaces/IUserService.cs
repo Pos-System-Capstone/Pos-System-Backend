@@ -10,5 +10,6 @@ namespace Pos_System.API.Services.Interfaces
         Task<GetUserResponse> GetUserById(Guid userId);
         Task<SignInResponse> LoginUser(SignInRequest req);
         Task<SignInResponse> SignUpUser(CreateNewUserRequest newUserRequest, string? brandCode);
+        Task<Guid> CreateNewUserOrder(CreateUserOrderRequest createNewOrderRequest);
     }
 }

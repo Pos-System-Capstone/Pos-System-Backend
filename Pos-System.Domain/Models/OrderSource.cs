@@ -16,6 +16,7 @@ namespace Pos_System.Domain.Models
         public string Status { get; set; } = null!;
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public Guid SourceId { get; set; }
 
         public virtual ICollection<Order> Orders { get; set; }
     }

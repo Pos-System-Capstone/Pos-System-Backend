@@ -22,7 +22,8 @@ namespace Pos_System.API.Controllers
         [HttpPost(ApiEndPointConstant.User.UsersEndpoint)]
         [ProducesResponseType(typeof(CreateNewUserResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> CreateNewUser([FromBody]CreateNewUserRequest newUserRequest, [FromQuery]string? brandCode)
+        public async Task<IActionResult> CreateNewUser([FromBody] CreateNewUserRequest newUserRequest,
+            [FromQuery] string? brandCode)
         {
             CreateNewUserResponse response = await _userService.CreateNewUser(newUserRequest, brandCode);
             if (response == null)
@@ -34,6 +35,7 @@ namespace Pos_System.API.Controllers
             _logger.LogInformation($"Create new user successful with {newUserRequest.FullName}");
             return CreatedAtAction(nameof(CreateNewUser), response);
         }
+
         [HttpPost(ApiEndPointConstant.User.UsersSignIn)]
         [ProducesResponseType(typeof(SignInResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
@@ -42,6 +44,7 @@ namespace Pos_System.API.Controllers
             SignInResponse response = await _userService.LoginUser(req);
             return Ok(response);
         }
+
         [HttpPost(ApiEndPointConstant.User.UsersSignUp)]
         [ProducesResponseType(typeof(SignInResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
@@ -52,7 +55,7 @@ namespace Pos_System.API.Controllers
         }
 
         [HttpPatch(ApiEndPointConstant.User.UserEndpoint)]
-        public async Task<IActionResult> UpdateUserInformation(Guid id, [FromBody]UpdateUserRequest updateUserRequest)
+        public async Task<IActionResult> UpdateUserInformation(Guid id, [FromBody] UpdateUserRequest updateUserRequest)
         {
             bool isSuccessful = await _userService.UpdateUserInformation(id, updateUserRequest);
             if (isSuccessful)
@@ -72,5 +75,12 @@ namespace Pos_System.API.Controllers
             var userResponse = _userService.GetUserById(userId);
             return Ok(userResponse);
         }
+
+        // [HttpPost("users/order")]
+        // // [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+        // public async Task<IActionResult> CreateNewUserOrder([FromBody] CreateUserOrderRequest request)
+        // {
+        //     return Ok();
+        // }
     }
 }
