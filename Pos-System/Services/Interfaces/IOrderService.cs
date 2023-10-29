@@ -2,6 +2,7 @@
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.Promotion;
+using Pos_System.Domain.Models;
 using Pos_System.Domain.Paginate;
 
 namespace Pos_System.API.Services.Interfaces
@@ -16,5 +17,6 @@ namespace Pos_System.API.Services.Interfaces
         public Task<List<GetPromotionResponse>> GetPromotion(Guid storeId);
 
         Task<Guid> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req);
+        Task<List<Order>> GetListOrderByUserId(Guid userId);
     }
 }

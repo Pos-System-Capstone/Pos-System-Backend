@@ -445,10 +445,31 @@ namespace Pos_System.API.Services.Implements
             payment.Status = req.Status;
             payment.Type = req.PaymentType;
             order.PaymentType = req.PaymentType;
+            //if(payment.Type.Equals(PaymentTypeEnum.POINTIFY_WALLET.GetDescriptionFromEnum()))
+            //{
+            //    payment.Status = OrderStatus.PAID.GetDescriptionFromEnum();
+            //    _unitOfWork.GetRepository<Payment>().UpdateAsync(payment);
+            //    await _unitOfWork.CommitAsync();
+            //    var data = new { 
+
+            //    };
+            //}
+            //else
+            //{
+            //    order.Status = OrderStatus.PENDING.GetDescriptionFromEnum();
+            //}
             _unitOfWork.GetRepository<Payment>().UpdateAsync(payment);
             _unitOfWork.GetRepository<Order>().UpdateAsync(order);
             await _unitOfWork.CommitAsync();
             return order.Id;
+        }
+
+        public async Task<List<Order>> GetListOrderByUserId(Guid userId)
+        {
+            //lấy ra danh sách order của user
+            List<Order> orders = (List<Order>) await _unitOfWork.GetRepository<Order>().GetListAsync(
+                               predicate: x => x.OrderSource.SourceId.Equals(userId));
+            return orders;
         }
     }
 }

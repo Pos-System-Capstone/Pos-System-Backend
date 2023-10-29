@@ -8,6 +8,7 @@ using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Services.Implements;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.API.Validators;
+using Pos_System.Domain.Models;
 
 namespace Pos_System.API.Controllers
 {
@@ -61,6 +62,13 @@ namespace Pos_System.API.Controllers
 
         {
             var response = await _orderService.UpdatePaymentOrder(id, req);
+            return Ok(response);
+        }
+        [HttpGet("orders/user/{userId}")]
+        [ProducesResponseType(typeof(List<Order>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetListOrderByUserId(Guid userId)
+        {
+            var response = await _orderService.GetListOrderByUserId(userId);
             return Ok(response);
         }
     }

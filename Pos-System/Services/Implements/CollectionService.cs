@@ -134,7 +134,7 @@ namespace Pos_System.API.Services.Implements
                 BrandId = brandId,
                 Description = createNewCollectionRequest?.Description,
                 PicUrl = createNewCollectionRequest?.PicUrl,
-                Status = CollectionStatus.Deactivate.GetDescriptionFromEnum(),
+                Status = CollectionStatus.Active.GetDescriptionFromEnum(),
 
             };
             await _unitOfWork.GetRepository<Collection>().InsertAsync(newCollection);
