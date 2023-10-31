@@ -45,12 +45,12 @@ namespace Pos_System.API.Controllers
         [HttpPost(ApiEndPointConstant.User.UsersSignIn)]
         [ProducesResponseType(typeof(SignInResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> LoginUser([FromBody] SignInRequest req)
+        public async Task<IActionResult> LoginUser([FromBody] LoginFirebase req)
         {
             SignInResponse response = await _userService.LoginUser(req);
             return Ok(response);
         }
-
+        
         [HttpPost(ApiEndPointConstant.User.UsersSignUp)]
         [ProducesResponseType(typeof(SignInResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]

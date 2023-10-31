@@ -24,13 +24,16 @@ namespace Pos_System.API.Services.Implements
 {
     public class UserService : BaseService<UserService>, IUserService
     {
-        
         public const double VAT_PERCENT = 0.08;
         public const double VAT_STANDARD = 1.08;
+        private readonly IFirebaseService _firebaseService;
+
         public UserService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<UserService> logger,
-            IMapper mapper, IHttpContextAccessor httpContextAccessor) : base(unitOfWork, logger, mapper,
+            IMapper mapper, IHttpContextAccessor httpContextAccessor, IFirebaseService firebaseService) : base(
+            unitOfWork, logger, mapper,
             httpContextAccessor)
         {
+            _firebaseService = firebaseService;
         }
 
 
@@ -78,74 +81,145 @@ namespace Pos_System.API.Services.Implements
             return createNewUserResponse;
         }
 
-        public async Task<SignInResponse> LoginUser(SignInRequest req)
+        public async Task<SignInResponse> LoginUser(LoginFirebase req)
         {
+            var cred = await _firebaseService.VerifyIdToken(req.Token);
+            if (cred == null) throw new BadHttpRequestException("Token Firebase không hợp lệ!");
+            var firebaseClaims = cred.Claims;
+            
+            var phone = firebaseClaims.First(c => c.Key == "phone_number").Value.ToString();
+            var uid = firebaseClaims.First(c => c.Key == "user_id").Value.ToString();
+            //if (email.Split("@").Last() != "fpt.edu.vn" && email != "johnnymc2001@gmail.com")
+            //    throw new BadRequestException("The system currently only accepted @fpt.edu.vn email!", ErrorNameValues.InvalidCredential);
+            
+
             User userLogin = await _unitOfWork.GetRepository<User>()
-                .SingleOrDefaultAsync(predicate: x => x.PhoneNumber.Equals(req.PhoneNumber) &&
-                                                      x.FireBaseUid.Equals(req.UID)
+                .SingleOrDefaultAsync(predicate: x => x.PhoneNumber.Equals(phone)
                                                       && x.Status.Equals("Active"));
+            DateTime expires;
+            IConfiguration configuration;
+            JwtSecurityTokenHandler jwtHandler;
+            SymmetricSecurityKey secrectKey;
+            SigningCredentials? credentials;
+            string issuer;
+            List<Claim> claims;
+            Tuple<string, Guid> guidClaim;
+            JwtSecurityToken? token;
+            string accesstken;
+            string? brandCode;
+            Guid brandId;
             if (userLogin == null)
             {
-                return new SignInResponse
+                CreateNewUserRequest newUserRequest = new CreateNewUserRequest()
                 {
-                    message = "Phone Number or UID is not correct"
+                    PhoneNunmer = phone,
+                    FullName = "Người dùng",
+                    Gender = "ORTHER",
+                    FireBaseUid = uid
                 };
-            }
-            else
-            {
-                Guid storeId = await _unitOfWork.GetRepository<Store>().SingleOrDefaultAsync(
-                    selector: x => x.Id,
-                    predicate: x => x.BrandId.Equals(userLogin.BrandId));
-                Tuple<string, Guid> guidClaim = new Tuple<string, Guid>("storeId", storeId);
+                var newUser = await CreateNewUser(newUserRequest, req.BrandCode);
+
+                User user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(predicate: x =>
+                    x.Id.Equals(newUser.Id)
+                    && x.Status.Equals("Active"));
+                brandId = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
+                    selector: brand => brand.Id,
+                    predicate: brand => brand.BrandCode.Equals(req.BrandCode)
+                );
+                guidClaim = new Tuple<string, Guid>("brandId", brandId);
                 //string? brandPicUrl = await _unitOfWork.GetRepository<Store>().SingleOrDefaultAsync(
                 //    selector: store => store.Brand.PicUrl,
                 //    predicate: store => store.Id.Equals(storeId),
                 //    include: store => store.Include(store => store.Brand)
 
                 //);
-                IConfiguration configuration = new ConfigurationBuilder()
+                configuration = new ConfigurationBuilder()
                     .AddEnvironmentVariables(EnvironmentVariableConstant.Prefix).Build();
-                JwtSecurityTokenHandler jwtHandler = new JwtSecurityTokenHandler();
-                SymmetricSecurityKey secrectKey =
+                jwtHandler = new JwtSecurityTokenHandler();
+                secrectKey =
                     new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(configuration.GetValue<string>(JwtConstant.SecretKey)));
-                var credentials = new SigningCredentials(secrectKey, SecurityAlgorithms.HmacSha256Signature);
-                string issuer = configuration.GetValue<string>(JwtConstant.Issuer);
-                List<Claim> claims = new List<Claim>()
+                credentials = new SigningCredentials(secrectKey, SecurityAlgorithms.HmacSha256Signature);
+                issuer = configuration.GetValue<string>(JwtConstant.Issuer);
+                claims = new List<Claim>()
                 {
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(JwtRegisteredClaimNames.Sub, userLogin.FullName),
+                    new Claim(JwtRegisteredClaimNames.Sub, newUser.FullName),
                     new Claim(ClaimTypes.Role, "User"),
                 };
                 if (guidClaim != null) claims.Add(new Claim(guidClaim.Item1, guidClaim.Item2.ToString()));
-                var expires = "User".Equals(RoleEnum.User.GetDescriptionFromEnum())
+                expires = "User".Equals(RoleEnum.User.GetDescriptionFromEnum())
                     ? DateTime.Now.AddDays(1)
                     : DateTime.Now.AddMinutes(configuration.GetValue<long>(JwtConstant.TokenExpireInMinutes));
-                var token = new JwtSecurityToken(issuer, null, claims, notBefore: DateTime.Now, expires, credentials);
-                string accesstken = jwtHandler.WriteToken(token);
+                token = new JwtSecurityToken(issuer, null, claims, notBefore: DateTime.Now, expires, credentials);
+                accesstken = jwtHandler.WriteToken(token);
                 return new SignInResponse
                 {
-                    message = "Login success",
+                    message = "Sign Up success",
                     AccessToken = accesstken,
                     UserInfo = new UserResponse()
                     {
-                        Id = userLogin.Id,
-                        FullName = userLogin.FullName,
-                        PhoneNumber = userLogin.PhoneNumber,
-                        BrandId = userLogin.BrandId,
-                        Email = userLogin.Email,
-                        FireBaseUid = userLogin.FireBaseUid,
-                        CreatedAt = userLogin.CreatedAt,
-                        Fcmtoken = userLogin.Fcmtoken,
-                        Gender = userLogin.Gender,
-                        Status = userLogin.Status,
-                        UpdatedAt = userLogin.UpdatedAt,
-                        UrlImg = userLogin.UrlImg
+                        Id = user.Id,
+                        FullName = user.FullName,
+                        PhoneNumber = user.PhoneNumber,
+                        BrandId = brandId,
+                        Email = user.Email,
+                        FireBaseUid = user.FireBaseUid,
+                        CreatedAt = user.CreatedAt,
+                        Fcmtoken = user.Fcmtoken,
+                        Gender = user.Gender,
+                        Status = user.Status,
+                        UpdatedAt = user.UpdatedAt,
+                        UrlImg = user.UrlImg
                     }
                 };
             }
+            brandId = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
+                selector: brand => brand.Id,
+                predicate: brand => brand.BrandCode.Equals(req.BrandCode)
+            );
+            guidClaim = new Tuple<string, Guid>("brandId", brandId);
+            configuration = new ConfigurationBuilder()
+                .AddEnvironmentVariables(EnvironmentVariableConstant.Prefix).Build();
+            jwtHandler = new JwtSecurityTokenHandler();
+            secrectKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(configuration.GetValue<string>(JwtConstant.SecretKey)));
+            credentials = new SigningCredentials(secrectKey, SecurityAlgorithms.HmacSha256Signature);
+            issuer = configuration.GetValue<string>(JwtConstant.Issuer);
+            claims = new List<Claim>()
+            {
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, userLogin.FullName),
+                new Claim(ClaimTypes.Role, "User"),
+            };
+            if (guidClaim != null) claims.Add(new Claim(guidClaim.Item1, guidClaim.Item2.ToString()));
+            expires = "User".Equals(RoleEnum.User.GetDescriptionFromEnum())
+                ? DateTime.Now.AddDays(1)
+                : DateTime.Now.AddMinutes(configuration.GetValue<long>(JwtConstant.TokenExpireInMinutes));
+            token = new JwtSecurityToken(issuer, null, claims, notBefore: DateTime.Now, expires, credentials);
+            accesstken = jwtHandler.WriteToken(token);
+            return new SignInResponse
+            {
+                message = "Login success",
+                AccessToken = accesstken,
+                UserInfo = new UserResponse()
+                {
+                    Id = userLogin.Id,
+                    FullName = userLogin.FullName,
+                    PhoneNumber = userLogin.PhoneNumber,
+                    BrandId = userLogin.BrandId,
+                    Email = userLogin.Email,
+                    FireBaseUid = userLogin.FireBaseUid,
+                    CreatedAt = userLogin.CreatedAt,
+                    Fcmtoken = userLogin.Fcmtoken,
+                    Gender = userLogin.Gender,
+                    Status = userLogin.Status,
+                    UpdatedAt = userLogin.UpdatedAt,
+                    UrlImg = userLogin.UrlImg
+                }
+            };
         }
-
+        
         public async Task<SignInResponse> SignUpUser(CreateNewUserRequest newUserRequest, string? brandCode)
         {
             var newUser = await CreateNewUser(newUserRequest, brandCode);
