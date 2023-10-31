@@ -143,7 +143,7 @@ namespace Pos_System.API.Controllers
         [ProducesResponseType(typeof(GetStoreEndDayReport), StatusCodes.Status200OK)]
         public async Task<IActionResult> ExportStoreEndDayReport(string? storeCode, string? brandCode, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
-            var response = await _reportService.GetStoreEndDayReport(storeCode, brandCode, startDate, endDate);
+            var response = await _reportService.GetStoresInBrandEndDayReport(storeCode, brandCode, startDate, endDate);
             return Ok(response);
 
         }
@@ -157,10 +157,10 @@ namespace Pos_System.API.Controllers
         }
 
         [HttpGet(ApiEndPointConstant.Brand.StoresInBrandCodeEndpoint)]
-        public async Task<IActionResult> GetStoresInBrand([FromQuery] string? brandCode, [FromQuery] int page,
+        public async Task<IActionResult> GetStoresInBrand([FromQuery] string? brandCode, [FromQuery]string? storeCode, [FromQuery] int page,
             [FromQuery] int size)
         {
-            var response = await _storeService.GetStoresInBrandByBrandCode(brandCode, page, size);
+            var response = await _storeService.GetStoresInBrandByBrandCode(brandCode, storeCode, page, size);
             return Ok(response);
         }
     }

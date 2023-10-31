@@ -170,7 +170,7 @@ public class StoreService : BaseService<StoreService>, IStoreService
         if (userStoreId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Menu.MissingStoreIdMessage);
 
         //Filter Menu, make sure it return correct menu in specific time
-        List<MenuStore> allMenuAvailable = (List<MenuStore>) await _unitOfWork.GetRepository<MenuStore>()
+        List<MenuStore> allMenuAvailable = (List<MenuStore>)await _unitOfWork.GetRepository<MenuStore>()
             .GetListAsync(predicate: x => x.StoreId.Equals(userStoreId)
                                           && x.Menu.Status.Equals(MenuStatus.Active.GetDescriptionFromEnum())
                                           && x.Store.Brand.Status.Equals(BrandStatus.Active.GetDescriptionFromEnum()),
@@ -217,7 +217,7 @@ public class StoreService : BaseService<StoreService>, IStoreService
                 x.EndTime),
             predicate: x => x.Id.Equals(menuOfStoreId) && x.Status.Equals(MenuStatus.Active.GetDescriptionFromEnum()));
 
-        menuOfStore.ProductsInMenu = (List<ProductDataForStaff>) await _unitOfWork.GetRepository<MenuProduct>()
+        menuOfStore.ProductsInMenu = (List<ProductDataForStaff>)await _unitOfWork.GetRepository<MenuProduct>()
             .GetListAsync(
                 selector: x => new ProductDataForStaff
                 (
@@ -236,8 +236,8 @@ public class StoreService : BaseService<StoreService>, IStoreService
                     x.Product.ParentProductId,
                     x.Product.BrandId,
                     x.Product.CategoryId,
-                    (List<Guid>) x.Product.CollectionProducts.Select(x => x.CollectionId),
-                    (List<Guid>) x.Product.Category.ExtraCategoryProductCategories.Select(x => x.ExtraCategoryId),
+                    (List<Guid>)x.Product.CollectionProducts.Select(x => x.CollectionId),
+                    (List<Guid>)x.Product.Category.ExtraCategoryProductCategories.Select(x => x.ExtraCategoryId),
                     x.Id //This is the menuProductId in response body
                 ),
                 predicate: x =>
@@ -251,7 +251,7 @@ public class StoreService : BaseService<StoreService>, IStoreService
                     .ThenInclude(category => category.ExtraCategoryProductCategories)
             );
 
-        menuOfStore.CollectionsOfBrand = (List<CollectionOfBrand>) await _unitOfWork.GetRepository<Collection>()
+        menuOfStore.CollectionsOfBrand = (List<CollectionOfBrand>)await _unitOfWork.GetRepository<Collection>()
             .GetListAsync(selector: x => new CollectionOfBrand(
                     x.Id,
                     x.Name,
@@ -262,7 +262,7 @@ public class StoreService : BaseService<StoreService>, IStoreService
                 predicate: x =>
                     x.BrandId.Equals(userBrandId) && x.Status == CollectionStatus.Active.GetDescriptionFromEnum());
 
-        menuOfStore.CategoriesOfBrand = (List<CategoryOfBrand>) await _unitOfWork.GetRepository<Category>()
+        menuOfStore.CategoriesOfBrand = (List<CategoryOfBrand>)await _unitOfWork.GetRepository<Category>()
             .GetListAsync(selector: x => new CategoryOfBrand(
                 x.Id,
                 x.Code,
@@ -276,12 +276,12 @@ public class StoreService : BaseService<StoreService>, IStoreService
         //Use to filter which productInGroups is added to menu
         List<Guid> productIdsInMenu = menuOfStore.ProductsInMenu.Select(x => x.Id).ToList();
 
-        menuOfStore.groupProductInMenus = (List<GroupProductInMenu>) await _unitOfWork.GetRepository<GroupProduct>()
+        menuOfStore.groupProductInMenus = (List<GroupProductInMenu>)await _unitOfWork.GetRepository<GroupProduct>()
             .GetListAsync(
                 x => new GroupProductInMenu
                 {
                     Id = x.Id,
-                    ComboProductId = (Guid) x.ComboProductId,
+                    ComboProductId = (Guid)x.ComboProductId,
                     Name = x.Name,
                     CombinationMode = EnumUtil.ParseEnum<GroupCombinationMode>(x.CombinationMode),
                     Priority = x.Priority,
@@ -294,7 +294,7 @@ public class StoreService : BaseService<StoreService>, IStoreService
                 include: x => x.Include(x => x.ComboProduct)
             );
 
-        menuOfStore.productInGroupList = (List<ProductsInGroupResponse>) await _unitOfWork
+        menuOfStore.productInGroupList = (List<ProductsInGroupResponse>)await _unitOfWork
             .GetRepository<ProductInGroup>().GetListAsync(
                 selector: x => new ProductsInGroupResponse
                 {
@@ -317,7 +317,7 @@ public class StoreService : BaseService<StoreService>, IStoreService
 
         foreach (GroupProductInMenu groupProduct in menuOfStore.groupProductInMenus)
         {
-            groupProduct.ProductsInGroupIds = (List<Guid>) menuOfStore.productInGroupList
+            groupProduct.ProductsInGroupIds = (List<Guid>)menuOfStore.productInGroupList
                 .Where(x => x.GroupProductId.Equals(groupProduct.Id))
                 .Select(x => x.Id).ToList();
         }
@@ -356,21 +356,40 @@ public class StoreService : BaseService<StoreService>, IStoreService
         return result;
     }
 
-    public async Task<IPaginate<GetStoreResponse>> GetStoresInBrandByBrandCode(string? brandCode, int page, int size)
+    public async Task<IPaginate<GetStoreResponse>> GetStoresInBrandByBrandCode(string? brandCode, string? storeCode, int page, int size)
     {
         if (brandCode == null) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandCodeMessage);
         Brand brand = await _unitOfWork.GetRepository<Brand>()
             .SingleOrDefaultAsync(predicate: x => x.BrandCode.Equals(brandCode));
         if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
 
-        IPaginate<GetStoreResponse> storesInBrandResponse = await _unitOfWork.GetRepository<Store>().GetPagingListAsync(
+        Store store = await _unitOfWork.GetRepository<Store>() .SingleOrDefaultAsync(predicate: x => x.Code.Equals(storeCode));
+
+        IPaginate<GetStoreResponse> storesInBrandResponse = null;
+
+        if (store == null)
+        {
+            storesInBrandResponse = await _unitOfWork.GetRepository<Store>().GetPagingListAsync(
             selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Email, x.Address, x.Status,
                 x.WifiName, x.WifiPassword),
             predicate: x => x.BrandId.Equals(brand.Id),
             orderBy: x => x.OrderBy(x => x.ShortName),
             page: page,
             size: size
-        );
+            );
+        }
+        else
+        {
+            storesInBrandResponse = await _unitOfWork.GetRepository<Store>().GetPagingListAsync(
+            selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Email, x.Address, x.Status,
+                x.WifiName, x.WifiPassword),
+            predicate: x => x.BrandId.Equals(brand.Id) && x.Id.Equals(store.Id),
+            orderBy: x => x.OrderBy(x => x.ShortName),
+            page: page,
+            size: size
+            );
+        }
+
         return storesInBrandResponse;
     }
 }
