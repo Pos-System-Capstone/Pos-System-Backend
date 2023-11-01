@@ -448,16 +448,6 @@ namespace Pos_System.API.Services.Implements
                 Status = "NEW",
                 UpdatedAt = currentTime
             };
-            Payment newPayment = new Payment()
-            {
-                Id = Guid.NewGuid(),
-                OrderId = newOrder.Id,
-                Amount = newOrder.FinalAmount,
-                CurrencyCode = "VND",
-                Type = createNewOrderRequest.PaymentType.GetDescriptionFromEnum(),
-                Status = PaymentStatusEnum.PENDING.GetDescriptionFromEnum()
-            };
-            await _unitOfWork.GetRepository<Payment>().InsertAsync(newPayment);
             newOrder.OrderSourceId = orderSource.Id;
             currentUserSession.NumberOfOrders++;
             await _unitOfWork.GetRepository<Order>().InsertAsync(newOrder);

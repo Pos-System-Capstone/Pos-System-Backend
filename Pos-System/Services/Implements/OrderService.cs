@@ -305,6 +305,8 @@ namespace Pos_System.API.Services.Implements
             if (store == null) throw new BadHttpRequestException(MessageConstant.Store.StoreNotFoundMessage);
 
             string currentUserName = GetUsernameFromJwt();
+            Account currentUser = await _unitOfWork.GetRepository<Account>()
+                .SingleOrDefaultAsync(predicate: x => x.Username.Equals(currentUserName));
             DateTime currentTime = TimeUtils.GetCurrentSEATime();
             Session currentUserSession = await _unitOfWork.GetRepository<Session>().SingleOrDefaultAsync(predicate: x =>
                 x.StoreId.Equals(storeId)
@@ -313,49 +315,16 @@ namespace Pos_System.API.Services.Implements
 
             Order order = await _unitOfWork.GetRepository<Order>()
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId));
-
             if (currentUserSession == null)
                 throw new BadHttpRequestException(MessageConstant.Order.UserNotInSessionMessage);
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
-
             if (updateOrderRequest.Status.Equals(OrderStatus.CANCELED))
             {
                 currentUserSession.NumberOfOrders--;
-                //Reverse Transaction if switch from PAID to CANCELED
-                // if(currentPayment != null)
-                // {
-                //     currentUserSession.TotalAmount -= order.TotalAmount;
-                //     currentUserSession.TotalFinalAmount -= order.FinalAmount;
-                //     currentUserSession.TotalChangeCash -= order.FinalAmount;
-                //     currentUserSession.TotalDiscountAmount -= order.Discount;
-                //
-                //     _unitOfWork.GetRepository<Payment>().DeleteAsync(currentPayment);
-                // }
             }
 
             if (updateOrderRequest.Status.Equals(OrderStatus.PAID))
             {
-                //Case chang from CANCELED to PAID
-                //if(order.Status.Equals(OrderStatus.CANCELED)) currentUserSession.NumberOfOrders++;
-                //PaymentType paymentType = await _unitOfWork.GetRepository<PaymentType>().SingleOrDefaultAsync(predicate: x =>
-                //    x.Id.Equals(updateOrderRequest.paymentId));
-
-                //if (paymentType == null) throw new BadHttpRequestException("Payment not found!");
-
-                //Payment currentPayment = await _unitOfWork.GetRepository<Payment>().SingleOrDefaultAsync(predicate: x => x.OrderId.Equals(orderId));
-
-                //if (currentPayment == null)
-                //{
-
-                //Payment newPaymentRequest = new Payment()
-                //{
-                //    Id = Guid.NewGuid(),
-                //    OrderId = order.Id,
-                //    Amount = order.FinalAmount,
-                //    PaymentTypeId = paymentType.Id
-                //};
-                //await _unitOfWork.GetRepository<Payment>().InsertAsync(newPaymentRequest);
-                //}
                 currentUserSession.TotalAmount += order.TotalAmount;
                 currentUserSession.TotalFinalAmount += order.FinalAmount;
                 currentUserSession.TotalDiscountAmount += order.Discount;
@@ -368,14 +337,13 @@ namespace Pos_System.API.Services.Implements
                 }
             }
 
+            order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
             order.PaymentType = updateOrderRequest.PaymentType.GetDescriptionFromEnum();
             order.Status = updateOrderRequest.Status.GetDescriptionFromEnum();
-
             _unitOfWork.GetRepository<Session>().UpdateAsync(currentUserSession);
             _unitOfWork.GetRepository<Order>().UpdateAsync(order);
             await _unitOfWork.CommitAsync();
-
             return order.Id;
         }
 
@@ -434,17 +402,21 @@ namespace Pos_System.API.Services.Implements
             return responese;
         }
 
-        public async Task<Guid> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req)
+        public async Task<Payment> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req)
         {
             Order order = await _unitOfWork.GetRepository<Order>()
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId));
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
-            Payment payment = await _unitOfWork.GetRepository<Payment>()
-                .SingleOrDefaultAsync(predicate: x => x.OrderId.Equals(orderId));
-            payment.PayTime = TimeUtils.GetCurrentSEATime();
-            payment.Status = req.Status;
-            payment.Type = req.PaymentType;
-            order.PaymentType = req.PaymentType;
+            Payment newPayment = new Payment()
+            {
+                Id = Guid.NewGuid(),
+                OrderId = order.Id,
+                Amount = order.FinalAmount,
+                CurrencyCode = "VND",
+                PayTime = TimeUtils.GetCurrentSEATime(),
+                Type = req.PaymentType.GetDescriptionFromEnum(),
+                Status = req.Status.GetDescriptionFromEnum()
+            };
             //if(payment.Type.Equals(PaymentTypeEnum.POINTIFY_WALLET.GetDescriptionFromEnum()))
             //{
             //    payment.Status = OrderStatus.PAID.GetDescriptionFromEnum();
@@ -458,17 +430,36 @@ namespace Pos_System.API.Services.Implements
             //{
             //    order.Status = OrderStatus.PENDING.GetDescriptionFromEnum();
             //}
-            _unitOfWork.GetRepository<Payment>().UpdateAsync(payment);
-            _unitOfWork.GetRepository<Order>().UpdateAsync(order);
+            await _unitOfWork.GetRepository<Payment>().InsertAsync(newPayment);
             await _unitOfWork.CommitAsync();
-            return order.Id;
+            return newPayment;
         }
 
-        public async Task<List<Order>> GetListOrderByUserId(Guid userId)
+        public async Task<IPaginate<ViewOrdersResponse>> GetListOrderByUserId(Guid userId, OrderStatus status, int page,
+            int size)
         {
             //lấy ra danh sách order của user
-            List<Order> orders = (List<Order>) await _unitOfWork.GetRepository<Order>().GetListAsync(
-                               predicate: x => x.OrderSource.SourceId.Equals(userId));
+            IPaginate<ViewOrdersResponse> orders = await _unitOfWork.GetRepository<Order>().GetPagingListAsync(
+                selector: x => new ViewOrdersResponse
+                {
+                    Id = x.Id,
+                    InvoiceId = x.InvoiceId,
+                    StaffName = x.CheckInPersonNavigation.Name,
+                    StartDate = x.CheckInDate,
+                    EndDate = x.CheckOutDate,
+                    FinalAmount = x.FinalAmount,
+                    OrderType = EnumUtil.ParseEnum<OrderType>(x.OrderType),
+                    Status = EnumUtil.ParseEnum<OrderStatus>(x.Status),
+                    PaymentType = string.IsNullOrEmpty(x.PaymentType)
+                        ? PaymentTypeEnum.CASH
+                        : EnumUtil.ParseEnum<PaymentTypeEnum>(x.PaymentType),
+                },
+                predicate: x =>
+                    x.OrderSource.SourceId.Equals(userId) && x.Status.Equals(status.GetDescriptionFromEnum()),
+                orderBy: x => x.OrderByDescending(x => x.CheckInDate),
+                page: page,
+                size: size
+            );
             return orders;
         }
     }

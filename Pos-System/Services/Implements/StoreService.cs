@@ -33,8 +33,9 @@ public class StoreService : BaseService<StoreService>, IStoreService
         if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
         searchShortName = searchShortName?.Trim().ToLower();
         IPaginate<GetStoreResponse> storesInBrandResponse = await _unitOfWork.GetRepository<Store>().GetPagingListAsync(
-            selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Email, x.Address, x.Status,
-                x.WifiName, x.WifiPassword),
+            selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Code, x.Email, x.Address,
+                x.Status,
+                x.WifiName, x.WifiPassword, x.Lat, x.Long),
             predicate: string.IsNullOrEmpty(searchShortName)
                 ? x => x.BrandId.Equals(brandId)
                 : x => x.BrandId.Equals(brandId) && x.ShortName.ToLower().Contains(searchShortName),
@@ -49,8 +50,9 @@ public class StoreService : BaseService<StoreService>, IStoreService
     {
         if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
         GetStoreDetailResponse storeDetailResponse = await _unitOfWork.GetRepository<Store>().SingleOrDefaultAsync(
-            selector: x => new GetStoreDetailResponse(x.Id, x.BrandId, x.Name, x.Name, x.Email, x.Address, x.Status,
-                x.Phone, x.Code, x.Brand.PicUrl, x.WifiName, x.WifiPassword),
+            selector: x => new GetStoreDetailResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Email, x.Address,
+                x.Status,
+                x.Phone, x.Code, x.Brand.PicUrl, x.WifiName, x.WifiPassword, x.Lat, x.Long),
             include: x => x.Include(x => x.Brand),
             predicate: x => x.Id.Equals(storeId)
         );
@@ -364,8 +366,9 @@ public class StoreService : BaseService<StoreService>, IStoreService
         if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
 
         IPaginate<GetStoreResponse> storesInBrandResponse = await _unitOfWork.GetRepository<Store>().GetPagingListAsync(
-            selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Email, x.Address, x.Status,
-                x.WifiName, x.WifiPassword),
+            selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Code, x.Email, x.Address,
+                x.Status,
+                x.WifiName, x.WifiPassword, x.Lat, x.Long),
             predicate: x => x.BrandId.Equals(brand.Id),
             orderBy: x => x.OrderBy(x => x.ShortName),
             page: page,

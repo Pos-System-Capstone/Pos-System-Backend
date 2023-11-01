@@ -16,7 +16,7 @@ namespace Pos_System.API.Services.Interfaces
             DateTime? startDate, DateTime? endDate, OrderType? orderType, OrderStatus? orderStatus);
         public Task<List<GetPromotionResponse>> GetPromotion(Guid storeId);
 
-        Task<Guid> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req);
-        Task<List<Order>> GetListOrderByUserId(Guid userId);
+        Task<Payment> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req);
+        Task<IPaginate<ViewOrdersResponse>> GetListOrderByUserId(Guid userId, OrderStatus status, int page, int size);
     }
 }

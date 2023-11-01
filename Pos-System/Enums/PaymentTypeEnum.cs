@@ -13,8 +13,7 @@ namespace Pos_System.API.Enums
 	public enum PaymentStatusEnum
 	{
         PENDING,
-        SUCCESS,
+        PAID,
         CANCELLED
     }
 }
-

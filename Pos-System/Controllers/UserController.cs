@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Pos_System.API.Constants;
+using Pos_System.API.Enums;
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Request.User;
 using Pos_System.API.Payload.Response.BlogPost;
+using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.User;
 using Pos_System.API.Services.Implements;
 using Pos_System.API.Services.Interfaces;
@@ -17,11 +19,14 @@ namespace Pos_System.API.Controllers
     {
         private readonly IUserService _userService;
         private readonly IBlogPostService _blogPostService;
+        private readonly IOrderService _orderService;
 
-        public UserController(ILogger<UserController> logger, IUserService userService, IBlogPostService blogPostService) : base(logger)
+        public UserController(ILogger<UserController> logger, IUserService userService,
+            IBlogPostService blogPostService, IOrderService orderService) : base(logger)
         {
             _userService = userService;
             _blogPostService = blogPostService;
+            _orderService = orderService;
         }
 
 
@@ -50,7 +55,7 @@ namespace Pos_System.API.Controllers
             SignInResponse response = await _userService.LoginUser(req);
             return Ok(response);
         }
-        
+
         [HttpPost(ApiEndPointConstant.User.UsersSignUp)]
         [ProducesResponseType(typeof(SignInResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
@@ -88,13 +93,24 @@ namespace Pos_System.API.Controllers
             var userResponse = await _userService.CreateNewUserOrder(req);
             return Ok(userResponse);
         }
+
         [HttpGet(ApiEndPointConstant.User.UserBlogPostEndpoint)]
         [ProducesResponseType(typeof(IPaginate<GetBlogPostResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetBlogPost([FromQuery] string? brandCode, [FromQuery] int page, [FromQuery] int size)
+        public async Task<IActionResult> GetBlogPost([FromQuery] string? brandCode, [FromQuery] int page,
+            [FromQuery] int size)
         {
             var blogPostInBrand = await _blogPostService.GetBlogPostByBrandCode(brandCode, page, size);
             return Ok(blogPostInBrand);
         }
 
+        [HttpGet(ApiEndPointConstant.User.UserOrderEndpoint)]
+        [ProducesResponseType(typeof(IPaginate<ViewOrdersResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetListOrderByUserId(Guid id, [FromQuery] OrderStatus status,
+            [FromQuery] int page,
+            [FromQuery] int size)
+        {
+            var response = await _orderService.GetListOrderByUserId(id, status, page, size);
+            return Ok(response);
+        }
     }
 }

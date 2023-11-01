@@ -64,12 +64,5 @@ namespace Pos_System.API.Controllers
             var response = await _orderService.UpdatePaymentOrder(id, req);
             return Ok(response);
         }
-        [HttpGet("orders/user/{userId}")]
-        [ProducesResponseType(typeof(List<Order>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetListOrderByUserId(Guid userId)
-        {
-            var response = await _orderService.GetListOrderByUserId(userId);
-            return Ok(response);
-        }
     }
 }

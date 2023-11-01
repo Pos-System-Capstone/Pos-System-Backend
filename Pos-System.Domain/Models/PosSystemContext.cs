@@ -599,6 +599,10 @@ namespace Pos_System.Domain.Models
 
                 entity.Property(e => e.Email).HasMaxLength(254);
 
+                entity.Property(e => e.Lat).HasMaxLength(256);
+
+                entity.Property(e => e.Long).HasMaxLength(256);
+
                 entity.Property(e => e.Name).HasMaxLength(50);
 
                 entity.Property(e => e.Phone)

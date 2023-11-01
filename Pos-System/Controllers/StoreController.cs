@@ -38,7 +38,7 @@ namespace Pos_System.API.Controllers
             _reportService = reportService;
         }
 
-        [CustomAuthorize(RoleEnum.SysAdmin, RoleEnum.BrandAdmin, RoleEnum.BrandManager, RoleEnum.StoreManager, RoleEnum.Staff)]
+        [CustomAuthorize(RoleEnum.SysAdmin, RoleEnum.BrandAdmin, RoleEnum.BrandManager, RoleEnum.StoreManager, RoleEnum.Staff, RoleEnum.User)]
         [HttpGet(ApiEndPointConstant.Store.StoreEndpoint)]
         [ProducesResponseType(typeof(GetStoreDetailResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetStoreById(Guid id)

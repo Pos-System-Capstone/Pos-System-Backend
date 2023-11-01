@@ -23,6 +23,8 @@ namespace Pos_System.Domain.Models
         public string? Address { get; set; }
         public string? WifiName { get; set; }
         public string? WifiPassword { get; set; }
+        public string? Lat { get; set; }
+        public string? Long { get; set; }
 
         public virtual Brand Brand { get; set; } = null!;
         public virtual ICollection<MenuStore> MenuStores { get; set; }
