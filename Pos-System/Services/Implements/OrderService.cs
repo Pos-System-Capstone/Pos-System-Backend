@@ -1,13 +1,19 @@
 ﻿using System.Linq.Expressions;
+using System.Net;
+using System.Text;
+using System.Text.Json;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
 using Pos_System.API.Extensions;
 using Pos_System.API.Helpers;
+using Pos_System.API.Payload.Request.CheckoutOrder;
 using Pos_System.API.Payload.Request.Orders;
+using Pos_System.API.Payload.Request.User;
+using Pos_System.API.Payload.Response.CheckoutOrderResponse;
 using Pos_System.API.Payload.Response.Orders;
-using Pos_System.API.Payload.Response.Products;
 using Pos_System.API.Payload.Response.Promotion;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.API.Utils;
@@ -21,10 +27,12 @@ namespace Pos_System.API.Services.Implements
     {
         public const double VAT_PERCENT = 0.1;
         public const double VAT_STANDARD = 1.1;
+        private readonly RestClient.RestClientService _restClient;
 
         public OrderService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<OrderService> logger, IMapper mapper,
             IHttpContextAccessor httpContextAccessor) : base(unitOfWork, logger, mapper, httpContextAccessor)
         {
+            _restClient = new RestClient.RestClientService();
         }
 
         public async Task<Guid> CreateNewOrder(Guid storeId, CreateNewOrderRequest createNewOrderRequest)
@@ -173,7 +181,7 @@ namespace Pos_System.API.Services.Implements
 
             if (order.PromotionOrderMappings.Count() > 0)
             {
-                orderDetailResponse.PromotionList = (List<OrderPromotionResponse>) await _unitOfWork
+                orderDetailResponse.PromotionList = (List<OrderPromotionResponse>)await _unitOfWork
                     .GetRepository<PromotionOrderMapping>().GetListAsync(
                         selector: x => new OrderPromotionResponse()
                         {
@@ -186,7 +194,7 @@ namespace Pos_System.API.Services.Implements
                         include: x => x.Include(x => x.Promotion));
             }
 
-            orderDetailResponse.ProductList = (List<OrderProductDetailResponse>) await _unitOfWork
+            orderDetailResponse.ProductList = (List<OrderProductDetailResponse>)await _unitOfWork
                 .GetRepository<OrderDetail>().GetListAsync(
                     selector: x => new OrderProductDetailResponse()
                     {
@@ -207,7 +215,7 @@ namespace Pos_System.API.Services.Implements
             {
                 foreach (OrderProductDetailResponse masterProduct in orderDetailResponse.ProductList)
                 {
-                    masterProduct.Extras = (List<OrderProductExtraDetailResponse>) await _unitOfWork
+                    masterProduct.Extras = (List<OrderProductExtraDetailResponse>)await _unitOfWork
                         .GetRepository<OrderDetail>().GetListAsync(selector: extra =>
                                 new OrderProductExtraDetailResponse()
                                 {
@@ -395,7 +403,7 @@ namespace Pos_System.API.Services.Implements
 
 
             if (userBrandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
-            List<GetPromotionResponse> responese = (List<GetPromotionResponse>) await _unitOfWork
+            List<GetPromotionResponse> responese = (List<GetPromotionResponse>)await _unitOfWork
                 .GetRepository<Promotion>().GetListAsync(
                     selector: x => new GetPromotionResponse
                     {
@@ -445,19 +453,6 @@ namespace Pos_System.API.Services.Implements
             payment.Status = req.Status;
             payment.Type = req.PaymentType;
             order.PaymentType = req.PaymentType;
-            //if(payment.Type.Equals(PaymentTypeEnum.POINTIFY_WALLET.GetDescriptionFromEnum()))
-            //{
-            //    payment.Status = OrderStatus.PAID.GetDescriptionFromEnum();
-            //    _unitOfWork.GetRepository<Payment>().UpdateAsync(payment);
-            //    await _unitOfWork.CommitAsync();
-            //    var data = new { 
-
-            //    };
-            //}
-            //else
-            //{
-            //    order.Status = OrderStatus.PENDING.GetDescriptionFromEnum();
-            //}
             _unitOfWork.GetRepository<Payment>().UpdateAsync(payment);
             _unitOfWork.GetRepository<Order>().UpdateAsync(order);
             await _unitOfWork.CommitAsync();
@@ -467,9 +462,158 @@ namespace Pos_System.API.Services.Implements
         public async Task<List<Order>> GetListOrderByUserId(Guid userId)
         {
             //lấy ra danh sách order của user
-            List<Order> orders = (List<Order>) await _unitOfWork.GetRepository<Order>().GetListAsync(
-                               predicate: x => x.OrderSource.SourceId.Equals(userId));
+            List<Order> orders = (List<Order>)await _unitOfWork.GetRepository<Order>().GetListAsync(
+                               predicate: x => x.OrderSource.Id.Equals(userId));
             return orders;
+        }
+
+        // payment
+        public async Task<CheckoutOrderResponse> CheckOutOrderAndPayment(Guid storeId, CreateUserOrderRequest createNewUserOrderRequest, PaymentTypeEnum typePayment)
+        {
+            Store store = await _unitOfWork.GetRepository<Store>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(storeId) && x.Status.Equals(StoreStatus.Active.GetDescriptionFromEnum()));
+            Brand brand = await _unitOfWork.GetRepository<Brand>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(store.BrandId) && x.Status.Equals(BrandStatus.Active.GetDescriptionFromEnum()));
+            if (typePayment == PaymentTypeEnum.POINTIFY_WALLET)
+            {
+                //kiểm tra type Promotion
+                List<string> typePromotions = new List<string>();
+                CheckoutOrderRequest reqCheckoutOrder = new CheckoutOrderRequest()
+                {
+                    Effects = new List<Effect>(),
+                    CustomerOrderInfo = new CustomerOrderInfo()
+                    {
+                        CartItems = new List<Item>(),
+                        Vouchers = new List<CouponCode>(),
+                    },
+                    Gift = new List<object>(),
+
+                };
+                Promotion promotion = null;
+                foreach (var item in createNewUserOrderRequest.PromotionList)
+                {
+                    promotion = await _unitOfWork.GetRepository<Promotion>()
+                        .SingleOrDefaultAsync(predicate: x => x.Id.Equals(item.PromotionId) 
+                                                            && x.Status.Equals(PromotionStatus.Deactive.GetDescriptionFromEnum()));
+                    typePromotions.Add(promotion.Type + "," + promotion.Id);
+                }
+                foreach (var item in typePromotions)
+                {
+                    if (item.Split(",")[0] == PromotionEnum.Percent.GetDescriptionFromEnum())
+                    {
+                        Effect newEffect = new Effect()
+                        {
+                            PromotionId = Guid.Parse(item.Split(",")[1]),
+                            PromotionTierId = Guid.Parse("065F9289-FFEE-410C-B566-CFE987EF2786"),
+                            TierIndex = 0,
+                            PromotionName = "",
+                            ConditionRuleName = "",
+                            ImgUrl = "https://pointify.vn/assets/images/pointify-logo.png",
+                            Description = "",
+                            EffectType = "setDiscount",
+                            PromotionType = 3
+                        };
+                        reqCheckoutOrder.Effects.Add(newEffect);
+                    }
+                }
+                reqCheckoutOrder.CustomerOrderInfo = new CustomerOrderInfo()
+                {
+                    ApiKey = store.BrandId.ToString(),
+                    Id = store.Code,
+                    BookingDate = DateTime.Now,
+                    Attributes = new OrderAttribute()
+                    {
+                        SalesMode = 7,
+                        PaymentMethod = 63,
+                        StoreInfo = new StoreInfo()
+                        {
+                            StoreCode = store.Code,
+                            BrandCode = brand.BrandCode,
+                            Applier = "3"
+                        }
+                    },
+                };
+                foreach (var product in createNewUserOrderRequest.ProductsList)
+                {
+                    MenuProduct menuProduct = await _unitOfWork.GetRepository<MenuProduct>()
+                        .SingleOrDefaultAsync(predicate: x => x.Id.Equals(product.ProductInMenuId) && x.Status.Equals(ProductStatus.Active.GetDescriptionFromEnum()));
+                    Product productFromMenu = await _unitOfWork.GetRepository<Product>()
+                        .SingleOrDefaultAsync(predicate: x => x.Id.Equals(menuProduct.ProductId) && x.Status.Equals(ProductStatus.Active.GetDescriptionFromEnum()));
+                    Category category = await _unitOfWork.GetRepository<Category>()
+                        .SingleOrDefaultAsync(predicate: x => x.Id.Equals(productFromMenu.CategoryId) && x.Status.Equals(ProductStatus.Active.GetDescriptionFromEnum()));
+                    reqCheckoutOrder.CustomerOrderInfo.CartItems.Add(new Item()
+                    {
+                        ProductCode = productFromMenu.Code,
+                        CategoryCode = category.Code,
+                        ProductName = productFromMenu.Name,
+                        UnitPrice = (decimal)product.SellingPrice,
+                        Quantity = product.Quantity,
+                        SubTotal = (decimal)(product.Quantity * product.SellingPrice),
+                        Discount = (decimal)product.Discount,
+                        DiscountFromOrder = 0,
+                        Total = (decimal)((product.Quantity * product.SellingPrice)- ((product.Quantity * product.SellingPrice)*product.Discount)),
+                        UrlImg = "https://pointify.vn/assets/images/pointify-logo.png",
+                        PromotionCodeApply = promotion.Code,
+                    });
+                }
+
+                reqCheckoutOrder.CustomerOrderInfo.Amount = (decimal)createNewUserOrderRequest.TotalAmount;
+                reqCheckoutOrder.CustomerOrderInfo.ShippingFee = 0;
+                User user = await _unitOfWork.GetRepository<User>()
+                    .SingleOrDefaultAsync(predicate: x => x.Id.Equals(createNewUserOrderRequest.UserId));
+                reqCheckoutOrder.CustomerOrderInfo.Users = new Users()
+                {
+                    MembershipId = user.Id,
+                    UserName = user.FullName,
+                    UserEmail = user.Email,
+                    UserPhoneNo = user.PhoneNumber,
+                    UserGender = user.Gender.Equals("MALE") ? 1 : (user.Gender.Equals("FEMALE") ? 2 : 3),
+                    UserLevel = "Bronze"
+                };
+                reqCheckoutOrder.TotalAmount = (decimal?)createNewUserOrderRequest.TotalAmount;
+                reqCheckoutOrder.Discount = (decimal?)createNewUserOrderRequest.DiscountAmount;
+                reqCheckoutOrder.DiscountOrderDetail = 0;
+                reqCheckoutOrder.FinalAmount = (decimal) (createNewUserOrderRequest.TotalAmount - (createNewUserOrderRequest.TotalAmount* createNewUserOrderRequest.DiscountAmount));
+                reqCheckoutOrder.BonusPoint = 0;
+                string url = $"https://api-pointify.reso.vn/api/transaction/check-out?brandId={store.BrandId}";
+                var response = await CallApiUtils.CallApiEndpoint(url, reqCheckoutOrder);
+
+                //map với response
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    var checkoutOrderResponse = new CheckoutOrderResponse()
+                    {
+                        Code = HttpStatusCode.OK,
+                        Message = "Success",
+                        Order = reqCheckoutOrder
+                    };
+                    Transaction transaction = new Transaction() {
+                       Id = Guid.NewGuid(),
+                       TransactionJson = JsonConvert.SerializeObject(reqCheckoutOrder),
+                       InsDate = DateTime.Now,
+                       UpsDate = DateTime.Now,
+                       PromotionId = promotion.Id,
+                       BrandId = brand.Id,
+                       Amount = (decimal)createNewUserOrderRequest.FinalAmount,
+                       Currency = "VND",
+                       IsIncrease = false,
+                       Type = typePayment.GetDescriptionFromEnum(),
+                    };
+                    await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
+                    await _unitOfWork.CommitAsync();
+                    return checkoutOrderResponse;
+                }
+                else
+                {
+                    var checkoutOrderResponse = new CheckoutOrderResponse()
+                    {
+                        Code = response.StatusCode,
+                        Message = response.RequestMessage.ToString()
+                    };
+                    return checkoutOrderResponse;
+                }   
+            }
+            return null;
         }
     }
 }

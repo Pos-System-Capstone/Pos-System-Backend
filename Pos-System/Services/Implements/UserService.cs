@@ -1,24 +1,17 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
-using Pos_System.API.Payload.Request.Brands;
 using Pos_System.API.Payload.Request.User;
-using Pos_System.API.Payload.Response;
 using Pos_System.API.Payload.Response.User;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.API.Utils;
 using Pos_System.Domain.Models;
 using Pos_System.Repository.Interfaces;
-using System.Data;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
-using ZaloPay.Helper;
 
 namespace Pos_System.API.Services.Implements
 {

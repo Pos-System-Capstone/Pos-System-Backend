@@ -4,6 +4,8 @@ using Pos_System.API.Enums;
 using Pos_System.API.Payload.Request.Menus;
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Request.Products;
+using Pos_System.API.Payload.Request.User;
+using Pos_System.API.Payload.Response.CheckoutOrderResponse;
 using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Services.Implements;
 using Pos_System.API.Services.Interfaces;
@@ -69,6 +71,13 @@ namespace Pos_System.API.Controllers
         public async Task<IActionResult> GetListOrderByUserId(Guid userId)
         {
             var response = await _orderService.GetListOrderByUserId(userId);
+            return Ok(response);
+        }
+        [HttpPost("orders/checkout")]
+        [ProducesResponseType(typeof(CheckoutOrderResponse), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CheckOutOrderAndPayment(Guid storeId, [FromBody] CreateUserOrderRequest createNewUserOrderRequest, [FromQuery] PaymentTypeEnum typePayment)
+        {
+            var response = await _orderService.CheckOutOrderAndPayment(storeId, createNewUserOrderRequest, typePayment);
             return Ok(response);
         }
     }

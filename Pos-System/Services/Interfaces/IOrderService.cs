@@ -1,5 +1,7 @@
 ﻿using Pos_System.API.Enums;
 using Pos_System.API.Payload.Request.Orders;
+using Pos_System.API.Payload.Request.User;
+using Pos_System.API.Payload.Response.CheckoutOrderResponse;
 using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.Promotion;
 using Pos_System.Domain.Models;
@@ -18,5 +20,6 @@ namespace Pos_System.API.Services.Interfaces
 
         Task<Guid> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req);
         Task<List<Order>> GetListOrderByUserId(Guid userId);
+        Task<CheckoutOrderResponse> CheckOutOrderAndPayment(Guid storeId, CreateUserOrderRequest createNewUserOrderRequest, PaymentTypeEnum typePayment);
     }
 }
