@@ -40,18 +40,23 @@ namespace Pos_System.API.Services.Implements
         public async Task<CreateNewUserResponse> CreateNewUser(CreateNewUserRequest newUserRequest, string? brandCode)
         {
             if (brandCode == null) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandCodeMessage);
+
             Brand brand = await _unitOfWork.GetRepository<Brand>()
                 .SingleOrDefaultAsync(predicate: x => x.BrandCode.Equals(brandCode));
             if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
             _logger.LogInformation($"Create new brand with {newUserRequest.FullName}");
-            User newUser = _mapper.Map<User>(newUserRequest);
-            newUser.Status = UserStatus.Active.GetDescriptionFromEnum();
-            newUser.Id = Guid.NewGuid();
-            newUser.BrandId = brand.Id;
-            newUser.Fcmtoken = "";
-
-            newUser.CreatedAt = DateTime.UtcNow;
-            newUser.UpdatedAt = DateTime.UtcNow;
+            User newUser = new User()
+            {
+                Id = Guid.NewGuid(),
+                PhoneNumber = newUserRequest.PhoneNunmer,
+                Status = UserStatus.Active.GetDescriptionFromEnum(),
+                FullName = newUserRequest.FullName,
+                BrandId = brand.Id,
+                Gender = newUserRequest.Gender,
+                FireBaseUid = newUserRequest.FireBaseUid,
+                CreatedAt = TimeUtils.GetCurrentSEATime(),
+                UpdatedAt = TimeUtils.GetCurrentSEATime(),
+            };
 
             await _unitOfWork.GetRepository<User>().InsertAsync(newUser);
             bool isSuccessful = await _unitOfWork.CommitAsync() > 0;
@@ -67,7 +72,6 @@ namespace Pos_System.API.Services.Implements
                 phoneNumber = newUser.PhoneNumber,
                 memberProgramId = "52b1f27d-885f-4b1c-9773-91ed894b4eac"
             };
-
             var json = JsonSerializer.Serialize(data);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             var httpClient = new HttpClient();
@@ -390,26 +394,26 @@ namespace Pos_System.API.Services.Implements
                     Notes = product.Note
                 });
                 if (product.PromotionId != null)
-                if (product.Extras.Count > 0)
-                {
-                    product.Extras.ForEach(extra =>
+                    if (product.Extras.Count > 0)
                     {
-                        double totalProductExtraAmount = extra.SellingPrice * extra.Quantity;
-                        double finalProductExtraAmount = totalProductExtraAmount - extra.Discount;
-                        orderDetails.Add(new OrderDetail()
+                        product.Extras.ForEach(extra =>
                         {
-                            Id = Guid.NewGuid(),
-                            MenuProductId = extra.ProductInMenuId,
-                            OrderId = newOrder.Id,
-                            Quantity = extra.Quantity,
-                            SellingPrice = extra.SellingPrice,
-                            TotalAmount = totalProductExtraAmount,
-                            Discount = extra.Discount,
-                            FinalAmount = finalProductExtraAmount,
-                            MasterOrderDetailId = masterOrderDetailId,
+                            double totalProductExtraAmount = extra.SellingPrice * extra.Quantity;
+                            double finalProductExtraAmount = totalProductExtraAmount - extra.Discount;
+                            orderDetails.Add(new OrderDetail()
+                            {
+                                Id = Guid.NewGuid(),
+                                MenuProductId = extra.ProductInMenuId,
+                                OrderId = newOrder.Id,
+                                Quantity = extra.Quantity,
+                                SellingPrice = extra.SellingPrice,
+                                TotalAmount = totalProductExtraAmount,
+                                Discount = extra.Discount,
+                                FinalAmount = finalProductExtraAmount,
+                                MasterOrderDetailId = masterOrderDetailId,
+                            });
                         });
-                    });
-                }
+                    }
 
                 if (product.PromotionId != null)
                 {
