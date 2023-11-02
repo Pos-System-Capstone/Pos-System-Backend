@@ -152,7 +152,8 @@ namespace Pos_System.API.Services.Implements
             if (store == null) throw new BadHttpRequestException(MessageConstant.Store.StoreNotFoundMessage);
             Order order = await _unitOfWork.GetRepository<Order>().SingleOrDefaultAsync(
                 predicate: x => x.Id.Equals(orderId),
-                include: x => x.Include(p => p.PromotionOrderMappings).ThenInclude(a => a.Promotion)
+                include: x =>
+                    x.Include(p => p.PromotionOrderMappings).ThenInclude(a => a.Promotion).Include(o => o.OrderSource)
             );
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
 
@@ -171,7 +172,7 @@ namespace Pos_System.API.Services.Implements
                 : EnumUtil.ParseEnum<PaymentTypeEnum>(order.PaymentType);
             orderDetailResponse.CheckInDate = order.CheckInDate;
 
-            if (order.PromotionOrderMappings.Count() > 0)
+            if (order.PromotionOrderMappings.Any())
             {
                 orderDetailResponse.PromotionList = (List<OrderPromotionResponse>) await _unitOfWork
                     .GetRepository<PromotionOrderMapping>().GetListAsync(
@@ -184,6 +185,33 @@ namespace Pos_System.API.Services.Implements
                         },
                         predicate: x => x.OrderId.Equals(orderId),
                         include: x => x.Include(x => x.Promotion));
+            }
+
+            if (order.OrderSource != null)
+            {
+                if (order.OrderSource.UserId == null)
+                {
+                    orderDetailResponse.CustomerInfo = new OrderUserResponse()
+                    {
+                        Name = order.OrderSource.Name,
+                        Phone = order.OrderSource.Phone,
+                        Address = order.OrderSource.Address
+                    };
+                }
+                else
+                {
+                    orderDetailResponse.CustomerInfo = await _unitOfWork
+                        .GetRepository<User>().SingleOrDefaultAsync(
+                            selector: x => new OrderUserResponse()
+                            {
+                                Id = x.Id,
+                                Name = x.FullName,
+                                Phone = x.PhoneNumber,
+                                Address = order.OrderSource.Address
+                            },
+                            predicate: x => x.Id.Equals(order.OrderSource.UserId)
+                        );
+                }
             }
 
             orderDetailResponse.ProductList = (List<OrderProductDetailResponse>) await _unitOfWork
@@ -455,12 +483,124 @@ namespace Pos_System.API.Services.Implements
                         : EnumUtil.ParseEnum<PaymentTypeEnum>(x.PaymentType),
                 },
                 predicate: x =>
-                    x.OrderSource.SourceId.Equals(userId) && x.Status.Equals(status.GetDescriptionFromEnum()),
+                    x.OrderSource.UserId.Equals(userId) && x.Status.Equals(status.GetDescriptionFromEnum()),
                 orderBy: x => x.OrderByDescending(x => x.CheckInDate),
                 page: page,
                 size: size
             );
             return orders;
+        }
+
+        public async Task<GetOrderDetailResponse> GetOrderDetailUser(Guid orderId)
+        {
+            if (orderId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Order.EmptyOrderIdMessage);
+            
+            Order order = await _unitOfWork.GetRepository<Order>().SingleOrDefaultAsync(
+                predicate: x => x.Id.Equals(orderId),
+                include: x =>
+                    x.Include(p => p.PromotionOrderMappings).ThenInclude(a => a.Promotion).Include(o => o.OrderSource)
+            );
+            if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
+
+            GetOrderDetailResponse orderDetailResponse = new GetOrderDetailResponse();
+            orderDetailResponse.OrderId = order.Id;
+            orderDetailResponse.InvoiceId = order.InvoiceId;
+            orderDetailResponse.TotalAmount = order.TotalAmount;
+            orderDetailResponse.FinalAmount = order.FinalAmount;
+            orderDetailResponse.Vat = order.Vat;
+            orderDetailResponse.VatAmount = order.Vatamount;
+            orderDetailResponse.Discount = order.Discount;
+            orderDetailResponse.OrderStatus = EnumUtil.ParseEnum<OrderStatus>(order.Status);
+            orderDetailResponse.OrderType = EnumUtil.ParseEnum<OrderType>(order.OrderType);
+            orderDetailResponse.PaymentType = string.IsNullOrEmpty(order.PaymentType)
+                ? PaymentTypeEnum.CASH
+                : EnumUtil.ParseEnum<PaymentTypeEnum>(order.PaymentType);
+            orderDetailResponse.CheckInDate = order.CheckInDate;
+
+            if (order.PromotionOrderMappings.Any())
+            {
+                orderDetailResponse.PromotionList = (List<OrderPromotionResponse>) await _unitOfWork
+                    .GetRepository<PromotionOrderMapping>().GetListAsync(
+                        selector: x => new OrderPromotionResponse()
+                        {
+                            PromotionId = x.PromotionId,
+                            PromotionName = x.Promotion.Name,
+                            DiscountAmount = x.DiscountAmount ?? 0,
+                            Quantity = x.Quantity ?? 1,
+                        },
+                        predicate: x => x.OrderId.Equals(orderId),
+                        include: x => x.Include(x => x.Promotion));
+            }
+
+            if (order.OrderSource != null)
+            {
+                if (order.OrderSource.UserId == null)
+                {
+                    orderDetailResponse.CustomerInfo = new OrderUserResponse()
+                    {
+                        Name = order.OrderSource.Name,
+                        Phone = order.OrderSource.Phone,
+                        Address = order.OrderSource.Address
+                    };
+                }
+                else
+                {
+                    orderDetailResponse.CustomerInfo = await _unitOfWork
+                        .GetRepository<User>().SingleOrDefaultAsync(
+                            selector: x => new OrderUserResponse()
+                            {
+                                Id = x.Id,
+                                Name = x.FullName,
+                                Phone = x.PhoneNumber,
+                                Address = order.OrderSource.Address
+                            },
+                            predicate: x => x.Id.Equals(order.OrderSource.UserId)
+                        );
+                }
+            }
+
+            orderDetailResponse.ProductList = (List<OrderProductDetailResponse>) await _unitOfWork
+                .GetRepository<OrderDetail>().GetListAsync(
+                    selector: x => new OrderProductDetailResponse()
+                    {
+                        ProductInMenuId = x.MenuProductId,
+                        OrderDetailId = x.Id,
+                        SellingPrice = x.SellingPrice,
+                        Quantity = x.Quantity,
+                        Name = x.MenuProduct.Product.Name,
+                        TotalAmount = x.TotalAmount,
+                        FinalAmount = x.FinalAmount,
+                        Discount = x.Discount,
+                        Note = x.Notes,
+                    },
+                    predicate: x => x.OrderId.Equals(orderId) && x.MasterOrderDetailId == null,
+                    include: x => x.Include(x => x.MenuProduct).ThenInclude(menuProduct => menuProduct.Product));
+
+            if (orderDetailResponse.ProductList.Count > 0)
+            {
+                foreach (OrderProductDetailResponse masterProduct in orderDetailResponse.ProductList)
+                {
+                    masterProduct.Extras = (List<OrderProductExtraDetailResponse>) await _unitOfWork
+                        .GetRepository<OrderDetail>().GetListAsync(selector: extra =>
+                                new OrderProductExtraDetailResponse()
+                                {
+                                    ProductInMenuId = extra.MenuProductId,
+                                    SellingPrice = extra.SellingPrice,
+                                    Quantity = extra.Quantity,
+                                    TotalAmount = extra.TotalAmount,
+                                    FinalAmount = extra.FinalAmount,
+                                    Discount = extra.Discount,
+                                    Name = extra.MenuProduct.Product.Name,
+                                },
+                            predicate: extra =>
+                                extra.OrderId.Equals(orderId) && extra.MasterOrderDetailId != null &&
+                                extra.MasterOrderDetailId.Equals(masterProduct.OrderDetailId),
+                            include: x =>
+                                x.Include(x => x.MenuProduct).ThenInclude(menuProduct => menuProduct.Product));
+                }
+            }
+
+            return orderDetailResponse;
         }
     }
 }

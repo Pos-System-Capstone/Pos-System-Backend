@@ -37,7 +37,7 @@ namespace Pos_System.API.Controllers
             return Ok(newOrderIdResponse);
         }
 
-        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
+        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager, RoleEnum.User)]
         [HttpGet(ApiEndPointConstant.Order.OrderEndPoint)]
         [ProducesResponseType(typeof(GetOrderDetailResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetOrderDetail(Guid storeId, Guid id)
@@ -46,7 +46,7 @@ namespace Pos_System.API.Controllers
             return Ok(response);
         }
 
-        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
+        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager, RoleEnum.User)]
         [HttpPut(ApiEndPointConstant.Order.OrderEndPoint)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateOrderPayment(Guid storeId, Guid id,

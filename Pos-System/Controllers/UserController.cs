@@ -112,5 +112,13 @@ namespace Pos_System.API.Controllers
             var response = await _orderService.GetListOrderByUserId(id, status, page, size);
             return Ok(response);
         }
+
+        [HttpGet(ApiEndPointConstant.User.OrderDetailsEndpoint)]
+        [ProducesResponseType(typeof(IPaginate<GetOrderDetailResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetOrderDetail(Guid id)
+        {
+            var response = await _orderService.GetOrderDetailUser(id);
+            return Ok(response);
+        }
     }
 }

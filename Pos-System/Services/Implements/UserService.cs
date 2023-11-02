@@ -86,12 +86,12 @@ namespace Pos_System.API.Services.Implements
             var cred = await _firebaseService.VerifyIdToken(req.Token);
             if (cred == null) throw new BadHttpRequestException("Token Firebase không hợp lệ!");
             var firebaseClaims = cred.Claims;
-            
+
             var phone = firebaseClaims.First(c => c.Key == "phone_number").Value.ToString();
             var uid = firebaseClaims.First(c => c.Key == "user_id").Value.ToString();
             //if (email.Split("@").Last() != "fpt.edu.vn" && email != "johnnymc2001@gmail.com")
             //    throw new BadRequestException("The system currently only accepted @fpt.edu.vn email!", ErrorNameValues.InvalidCredential);
-            
+
 
             User userLogin = await _unitOfWork.GetRepository<User>()
                 .SingleOrDefaultAsync(predicate: x => x.PhoneNumber.Equals(phone)
@@ -174,6 +174,7 @@ namespace Pos_System.API.Services.Implements
                     }
                 };
             }
+
             brandId = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
                 selector: brand => brand.Id,
                 predicate: brand => brand.BrandCode.Equals(req.BrandCode)
@@ -219,7 +220,7 @@ namespace Pos_System.API.Services.Implements
                 }
             };
         }
-        
+
         public async Task<SignInResponse> SignUpUser(CreateNewUserRequest newUserRequest, string? brandCode)
         {
             var newUser = await CreateNewUser(newUserRequest, brandCode);
@@ -338,7 +339,7 @@ namespace Pos_System.API.Services.Implements
             Session currentUserSession = await _unitOfWork.GetRepository<Session>().SingleOrDefaultAsync(predicate: x =>
                 x.StoreId.Equals(createNewOrderRequest.StoreId)
                 && DateTime.Compare(x.StartDateTime, currentTime) < 0
-                && DateTime.Compare(x.EndDateTime, currentTime) > 0);
+                && DateTime.Compare(x.EndDateTime, currentTime) >= 0);
             if (currentUserSession == null)
                 throw new BadHttpRequestException(MessageConstant.Order.UserNotInSessionMessage);
             //if (!createNewOrderRequest.ProductsList.Any())
@@ -388,6 +389,7 @@ namespace Pos_System.API.Services.Implements
                     FinalAmount = finalProductAmount,
                     Notes = product.Note
                 });
+                if (product.PromotionId != null)
                 if (product.Extras.Count > 0)
                 {
                     product.Extras.ForEach(extra =>
@@ -438,24 +440,22 @@ namespace Pos_System.API.Services.Implements
                 await _unitOfWork.GetRepository<PromotionOrderMapping>().InsertRangeAsync(promotionMappingList);
             }
 
-            OrderSource orderSource = new OrderSource()
+            OrderUser orderUser = new OrderUser()
             {
                 Id = Guid.NewGuid(),
-                SourceType = "USER",
-                SourceId = createNewOrderRequest.UserId,
+                UserType = "USER",
+                UserId = createNewOrderRequest.UserId,
                 Address = createNewOrderRequest.Address,
                 CreatedAt = currentTime,
-                Status = "NEW",
-                UpdatedAt = currentTime
+                Status = OrderStatus.PENDING.GetDescriptionFromEnum(),
+                CompletedAt = currentTime
             };
-            newOrder.OrderSourceId = orderSource.Id;
-            currentUserSession.NumberOfOrders++;
+            newOrder.OrderSourceId = orderUser.Id;
+
             await _unitOfWork.GetRepository<Order>().InsertAsync(newOrder);
             await _unitOfWork.GetRepository<OrderDetail>().InsertRangeAsync(orderDetails);
-            await _unitOfWork.GetRepository<OrderSource>().InsertAsync(orderSource);
-            _unitOfWork.GetRepository<Session>().UpdateAsync(currentUserSession);
+            await _unitOfWork.GetRepository<OrderUser>().InsertAsync(orderUser);
             await _unitOfWork.CommitAsync();
-
             return newOrder.Id;
         }
     }

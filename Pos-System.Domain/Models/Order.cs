@@ -32,7 +32,7 @@ namespace Pos_System.Domain.Models
         public string? PaymentType { get; set; }
 
         public virtual Account CheckInPersonNavigation { get; set; } = null!;
-        public virtual OrderSource? OrderSource { get; set; }
+        public virtual OrderUser? OrderSource { get; set; }
         public virtual Session Session { get; set; } = null!;
         public virtual ICollection<OrderDetail> OrderDetails { get; set; }
         public virtual ICollection<PromotionOrderMapping> PromotionOrderMappings { get; set; }

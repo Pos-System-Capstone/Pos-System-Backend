@@ -30,7 +30,7 @@ namespace Pos_System.Domain.Models
         public virtual DbSet<MenuStore> MenuStores { get; set; } = null!;
         public virtual DbSet<Order> Orders { get; set; } = null!;
         public virtual DbSet<OrderDetail> OrderDetails { get; set; } = null!;
-        public virtual DbSet<OrderSource> OrderSources { get; set; } = null!;
+        public virtual DbSet<OrderUser> OrderUsers { get; set; } = null!;
         public virtual DbSet<Payment> Payments { get; set; } = null!;
         public virtual DbSet<Product> Products { get; set; } = null!;
         public virtual DbSet<ProductInGroup> ProductInGroups { get; set; } = null!;
@@ -388,19 +388,31 @@ namespace Pos_System.Domain.Models
                     .HasConstraintName("FK_OrderDetail_Order");
             });
 
-            modelBuilder.Entity<OrderSource>(entity =>
+            modelBuilder.Entity<OrderUser>(entity =>
             {
-                entity.ToTable("OrderSource");
+                entity.ToTable("OrderUser");
 
                 entity.Property(e => e.Id).ValueGeneratedNever();
 
+                entity.Property(e => e.Address).HasMaxLength(500);
+
+                entity.Property(e => e.CompletedAt).HasColumnType("datetime");
+
                 entity.Property(e => e.CreatedAt).HasColumnType("datetime");
 
-                entity.Property(e => e.SourceType).HasMaxLength(50);
+                entity.Property(e => e.Name).HasMaxLength(100);
+
+                entity.Property(e => e.Note).HasMaxLength(256);
+
+                entity.Property(e => e.PaymentStatus)
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Phone).HasMaxLength(20);
 
                 entity.Property(e => e.Status).HasMaxLength(50);
 
-                entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+                entity.Property(e => e.UserType).HasMaxLength(50);
             });
 
             modelBuilder.Entity<Payment>(entity =>
