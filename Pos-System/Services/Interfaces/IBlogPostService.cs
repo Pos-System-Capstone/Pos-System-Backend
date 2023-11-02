@@ -1,6 +1,7 @@
 ﻿using Pos_System.API.Payload.Request.BlogPost;
 using Pos_System.API.Payload.Request.User;
 using Pos_System.API.Payload.Response.BlogPost;
+using Pos_System.Domain.Models;
 using Pos_System.Domain.Paginate;
 
 namespace Pos_System.API.Services.Interfaces
@@ -16,5 +17,7 @@ namespace Pos_System.API.Services.Interfaces
         Task<bool> RemovedBlogPostById(Guid blogId);
 
         Task<bool> UpdateBlogPost(Guid id, UpdateBlogPostRequest request);
+
+        Task<BlogPost> GetBlogDetails(Guid id);
     }
 }

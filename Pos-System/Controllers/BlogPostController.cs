@@ -22,7 +22,7 @@ namespace Pos_System.API.Controllers
             _blogPostService = blogPostService;
         }
 
-        [CustomAuthorize(RoleEnum.SysAdmin)]
+        [CustomAuthorize(RoleEnum.SysAdmin, RoleEnum.BrandAdmin)]
         [HttpGet(ApiEndPointConstant.BlogPost.BlogPostsEndpoint)]
         [ProducesResponseType(typeof(IPaginate<GetBlogPostResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetBlogPostByBrandCode([FromQuery] int page, [FromQuery] int size)
@@ -31,7 +31,7 @@ namespace Pos_System.API.Controllers
             return Ok(blogPostInBrand);
         }
 
-        [CustomAuthorize(RoleEnum.SysAdmin)]
+        [CustomAuthorize(RoleEnum.SysAdmin, RoleEnum.BrandAdmin)]
         [HttpPost(ApiEndPointConstant.BlogPost.BlogPostsEndpoint)]
         public async Task<IActionResult> CreateNewBlogPost([FromBody] CreateBlogPostRequest createNewBlogPostRequest)
         {
@@ -43,10 +43,11 @@ namespace Pos_System.API.Controllers
                     $"Create new blog post failed: {createNewBlogPostRequest.Title}, {createNewBlogPostRequest.BlogContent}");
                 return Ok(MessageConstant.BlogPost.CreateNewBlogPostFailedMessage);
             }
+
             return Ok(response);
         }
 
-        [CustomAuthorize(RoleEnum.SysAdmin)]
+        [CustomAuthorize(RoleEnum.SysAdmin, RoleEnum.BrandAdmin)]
         [HttpPatch(ApiEndPointConstant.BlogPost.StatusBlogPostEndpoint)]
         public async Task<IActionResult> UpdateUserInformation(Guid id)
         {
@@ -68,6 +69,14 @@ namespace Pos_System.API.Controllers
             bool isSuccessfuly = await _blogPostService.UpdateBlogPost(id, updatelogpost);
             if (!isSuccessfuly) return BadRequest(MessageConstant.BlogPost.UpdateBlogPostFailedMessage);
             return Ok(MessageConstant.BlogPost.UpdateBlogPostSuccessfulMessage);
+        }
+
+        [HttpGet(ApiEndPointConstant.BlogPost.BlogPostEndpoint)]
+        public async Task<IActionResult> GetBlogDetail(Guid id)
+        {
+            var res = await _blogPostService.GetBlogDetails(id);
+
+            return Ok(res);
         }
     }
 }

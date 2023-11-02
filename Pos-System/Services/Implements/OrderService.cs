@@ -481,6 +481,7 @@ namespace Pos_System.API.Services.Implements
                     PaymentType = string.IsNullOrEmpty(x.PaymentType)
                         ? PaymentTypeEnum.CASH
                         : EnumUtil.ParseEnum<PaymentTypeEnum>(x.PaymentType),
+                    Address = x.OrderSource != null ? x.OrderSource.Address : null
                 },
                 predicate: x =>
                     x.OrderSource.UserId.Equals(userId) && x.Status.Equals(status.GetDescriptionFromEnum()),
@@ -494,7 +495,7 @@ namespace Pos_System.API.Services.Implements
         public async Task<GetOrderDetailResponse> GetOrderDetailUser(Guid orderId)
         {
             if (orderId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Order.EmptyOrderIdMessage);
-            
+
             Order order = await _unitOfWork.GetRepository<Order>().SingleOrDefaultAsync(
                 predicate: x => x.Id.Equals(orderId),
                 include: x =>

@@ -114,7 +114,7 @@ namespace Pos_System.API.Controllers
         }
 
         [HttpGet(ApiEndPointConstant.User.OrderDetailsEndpoint)]
-        [ProducesResponseType(typeof(IPaginate<GetOrderDetailResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(GetOrderDetailResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetOrderDetail(Guid id)
         {
             var response = await _orderService.GetOrderDetailUser(id);
