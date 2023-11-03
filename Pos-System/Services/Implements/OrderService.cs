@@ -468,10 +468,10 @@ namespace Pos_System.API.Services.Implements
         }
 
         // payment
-        public async Task<CheckoutOrderResponse> CheckOutOrderAndPayment(Guid storeId, CreateUserOrderRequest createNewUserOrderRequest, PaymentTypeEnum typePayment)
+        public async Task<CheckoutOrderResponse> CheckOutOrderAndPayment( CreateUserOrderRequest createNewUserOrderRequest, PaymentTypeEnum typePayment)
         {
             Store store = await _unitOfWork.GetRepository<Store>()
-                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(storeId) && x.Status.Equals(StoreStatus.Active.GetDescriptionFromEnum()));
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(createNewUserOrderRequest.StoreId) && x.Status.Equals(StoreStatus.Active.GetDescriptionFromEnum()));
             Brand brand = await _unitOfWork.GetRepository<Brand>()
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(store.BrandId) && x.Status.Equals(BrandStatus.Active.GetDescriptionFromEnum()));
             if (typePayment == PaymentTypeEnum.POINTIFY_WALLET)

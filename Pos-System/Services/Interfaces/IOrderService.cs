@@ -20,6 +20,6 @@ namespace Pos_System.API.Services.Interfaces
 
         Task<Guid> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req);
         Task<List<Order>> GetListOrderByUserId(Guid userId);
-        Task<CheckoutOrderResponse> CheckOutOrderAndPayment(Guid storeId, CreateUserOrderRequest createNewUserOrderRequest, PaymentTypeEnum typePayment);
+        Task<CheckoutOrderResponse> CheckOutOrderAndPayment(CreateUserOrderRequest createNewUserOrderRequest, PaymentTypeEnum typePayment);
     }
 }

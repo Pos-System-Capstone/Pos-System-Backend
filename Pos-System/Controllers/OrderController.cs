@@ -75,9 +75,9 @@ namespace Pos_System.API.Controllers
         }
         [HttpPost("orders/checkout")]
         [ProducesResponseType(typeof(CheckoutOrderResponse), StatusCodes.Status200OK)]
-        public async Task<IActionResult> CheckOutOrderAndPayment(Guid storeId, [FromBody] CreateUserOrderRequest createNewUserOrderRequest, [FromQuery] PaymentTypeEnum typePayment)
+        public async Task<IActionResult> CheckOutOrderAndPayment([FromBody] CreateUserOrderRequest createNewUserOrderRequest, [FromQuery] PaymentTypeEnum typePayment)
         {
-            var response = await _orderService.CheckOutOrderAndPayment(storeId, createNewUserOrderRequest, typePayment);
+            var response = await _orderService.CheckOutOrderAndPayment(createNewUserOrderRequest, typePayment);
             return Ok(response);
         }
     }
