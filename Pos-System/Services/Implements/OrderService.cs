@@ -27,12 +27,10 @@ namespace Pos_System.API.Services.Implements
     {
         public const double VAT_PERCENT = 0.1;
         public const double VAT_STANDARD = 1.1;
-        private readonly RestClient.RestClientService _restClient;
 
         public OrderService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<OrderService> logger, IMapper mapper,
             IHttpContextAccessor httpContextAccessor) : base(unitOfWork, logger, mapper, httpContextAccessor)
         {
-            _restClient = new RestClient.RestClientService();
         }
 
         public async Task<Guid> CreateNewOrder(Guid storeId, CreateNewOrderRequest createNewOrderRequest)
@@ -468,13 +466,27 @@ namespace Pos_System.API.Services.Implements
         }
 
         // payment
-        public async Task<CheckoutOrderResponse> CheckOutOrderAndPayment(CreateUserOrderRequest createNewUserOrderRequest, 
+        public async Task<CheckoutOrderRequest> CheckOutOrderAndPayment(CreateUserOrderRequest createNewUserOrderRequest, 
                                                                             PaymentTypeEnum typePayment)
         {
+            Store store = await _unitOfWork.GetRepository<Store>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(createNewUserOrderRequest.StoreId)
+                                           && x.Status.Equals(StoreStatus.Active.GetDescriptionFromEnum()));
+            Brand brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(store.BrandId)
+                                       && x.Status.Equals(BrandStatus.Active.GetDescriptionFromEnum()));
+            string url = $"https://api-pointify.reso.vn/api/transaction/check-out?brandId={brand.Id}";
             if (typePayment == PaymentTypeEnum.POINTIFY_WALLET)
             {
-                  CheckoutOrderResponse response = await checkPromotionOrder(createNewUserOrderRequest);
-                  if(response != null) return response;
+                CheckoutOrderResponse response = await checkPromotionOrder(createNewUserOrderRequest);
+                if(response != null)
+                {
+                    var checkOutOrder = await CallApiUtils.CallApiEndpoint(url, response.Order);
+                    if (checkOutOrder.StatusCode.Equals(200))
+                    {
+                        CheckoutOrderRequest responseContent = (CheckoutOrderRequest)await CallApiUtils.GenerateObjectFromResponse(checkOutOrder);
+                        return responseContent;
+                    }
+                }
             }
             return null;
         }

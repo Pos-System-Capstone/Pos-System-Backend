@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
+using Pos_System.API.Payload.Request.CheckoutOrder;
 using Pos_System.API.Payload.Request.Menus;
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Request.Products;
@@ -74,7 +75,7 @@ namespace Pos_System.API.Controllers
             return Ok(response);
         }
         [HttpPost("orders/checkout")]
-        [ProducesResponseType(typeof(CheckoutOrderResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(CheckoutOrderRequest), StatusCodes.Status200OK)]
         public async Task<IActionResult> CheckOutOrderAndPayment([FromBody] CreateUserOrderRequest createNewUserOrderRequest, [FromQuery] PaymentTypeEnum typePayment)
         {
             var response = await _orderService.CheckOutOrderAndPayment(createNewUserOrderRequest, typePayment);
