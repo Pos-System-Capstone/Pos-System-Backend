@@ -474,16 +474,57 @@ namespace Pos_System.API.Services.Implements
                                            && x.Status.Equals(StoreStatus.Active.GetDescriptionFromEnum()));
             Brand brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(store.BrandId)
                                        && x.Status.Equals(BrandStatus.Active.GetDescriptionFromEnum()));
-            string url = $"https://api-pointify.reso.vn/api/transaction/check-out?brandId={brand.Id}";
+            string url = $"https://localhost:44367/api/transaction/check-out?brandId={brand.Id}";
             if (typePayment == PaymentTypeEnum.POINTIFY_WALLET)
             {
                 CheckoutOrderResponse response = await checkPromotionOrder(createNewUserOrderRequest);
                 if(response != null)
                 {
                     var checkOutOrder = await CallApiUtils.CallApiEndpoint(url, response.Order);
-                    if (checkOutOrder.StatusCode.Equals(200))
+                    if (checkOutOrder.StatusCode.Equals(HttpStatusCode.OK))
                     {
-                        CheckoutOrderRequest responseContent = (CheckoutOrderRequest)await CallApiUtils.GenerateObjectFromResponse(checkOutOrder);
+                        //CheckoutOrderRequest responseContent = (CheckoutOrderRequest)await CallApiUtils.GenerateObjectFromResponse(checkOutOrder);
+                        CheckoutOrderRequest responseContent = new CheckoutOrderRequest();
+                        responseContent = JsonConvert.DeserializeObject<CheckoutOrderRequest>(checkOutOrder.Content.ReadAsStringAsync().Result);
+                        foreach(var item in responseContent.Effects)
+                        {
+                            if (item.EffectType.Equals("GET_POINT"))
+                            {
+                                Transaction transactionGetPoint = new Transaction()
+                                {
+                                    Id = Guid.NewGuid(),
+                                    TransactionJson = JsonConvert.SerializeObject(responseContent),
+                                    InsDate = DateTime.Now,
+                                    UpsDate = DateTime.Now,
+                                    PromotionId = item.PromotionId,
+                                    BrandId = brand.Id,
+                                    Amount = (decimal)responseContent.BonusPoint,
+                                    Currency = "POINT",
+                                    IsIncrease = true,
+                                    Type = "GET_POINT",
+                                };
+                                await _unitOfWork.GetRepository<Transaction>().InsertAsync(transactionGetPoint);
+                                await _unitOfWork.CommitAsync();
+                            }
+                            else {
+                                Transaction transaction = new Transaction()
+                                {
+                                    Id = Guid.NewGuid(),
+                                    TransactionJson = JsonConvert.SerializeObject(responseContent),
+                                    InsDate = DateTime.Now,
+                                    UpsDate = DateTime.Now,
+                                    PromotionId = item.PromotionId,
+                                    BrandId = brand.Id,
+                                    Amount = (decimal)responseContent.FinalAmount,
+                                    Currency = "VND",
+                                    IsIncrease = false,
+                                    Type = typePayment.GetDescriptionFromEnum(),
+                                };
+                                await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
+                                await _unitOfWork.CommitAsync();
+                            }
+                            
+                        }
                         return responseContent;
                     }
                 }
@@ -547,7 +588,8 @@ namespace Pos_System.API.Services.Implements
                 //tìm promotion
                 Promotion promo = await _unitOfWork.GetRepository<Promotion>()
                     .SingleOrDefaultAsync(predicate: x => x.Id.Equals(promotion.PromotionId) 
-                                                          && x.Status.Equals(PromotionStatus.Active.GetDescriptionFromEnum()));
+                                                                //sửa lại cái promotion status
+                                                          && x.Status.Equals(PromotionStatus.Deactive.GetDescriptionFromEnum()));
                 customerOrderInfo.Vouchers.Add(new CouponCode()
                 {
                     PromotionCode = promo.Code,
@@ -573,11 +615,18 @@ namespace Pos_System.API.Services.Implements
             customerOrderInfo.Amount = (decimal)orderReq.FinalAmount;
             customerOrderInfo.ShippingFee = (decimal)orderReq.DiscountAmount;
             //call api check promotion
+            //sửa lại localhost thành domain của api
             string url = "https://localhost:44367/api/promotions/check-promotion";
             var response = await CallApiUtils.CallApiEndpoint(url, customerOrderInfo);
-            //lấy value dc response từ api
-            CheckoutOrderResponse responseContent = (CheckoutOrderResponse) await CallApiUtils.GenerateObjectFromResponse(response);
-            return responseContent;
+            if (response.StatusCode.Equals(HttpStatusCode.OK))
+            {
+                //lấy value dc response từ api
+                //CheckoutOrderResponse responseContent = (CheckoutOrderResponse)await CallApiUtils.GenerateObjectFromResponse(response);
+                CheckoutOrderResponse responseContent = new CheckoutOrderResponse();
+                responseContent = JsonConvert.DeserializeObject<CheckoutOrderResponse>(response.Content.ReadAsStringAsync().Result);
+                return responseContent;
+            }
+            return null;
         }
     }
 }
