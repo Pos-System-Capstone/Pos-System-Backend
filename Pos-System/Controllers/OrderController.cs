@@ -80,5 +80,12 @@ namespace Pos_System.API.Controllers
             var response = await _orderService.CheckOutOrderAndPayment(createNewUserOrderRequest, typePayment);
             return Ok(response);
         }
+        //[HttpPost("orders/checkout/promotion")]
+        //[ProducesResponseType(typeof(CheckoutOrderResponse), StatusCodes.Status200OK)]
+        //public async Task<IActionResult> checkPromotionOrder([FromBody] CreateUserOrderRequest orderReq)
+        //{
+        //    var response = await _orderService.checkPromotionOrder(orderReq);
+        //    return Ok(response);
+        //}
     }
 }

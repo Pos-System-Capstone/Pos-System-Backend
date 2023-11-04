@@ -21,5 +21,6 @@ namespace Pos_System.API.Services.Interfaces
         Task<Guid> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req);
         Task<List<Order>> GetListOrderByUserId(Guid userId);
         Task<CheckoutOrderResponse> CheckOutOrderAndPayment(CreateUserOrderRequest createNewUserOrderRequest, PaymentTypeEnum typePayment);
+        //private Task<CheckoutOrderResponse> checkPromotionOrder(CreateUserOrderRequest orderReq);
     }
 }

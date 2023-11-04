@@ -28,7 +28,12 @@ namespace Pos_System.API.Payload.Request.CheckoutOrder
         public string? Description { get; set; }
         public string? EffectType { get; set; }
         public int? PromotionType { get; set; }
-        public Object? Prop { get; set; }
+        public Props Prop { get; set; }
+    }
+    public class Props
+    {
+        public string Code { get; set; }
+        public string Value { get; set; }
     }
     public class CustomerOrderInfo
     {
@@ -98,4 +103,6 @@ namespace Pos_System.API.Payload.Request.CheckoutOrder
         [StringLength(100)] public string BrandCode { get; set; }
         public string Applier { get; set; }
     }
+
+
 }

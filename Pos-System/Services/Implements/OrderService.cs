@@ -468,152 +468,104 @@ namespace Pos_System.API.Services.Implements
         }
 
         // payment
-        public async Task<CheckoutOrderResponse> CheckOutOrderAndPayment( CreateUserOrderRequest createNewUserOrderRequest, PaymentTypeEnum typePayment)
+        public async Task<CheckoutOrderResponse> CheckOutOrderAndPayment(CreateUserOrderRequest createNewUserOrderRequest, 
+                                                                            PaymentTypeEnum typePayment)
         {
-            Store store = await _unitOfWork.GetRepository<Store>()
-                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(createNewUserOrderRequest.StoreId) && x.Status.Equals(StoreStatus.Active.GetDescriptionFromEnum()));
-            Brand brand = await _unitOfWork.GetRepository<Brand>()
-                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(store.BrandId) && x.Status.Equals(BrandStatus.Active.GetDescriptionFromEnum()));
             if (typePayment == PaymentTypeEnum.POINTIFY_WALLET)
             {
-                //kiểm tra type Promotion
-                List<string> typePromotions = new List<string>();
-                CheckoutOrderRequest reqCheckoutOrder = new CheckoutOrderRequest()
-                {
-                    Effects = new List<Effect>(),
-                    CustomerOrderInfo = new CustomerOrderInfo()
-                    {
-                        CartItems = new List<Item>(),
-                        Vouchers = new List<CouponCode>(),
-                    },
-                    Gift = new List<object>(),
-
-                };
-                Promotion promotion = null;
-                foreach (var item in createNewUserOrderRequest.PromotionList)
-                {
-                    promotion = await _unitOfWork.GetRepository<Promotion>()
-                        .SingleOrDefaultAsync(predicate: x => x.Id.Equals(item.PromotionId) 
-                                                            && x.Status.Equals(PromotionStatus.Deactive.GetDescriptionFromEnum()));
-                    typePromotions.Add(promotion.Type + "," + promotion.Id);
-                }
-                foreach (var item in typePromotions)
-                {
-                    if (item.Split(",")[0] == PromotionEnum.Percent.GetDescriptionFromEnum())
-                    {
-                        Effect newEffect = new Effect()
-                        {
-                            PromotionId = Guid.Parse(item.Split(",")[1]),
-                            PromotionTierId = Guid.Parse("065F9289-FFEE-410C-B566-CFE987EF2786"),
-                            TierIndex = 0,
-                            PromotionName = "",
-                            ConditionRuleName = "",
-                            ImgUrl = "https://pointify.vn/assets/images/pointify-logo.png",
-                            Description = "",
-                            EffectType = "setDiscount",
-                            PromotionType = 3
-                        };
-                        reqCheckoutOrder.Effects.Add(newEffect);
-                    }
-                }
-                reqCheckoutOrder.CustomerOrderInfo = new CustomerOrderInfo()
-                {
-                    ApiKey = store.BrandId.ToString(),
-                    Id = store.Code,
-                    BookingDate = DateTime.Now,
-                    Attributes = new OrderAttribute()
-                    {
-                        SalesMode = 7,
-                        PaymentMethod = 63,
-                        StoreInfo = new StoreInfo()
-                        {
-                            StoreCode = store.Code,
-                            BrandCode = brand.BrandCode,
-                            Applier = "3"
-                        }
-                    },
-                };
-                foreach (var product in createNewUserOrderRequest.ProductsList)
-                {
-                    MenuProduct menuProduct = await _unitOfWork.GetRepository<MenuProduct>()
-                        .SingleOrDefaultAsync(predicate: x => x.Id.Equals(product.ProductInMenuId) && x.Status.Equals(ProductStatus.Active.GetDescriptionFromEnum()));
-                    Product productFromMenu = await _unitOfWork.GetRepository<Product>()
-                        .SingleOrDefaultAsync(predicate: x => x.Id.Equals(menuProduct.ProductId) && x.Status.Equals(ProductStatus.Active.GetDescriptionFromEnum()));
-                    Category category = await _unitOfWork.GetRepository<Category>()
-                        .SingleOrDefaultAsync(predicate: x => x.Id.Equals(productFromMenu.CategoryId) && x.Status.Equals(ProductStatus.Active.GetDescriptionFromEnum()));
-                    reqCheckoutOrder.CustomerOrderInfo.CartItems.Add(new Item()
-                    {
-                        ProductCode = productFromMenu.Code,
-                        CategoryCode = category.Code,
-                        ProductName = productFromMenu.Name,
-                        UnitPrice = (decimal)product.SellingPrice,
-                        Quantity = product.Quantity,
-                        SubTotal = (decimal)(product.Quantity * product.SellingPrice),
-                        Discount = (decimal)product.Discount,
-                        DiscountFromOrder = 0,
-                        Total = (decimal)((product.Quantity * product.SellingPrice)- ((product.Quantity * product.SellingPrice)*product.Discount)),
-                        UrlImg = "https://pointify.vn/assets/images/pointify-logo.png",
-                        PromotionCodeApply = promotion.Code,
-                    });
-                }
-
-                reqCheckoutOrder.CustomerOrderInfo.Amount = (decimal)createNewUserOrderRequest.TotalAmount;
-                reqCheckoutOrder.CustomerOrderInfo.ShippingFee = 0;
-                User user = await _unitOfWork.GetRepository<User>()
-                    .SingleOrDefaultAsync(predicate: x => x.Id.Equals(createNewUserOrderRequest.UserId));
-                reqCheckoutOrder.CustomerOrderInfo.Users = new Users()
-                {
-                    MembershipId = user.Id,
-                    UserName = user.FullName,
-                    UserEmail = user.Email,
-                    UserPhoneNo = user.PhoneNumber,
-                    UserGender = user.Gender.Equals("MALE") ? 1 : (user.Gender.Equals("FEMALE") ? 2 : 3),
-                    UserLevel = "Bronze"
-                };
-                reqCheckoutOrder.TotalAmount = (decimal?)createNewUserOrderRequest.TotalAmount;
-                reqCheckoutOrder.Discount = (decimal?)createNewUserOrderRequest.DiscountAmount;
-                reqCheckoutOrder.DiscountOrderDetail = 0;
-                reqCheckoutOrder.FinalAmount = (decimal) (createNewUserOrderRequest.TotalAmount - (createNewUserOrderRequest.TotalAmount* createNewUserOrderRequest.DiscountAmount));
-                reqCheckoutOrder.BonusPoint = 0;
-                string url = $"https://api-pointify.reso.vn/api/transaction/check-out?brandId={store.BrandId}";
-                var response = await CallApiUtils.CallApiEndpoint(url, reqCheckoutOrder);
-
-                //map với response
-                if (response.StatusCode == HttpStatusCode.OK)
-                {
-                    var checkoutOrderResponse = new CheckoutOrderResponse()
-                    {
-                        Code = HttpStatusCode.OK,
-                        Message = "Success",
-                        Order = reqCheckoutOrder
-                    };
-                    Transaction transaction = new Transaction() {
-                       Id = Guid.NewGuid(),
-                       TransactionJson = JsonConvert.SerializeObject(reqCheckoutOrder),
-                       InsDate = DateTime.Now,
-                       UpsDate = DateTime.Now,
-                       PromotionId = promotion.Id,
-                       BrandId = brand.Id,
-                       Amount = (decimal)createNewUserOrderRequest.FinalAmount,
-                       Currency = "VND",
-                       IsIncrease = false,
-                       Type = typePayment.GetDescriptionFromEnum(),
-                    };
-                    await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
-                    await _unitOfWork.CommitAsync();
-                    return checkoutOrderResponse;
-                }
-                else
-                {
-                    var checkoutOrderResponse = new CheckoutOrderResponse()
-                    {
-                        Code = response.StatusCode,
-                        Message = response.RequestMessage.ToString()
-                    };
-                    return checkoutOrderResponse;
-                }   
+                  CheckoutOrderResponse response = await checkPromotionOrder(createNewUserOrderRequest);
+                  if(response != null) return response;
             }
             return null;
+        }
+
+        private async Task<CheckoutOrderResponse> checkPromotionOrder(CreateUserOrderRequest orderReq)
+        {
+            //tìm store từ req
+            Store store = await _unitOfWork.GetRepository<Store>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderReq.StoreId) 
+                            && x.Status.Equals(StoreStatus.Active.GetDescriptionFromEnum()));
+            //tìm brand từ store đã tìm dc
+            Brand brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(store.BrandId) 
+                                       && x.Status.Equals(BrandStatus.Active.GetDescriptionFromEnum()));
+            //khởi tạo cái orderInfo
+            CustomerOrderInfo customerOrderInfo = new CustomerOrderInfo()
+            {
+                CartItems = new List<Item>(),
+                Vouchers = new List<CouponCode>(),
+            };
+            //tìm thấy store và brand
+            customerOrderInfo.ApiKey = brand.Id.ToString();
+            customerOrderInfo.Id = store.Code;
+            customerOrderInfo.BookingDate = DateTime.Now;
+            //tìm product từ req
+            MenuProduct menPro = new MenuProduct();
+            Product product = new Product();
+            Category category = new Category();
+            foreach(var menuPro in orderReq.ProductsList)
+            {
+                //tìm menuProduct từ req
+                menPro = await _unitOfWork.GetRepository<MenuProduct>()
+                    .SingleOrDefaultAsync(predicate: x => x.Id.Equals(menuPro.ProductInMenuId) 
+                                                   && x.Status.Equals(ProductStatus.Active.GetDescriptionFromEnum()));
+                //tìm product từ menuProduct
+                product = await _unitOfWork.GetRepository<Product>()
+                    .SingleOrDefaultAsync(predicate: x => x.Id.Equals(menPro.ProductId) 
+                                                                      && x.Status.Equals(ProductStatus.Active.GetDescriptionFromEnum()));
+                //tìm category từ product
+                category = await _unitOfWork.GetRepository<Category>()
+                    .SingleOrDefaultAsync(predicate: x => x.Id.Equals(product.CategoryId) 
+                                                                      && x.Status.Equals(ProductStatus.Active.GetDescriptionFromEnum()));
+                customerOrderInfo.CartItems.Add(new Item()
+                {
+                    ProductCode = product.Code,
+                    CategoryCode = category.Code,
+                    ProductName = product.Name,
+                    UnitPrice = (decimal)product.SellingPrice,
+                    Quantity = menuPro.Quantity,
+                    SubTotal = (decimal)(product.SellingPrice * menuPro.Quantity),
+                    Discount = (decimal)menuPro.Discount,
+                    DiscountFromOrder = 0,
+                    Total = (decimal)((product.SellingPrice * menuPro.Quantity) - (product.SellingPrice * menuPro.Quantity * menuPro.Discount)),
+                    UrlImg = product.PicUrl
+                });
+            }
+            foreach(var promotion in orderReq.PromotionList)
+            {
+                //tìm promotion
+                Promotion promo = await _unitOfWork.GetRepository<Promotion>()
+                    .SingleOrDefaultAsync(predicate: x => x.Id.Equals(promotion.PromotionId) 
+                                                          && x.Status.Equals(PromotionStatus.Active.GetDescriptionFromEnum()));
+                customerOrderInfo.Vouchers.Add(new CouponCode()
+                {
+                    PromotionCode = promo.Code,
+                });
+            }
+            customerOrderInfo.Attributes = new OrderAttribute()
+            {
+                SalesMode = 7,
+                PaymentMethod = 63,
+                StoreInfo = new StoreInfo()
+                {
+                    StoreCode = store.Code,
+                    BrandCode = brand.BrandCode,
+                    Applier = "3"
+                }
+            };
+            //tìm user từ req
+            User user = await _unitOfWork.GetRepository<User>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderReq.UserId));
+            customerOrderInfo.Users = new Users() {
+                MembershipId = user.Id,
+            };
+            customerOrderInfo.Amount = (decimal)orderReq.FinalAmount;
+            customerOrderInfo.ShippingFee = (decimal)orderReq.DiscountAmount;
+            //call api check promotion
+            string url = "https://localhost:44367/api/promotions/check-promotion";
+            var response = await CallApiUtils.CallApiEndpoint(url, customerOrderInfo);
+            //lấy value dc response từ api
+            CheckoutOrderResponse responseContent = (CheckoutOrderResponse) await CallApiUtils.GenerateObjectFromResponse(response);
+            return responseContent;
         }
     }
 }
