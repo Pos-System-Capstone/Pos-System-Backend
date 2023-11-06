@@ -33,7 +33,7 @@ namespace Pos_System.API.Payload.Request.CheckoutOrder
     public class Props
     {
         public string Code { get; set; }
-        public string Value { get; set; }
+        public decimal Value { get; set; }
     }
     public class CustomerOrderInfo
     {

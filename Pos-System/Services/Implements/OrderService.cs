@@ -483,7 +483,6 @@ namespace Pos_System.API.Services.Implements
                     var checkOutOrder = await CallApiUtils.CallApiEndpoint(url, response.Order);
                     if (checkOutOrder.StatusCode.Equals(HttpStatusCode.OK))
                     {
-                        //CheckoutOrderRequest responseContent = (CheckoutOrderRequest)await CallApiUtils.GenerateObjectFromResponse(checkOutOrder);
                         CheckoutOrderRequest responseContent = new CheckoutOrderRequest();
                         responseContent = JsonConvert.DeserializeObject<CheckoutOrderRequest>(checkOutOrder.Content.ReadAsStringAsync().Result);
                         foreach(var item in responseContent.Effects)
@@ -577,9 +576,9 @@ namespace Pos_System.API.Services.Implements
                     UnitPrice = (decimal)product.SellingPrice,
                     Quantity = menuPro.Quantity,
                     SubTotal = (decimal)(product.SellingPrice * menuPro.Quantity),
-                    Discount = (decimal)menuPro.Discount,
+                    Discount = 0,
                     DiscountFromOrder = 0,
-                    Total = (decimal)((product.SellingPrice * menuPro.Quantity) - (product.SellingPrice * menuPro.Quantity * menuPro.Discount)),
+                    Total = 0,
                     UrlImg = product.PicUrl
                 });
             }
@@ -609,9 +608,17 @@ namespace Pos_System.API.Services.Implements
             //tìm user từ req
             User user = await _unitOfWork.GetRepository<User>()
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderReq.UserId));
-            customerOrderInfo.Users = new Users() {
-                MembershipId = user.Id,
-            };
+            if(user == null)
+            {
+                customerOrderInfo.Users = null;
+            }
+            else
+            {
+                customerOrderInfo.Users = new Users()
+                {
+                    MembershipId = user.Id,
+                };
+            } 
             customerOrderInfo.Amount = (decimal)orderReq.FinalAmount;
             customerOrderInfo.ShippingFee = (decimal)orderReq.DiscountAmount;
             //call api check promotion
