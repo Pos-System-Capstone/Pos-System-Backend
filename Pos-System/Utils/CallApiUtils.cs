@@ -18,10 +18,10 @@ namespace Pos_System.API.Utils
             var response = await httpClient.PostAsync(url, content);
             return response;
         }
-        public static async Task<Object> GenerateObjectFromResponse(HttpResponseMessage response)
+        public static async Task<T> GenerateObjectFromResponse<T>(HttpResponseMessage response)
         {
             var responseString = await response.Content.ReadAsStringAsync();
-            var responseObject = JsonConvert.DeserializeObject<Object>(responseString);
+            T responseObject = JsonConvert.DeserializeObject<T>(responseString);
             return responseObject;
         }
     }

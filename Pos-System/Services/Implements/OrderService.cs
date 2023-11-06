@@ -484,7 +484,7 @@ namespace Pos_System.API.Services.Implements
                     if (checkOutOrder.StatusCode.Equals(HttpStatusCode.OK))
                     {
                         CheckoutOrderRequest responseContent = new CheckoutOrderRequest();
-                        responseContent = JsonConvert.DeserializeObject<CheckoutOrderRequest>(checkOutOrder.Content.ReadAsStringAsync().Result);
+                        responseContent = await CallApiUtils.GenerateObjectFromResponse<CheckoutOrderRequest>(checkOutOrder);
                         foreach(var item in responseContent.Effects)
                         {
                             if (item.EffectType.Equals("GET_POINT"))
@@ -630,7 +630,7 @@ namespace Pos_System.API.Services.Implements
                 //lấy value dc response từ api
                 //CheckoutOrderResponse responseContent = (CheckoutOrderResponse)await CallApiUtils.GenerateObjectFromResponse(response);
                 CheckoutOrderResponse responseContent = new CheckoutOrderResponse();
-                responseContent = JsonConvert.DeserializeObject<CheckoutOrderResponse>(response.Content.ReadAsStringAsync().Result);
+                responseContent = await CallApiUtils.GenerateObjectFromResponse<CheckoutOrderResponse>(response);
                 return responseContent;
             }
             return null;
