@@ -83,7 +83,7 @@ namespace Pos_System.API.Controllers
         }
 
         [HttpPost("users/order")]
-        public async Task<IActionResult> CreateUserOrder([FromBody] CreateUserOrderRequest req)
+        public async Task<IActionResult> CreateUserOrder([FromBody] PrepareOrderRequest req)
         {
             var userResponse = await _userService.CreateNewUserOrder(req);
             return Ok(userResponse);
@@ -94,6 +94,14 @@ namespace Pos_System.API.Controllers
         {
             var blogPostInBrand = await _blogPostService.GetBlogPostByBrandCode(brandCode, page, size);
             return Ok(blogPostInBrand);
+        }
+        
+        [HttpGet("users/scan")]
+        [ProducesResponseType(typeof(GetUserInfo), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ScanUser([FromQuery] string phone)
+        {
+            var userResponse = await _userService.ScanUser(phone);
+            return Ok(userResponse);
         }
 
     }

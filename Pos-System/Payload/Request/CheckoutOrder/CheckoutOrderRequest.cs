@@ -33,7 +33,7 @@ namespace Pos_System.API.Payload.Request.CheckoutOrder
     public class Props
     {
         public string Code { get; set; }
-        public string Value { get; set; }
+        public decimal Value { get; set; }
     }
     public class CustomerOrderInfo
     {
@@ -54,7 +54,7 @@ namespace Pos_System.API.Payload.Request.CheckoutOrder
         public List<CouponCode> Vouchers { get; set; }
         public decimal Amount { get; set; }
         public decimal ShippingFee { get; set; }
-        public Users Users { get; set; }
+        public Users? Users { get; set; }
     }
     public class Item
     {
@@ -68,12 +68,12 @@ namespace Pos_System.API.Payload.Request.CheckoutOrder
         public decimal DiscountFromOrder { get; set; }
         public decimal Total { get; set; }
         [StringLength(1000)] public string UrlImg { get; set; }
-        public string PromotionCodeApply { get; set; }
+        public string? PromotionCodeApply { get; set; }
     }
     public class CouponCode
     {
-        public string PromotionCode { get; set; }
-        public string VoucherCode { get; set; }
+        public string? PromotionCode { get; set; }
+        public string? VoucherCode { get; set; }
     }
     public class Users
     {

@@ -67,6 +67,7 @@ namespace Pos_System.API.Controllers
             var response = await _orderService.UpdatePaymentOrder(id, req);
             return Ok(response);
         }
+
         [HttpGet("orders/user/{userId}")]
         [ProducesResponseType(typeof(List<Order>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetListOrderByUserId(Guid userId)
@@ -74,19 +75,32 @@ namespace Pos_System.API.Controllers
             var response = await _orderService.GetListOrderByUserId(userId);
             return Ok(response);
         }
+
         [HttpPost("orders/checkout")]
         [ProducesResponseType(typeof(CheckoutOrderRequest), StatusCodes.Status200OK)]
-        public async Task<IActionResult> CheckOutOrderAndPayment([FromBody] CreateUserOrderRequest createNewUserOrderRequest, [FromQuery] PaymentTypeEnum typePayment)
+        public async Task<IActionResult> CheckOutOrderAndPayment(
+            [FromBody] CreateUserOrderRequest createNewUserOrderRequest, [FromQuery] PaymentTypeEnum typePayment)
         {
             var response = await _orderService.CheckOutOrderAndPayment(createNewUserOrderRequest, typePayment);
             return Ok(response);
         }
-        //[HttpPost("orders/checkout/promotion")]
-        //[ProducesResponseType(typeof(CheckoutOrderResponse), StatusCodes.Status200OK)]
-        //public async Task<IActionResult> checkPromotionOrder([FromBody] CreateUserOrderRequest orderReq)
-        //{
-        //    var response = await _orderService.checkPromotionOrder(orderReq);
-        //    return Ok(response);
-        //}
+
+        [HttpPost("orders/prepare")]
+        [ProducesResponseType(typeof(PrepareOrderRequest), StatusCodes.Status200OK)]
+        public async Task<IActionResult> PrepareOrder(
+            [FromBody] PrepareOrderRequest prepareOrderRequest)
+        {
+            var response = await _orderService.PrepareOrder(prepareOrderRequest);
+            return Ok(response);
+        }
+
+        [HttpPost("orders/create")]
+        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
+        [ProducesResponseType(typeof(PrepareOrderRequest), StatusCodes.Status200OK)]
+        public async Task<IActionResult> PlaceOrder([FromBody] PrepareOrderRequest orderReq)
+        {
+            var response = await _orderService.PlaceStoreOrder(orderReq);
+            return Ok(response);
+        }
     }
 }

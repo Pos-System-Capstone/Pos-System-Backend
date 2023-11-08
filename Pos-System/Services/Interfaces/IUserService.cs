@@ -1,4 +1,5 @@
-﻿using Pos_System.API.Payload.Request.User;
+﻿using Pos_System.API.Payload.Request.Orders;
+using Pos_System.API.Payload.Request.User;
 using Pos_System.API.Payload.Response.User;
 
 namespace Pos_System.API.Services.Interfaces
@@ -10,6 +11,7 @@ namespace Pos_System.API.Services.Interfaces
         Task<GetUserResponse> GetUserById(Guid userId);
         Task<SignInResponse> LoginUser(SignInRequest req);
         Task<SignInResponse> SignUpUser(CreateNewUserRequest newUserRequest, string? brandCode);
-        Task<Guid> CreateNewUserOrder(CreateUserOrderRequest createNewOrderRequest);
+        Task<Guid> CreateNewUserOrder(PrepareOrderRequest createNewOrderRequest);
+        Task<GetUserInfo> ScanUser(string phone);
     }
 }

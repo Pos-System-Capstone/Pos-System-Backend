@@ -15,7 +15,18 @@ namespace Pos_System.API.Payload.Response.Orders
         public OrderType OrderType { get; set; }
         public PaymentTypeEnum PaymentType { get; set; }
         public DateTime CheckInDate { get; set; }
+
+        public string? CustomerName { get; set; }
+
+        public Guid? CustomerId { get; set; }
+        public string? CustomerPhone { get; set; }
         
+        public string? CustomerType { get; set; }
+
+        public string? DeliAddress { get; set; }
+
+        public OrderSourceStatus? DeliStatus { get; set; }
+
         public List<OrderPromotionResponse> PromotionList { get; set; } = new List<OrderPromotionResponse>();
         public List<OrderProductDetailResponse> ProductList { get; set; } = new List<OrderProductDetailResponse>();
     }
@@ -31,6 +42,8 @@ namespace Pos_System.API.Payload.Response.Orders
         public double FinalAmount { get; set; }
         public double Discount { get; set; }
         public string Note { get; set; }
+
+
         public List<OrderProductExtraDetailResponse> Extras { get; set; } = new List<OrderProductExtraDetailResponse>();
     }
 
@@ -44,12 +57,14 @@ namespace Pos_System.API.Payload.Response.Orders
         public double Discount { get; set; }
         public string Name { get; set; }
     }
-    
+
     public class OrderPromotionResponse
     {
         public Guid PromotionId { get; set; }
         public string PromotionName { get; set; }
         public double DiscountAmount { get; set; }
         public int Quantity { get; set; }
+
+        public string EffectType { get; set; }
     }
 }

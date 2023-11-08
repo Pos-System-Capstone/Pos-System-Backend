@@ -12,14 +12,16 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using Pos_System.API.Payload.Request.Orders;
 
 namespace Pos_System.API.Services.Implements
 {
     public class UserService : BaseService<UserService>, IUserService
     {
-        
         public const double VAT_PERCENT = 0.08;
         public const double VAT_STANDARD = 1.08;
+
         public UserService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<UserService> logger,
             IMapper mapper, IHttpContextAccessor httpContextAccessor) : base(unitOfWork, logger, mapper,
             httpContextAccessor)
@@ -247,7 +249,7 @@ namespace Pos_System.API.Services.Implements
             return userResponse;
         }
 
-        public async Task<Guid> CreateNewUserOrder(CreateUserOrderRequest createNewOrderRequest)
+        public async Task<Guid> CreateNewUserOrder(PrepareOrderRequest createNewOrderRequest)
         {
             Store store = await _unitOfWork.GetRepository<Store>()
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(createNewOrderRequest.StoreId));
@@ -259,9 +261,9 @@ namespace Pos_System.API.Services.Implements
                 && DateTime.Compare(x.StartDateTime, currentTime) < 0
                 && DateTime.Compare(x.EndDateTime, currentTime) > 0);
             if (currentUserSession == null)
-                throw new BadHttpRequestException(MessageConstant.Order.UserNotInSessionMessage);
-            //if (!createNewOrderRequest.ProductsList.Any())
-            //    throw new BadHttpRequestException(MessageConstant.Order.NoProductsInOrderMessage);
+                throw new BadHttpRequestException(MessageConstant.Order.CanNotCreateOrderInThisTime);
+            if (!createNewOrderRequest.ProductList.Any())
+                throw new BadHttpRequestException(MessageConstant.Order.NoProductsInOrderMessage);
 
             string newInvoiceId = store.Code + currentTimeStamp;
             int defaultGuest = 1;
@@ -282,7 +284,7 @@ namespace Pos_System.API.Services.Implements
                 Vatamount = vatAmount,
                 OrderType = createNewOrderRequest.OrderType.GetDescriptionFromEnum(),
                 NumberOfGuest = defaultGuest,
-                Status = createNewOrderRequest.Status.GetDescriptionFromEnum(),
+                Status = OrderStatus.PENDING.GetDescriptionFromEnum(),
                 SessionId = currentUserSession.Id,
                 PaymentType = createNewOrderRequest.PaymentType.GetDescriptionFromEnum()
             };
@@ -290,10 +292,8 @@ namespace Pos_System.API.Services.Implements
 
             List<OrderDetail> orderDetails = new List<OrderDetail>();
             List<PromotionOrderMapping> promotionMappingList = new List<PromotionOrderMapping>();
-            createNewOrderRequest.ProductsList.ForEach(product =>
+            createNewOrderRequest.ProductList.ForEach(product =>
             {
-                double totalProductAmount = product.SellingPrice * product.Quantity;
-                double finalProductAmount = totalProductAmount - product.Discount;
                 Guid masterOrderDetailId = Guid.NewGuid();
                 orderDetails.Add(new OrderDetail()
                 {
@@ -302,17 +302,15 @@ namespace Pos_System.API.Services.Implements
                     OrderId = newOrder.Id,
                     Quantity = product.Quantity,
                     SellingPrice = product.SellingPrice,
-                    TotalAmount = totalProductAmount,
+                    TotalAmount = product.TotalAmount,
                     Discount = product.Discount,
-                    FinalAmount = finalProductAmount,
+                    FinalAmount = product.FinalAmount,
                     Notes = product.Note
                 });
                 if (product.Extras.Count > 0)
                 {
                     product.Extras.ForEach(extra =>
                     {
-                        double totalProductExtraAmount = extra.SellingPrice * extra.Quantity;
-                        double finalProductExtraAmount = totalProductExtraAmount - extra.Discount;
                         orderDetails.Add(new OrderDetail()
                         {
                             Id = Guid.NewGuid(),
@@ -320,25 +318,29 @@ namespace Pos_System.API.Services.Implements
                             OrderId = newOrder.Id,
                             Quantity = extra.Quantity,
                             SellingPrice = extra.SellingPrice,
-                            TotalAmount = totalProductExtraAmount,
-                            Discount = extra.Discount,
-                            FinalAmount = finalProductExtraAmount,
+                            TotalAmount = extra.TotalAmount,
+                            Discount = 0,
+                            FinalAmount = extra.TotalAmount,
                             MasterOrderDetailId = masterOrderDetailId,
                         });
                     });
                 }
 
-                if (product.PromotionId != null)
+                if (product.PromotionCodeApplied != null)
                 {
+                    PromotionPrepare promotionPrepare = createNewOrderRequest.PromotionList.SingleOrDefault(
+                        x => x.Code.Equals(product.PromotionCodeApplied));
                     promotionMappingList.Add(new PromotionOrderMapping()
                     {
                         Id = Guid.NewGuid(),
-                        PromotionId = product.PromotionId ?? Guid.NewGuid(),
+                        PromotionId = promotionPrepare.PromotionId ?? Guid.NewGuid(),
                         OrderId = newOrder.Id,
                         Quantity = 1,
                         DiscountAmount = product.Discount,
-                        OrderDetailId = masterOrderDetailId
+                        OrderDetailId = masterOrderDetailId,
+                        EffectType = promotionPrepare.EffectType
                     });
+                    createNewOrderRequest.PromotionList.Remove(promotionPrepare);
                 }
             });
             if (createNewOrderRequest.PromotionList != null && createNewOrderRequest.PromotionList.Any())
@@ -348,44 +350,87 @@ namespace Pos_System.API.Services.Implements
                     promotionMappingList.Add(new PromotionOrderMapping()
                     {
                         Id = Guid.NewGuid(),
-                        PromotionId = orderPromotion.PromotionId,
+                        PromotionId = orderPromotion.PromotionId ?? Guid.NewGuid(),
                         OrderId = newOrder.Id,
                         Quantity = 1,
-                        DiscountAmount = orderPromotion.DiscountAmount
+                        DiscountAmount = orderPromotion.DiscountAmount,
+                        EffectType = orderPromotion.EffectType
                     });
                 });
+            }
+
+            if (promotionMappingList.Any())
+            {
                 await _unitOfWork.GetRepository<PromotionOrderMapping>().InsertRangeAsync(promotionMappingList);
             }
 
-            OrderSource orderSource = new OrderSource()
+            OrderUser orderSource = new OrderUser()
             {
                 Id = Guid.NewGuid(),
-                SourceType = "USER",
-                SourceId = createNewOrderRequest.UserId,
-                Address = createNewOrderRequest.Address,
+                UserType = createNewOrderRequest.CustomerId == null ? "GUEST" : "USER",
+                UserId = createNewOrderRequest.CustomerId ?? Guid.Parse("6CFADCDC-25C2-4F0C-8335-5B45698B2375"),
+                Address = createNewOrderRequest.DeliveryAddress,
+                Name = createNewOrderRequest.CustomerName,
+                Phone = createNewOrderRequest.CustomerPhone,
                 CreatedAt = currentTime,
-                Status = "NEW",
-                UpdatedAt = currentTime
+                Status = OrderSourceStatus.PENDING.GetDescriptionFromEnum(),
+                CompletedAt = currentTime
             };
-            Payment newPayment = new Payment()
-            {
-                Id = Guid.NewGuid(),
-                OrderId = newOrder.Id,
-                Amount = newOrder.FinalAmount,
-                CurrencyCode = "VND",
-                Type = createNewOrderRequest.PaymentType.GetDescriptionFromEnum(),
-                Status = PaymentStatusEnum.PENDING.GetDescriptionFromEnum()
-            };
-            await _unitOfWork.GetRepository<Payment>().InsertAsync(newPayment);
             newOrder.OrderSourceId = orderSource.Id;
-            currentUserSession.NumberOfOrders++;
             await _unitOfWork.GetRepository<Order>().InsertAsync(newOrder);
             await _unitOfWork.GetRepository<OrderDetail>().InsertRangeAsync(orderDetails);
-            await _unitOfWork.GetRepository<OrderSource>().InsertAsync(orderSource);
-            _unitOfWork.GetRepository<Session>().UpdateAsync(currentUserSession);
+            await _unitOfWork.GetRepository<OrderUser>().InsertAsync(orderSource);
             await _unitOfWork.CommitAsync();
-
             return newOrder.Id;
+        }
+
+        public async Task<Guid> UpdateOrder(Guid orderId, OrderSourceStatus status)
+        {
+            Order order = await _unitOfWork.GetRepository<Order>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId));
+            OrderUser orderSource = await _unitOfWork.GetRepository<OrderUser>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(order.OrderSourceId));
+            if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
+            DateTime currentTime = TimeUtils.GetCurrentSEATime();
+            if (status.Equals(OrderSourceStatus.CANCELED))
+            {
+                if (order.Status.Equals(OrderStatus.PAID.GetDescriptionFromEnum()))
+                {
+                    throw new BadHttpRequestException(MessageConstant.Order.CanNotCancelOrder);
+                }
+
+                order.Status = OrderStatus.CANCELED_BY_USER.GetDescriptionFromEnum();
+                orderSource.Status = OrderSourceStatus.CANCELED.GetDescriptionFromEnum();
+            }
+            else
+            {
+                orderSource.Status = status.GetDescriptionFromEnum();
+                orderSource.CompletedAt = currentTime;
+            }
+
+            order.CheckOutDate = currentTime;
+
+            _unitOfWork.GetRepository<Order>().UpdateAsync(order);
+            _unitOfWork.GetRepository<OrderUser>().UpdateAsync(orderSource);
+            await _unitOfWork.CommitAsync();
+            return order.Id;
+        }
+
+
+        public async Task<GetUserInfo> ScanUser(string phone)
+        {
+            string modifiedPhoneNumber = Regex.Replace(phone, @"^0", "+84");
+            GetUserInfo user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
+                selector: x => new GetUserInfo(x.Id, x.PhoneNumber, x.FullName, x.Gender, x.Email),
+                predicate: x =>
+                    x.PhoneNumber.Equals(modifiedPhoneNumber)
+                    && x.Status.Equals("Active"));
+            if (user == null)
+            {
+                throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
+            }
+
+            return user;
         }
     }
 }

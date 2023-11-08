@@ -535,6 +535,10 @@ namespace Pos_System.Domain.Models
 
                 entity.Property(e => e.Id).ValueGeneratedNever();
 
+                entity.Property(e => e.EffectType)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
                 entity.HasOne(d => d.Order)
                     .WithMany(p => p.PromotionOrderMappings)
                     .HasForeignKey(d => d.OrderId)
