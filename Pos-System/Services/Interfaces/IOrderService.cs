@@ -1,5 +1,8 @@
 ﻿using Pos_System.API.Enums;
+using Pos_System.API.Payload.Request.CheckoutOrder;
 using Pos_System.API.Payload.Request.Orders;
+using Pos_System.API.Payload.Request.User;
+using Pos_System.API.Payload.Response.CheckoutOrderResponse;
 using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.Promotion;
 using Pos_System.Domain.Models;
@@ -18,8 +21,15 @@ namespace Pos_System.API.Services.Interfaces
 
         public Task<List<GetPromotionResponse>> GetPromotion(Guid storeId);
 
-        Task<Payment> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req);
-        Task<IPaginate<ViewOrdersResponse>> GetListOrderByUserId(Guid userId, OrderStatus status, int page, int size);
-        Task<GetOrderDetailResponse> GetOrderDetailUser(Guid orderId);
+        Task<Guid> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req);
+        Task<List<Order>> GetListOrderByUserId(Guid userId);
+
+        Task<CheckoutOrderRequest> CheckOutOrderAndPayment(CreateUserOrderRequest createNewUserOrderRequest,
+            PaymentTypeEnum typePayment);
+        //private Task<CheckoutOrderResponse> checkPromotionOrder(CreateUserOrderRequest orderReq);
+
+        Task<PrepareOrderRequest> PrepareOrder(PrepareOrderRequest orderReq);
+
+        Task<Guid> PlaceStoreOrder(PrepareOrderRequest createNewOrderRequest);
     }
 }

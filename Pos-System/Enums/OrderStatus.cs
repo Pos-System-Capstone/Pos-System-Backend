@@ -4,6 +4,15 @@
     {
         PENDING,
         PAID,
+        CANCELED,
+        CANCELED_BY_USER
+    }
+    
+    public enum OrderSourceStatus
+    {
+        PENDING,
+        DELIVERING,
+        DELIVERED,
         CANCELED
     }
 }
