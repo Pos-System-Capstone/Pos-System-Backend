@@ -1,12 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
-using Pos_System.API.Payload.Request.CheckoutOrder;
 using Pos_System.API.Payload.Request.Menus;
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Request.Products;
-using Pos_System.API.Payload.Request.User;
-using Pos_System.API.Payload.Response.CheckoutOrderResponse;
 using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Services.Implements;
 using Pos_System.API.Services.Interfaces;
@@ -65,41 +62,6 @@ namespace Pos_System.API.Controllers
 
         {
             var response = await _orderService.UpdatePaymentOrder(id, req);
-            return Ok(response);
-        }
-
-        [HttpGet("orders/user/{userId}")]
-        [ProducesResponseType(typeof(List<Order>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetListOrderByUserId(Guid userId)
-        {
-            var response = await _orderService.GetListOrderByUserId(userId);
-            return Ok(response);
-        }
-
-        [HttpPost("orders/checkout")]
-        [ProducesResponseType(typeof(CheckoutOrderRequest), StatusCodes.Status200OK)]
-        public async Task<IActionResult> CheckOutOrderAndPayment(
-            [FromBody] CreateUserOrderRequest createNewUserOrderRequest, [FromQuery] PaymentTypeEnum typePayment)
-        {
-            var response = await _orderService.CheckOutOrderAndPayment(createNewUserOrderRequest, typePayment);
-            return Ok(response);
-        }
-
-        [HttpPost("orders/prepare")]
-        [ProducesResponseType(typeof(PrepareOrderRequest), StatusCodes.Status200OK)]
-        public async Task<IActionResult> PrepareOrder(
-            [FromBody] PrepareOrderRequest prepareOrderRequest)
-        {
-            var response = await _orderService.PrepareOrder(prepareOrderRequest);
-            return Ok(response);
-        }
-
-        [HttpPost("orders/create")]
-        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
-        [ProducesResponseType(typeof(PrepareOrderRequest), StatusCodes.Status200OK)]
-        public async Task<IActionResult> PlaceOrder([FromBody] PrepareOrderRequest orderReq)
-        {
-            var response = await _orderService.PlaceStoreOrder(orderReq);
             return Ok(response);
         }
     }
