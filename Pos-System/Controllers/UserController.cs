@@ -88,7 +88,7 @@ namespace Pos_System.API.Controllers
         }
 
         [HttpPost("users/order")]
-        public async Task<IActionResult> CreateUserOrder([FromBody] CreateUserOrderRequest req)
+        public async Task<IActionResult> CreateUserOrder([FromBody] PrepareOrderRequest req)
         {
             var userResponse = await _userService.CreateNewUserOrder(req);
             return Ok(userResponse);

@@ -21,5 +21,7 @@ namespace Pos_System.API.Services.Interfaces
         Task<Payment> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req);
         Task<IPaginate<ViewOrdersResponse>> GetListOrderByUserId(Guid userId, OrderStatus status, int page, int size);
         Task<GetOrderDetailResponse> GetOrderDetailUser(Guid orderId);
+        Task<PrepareOrderRequest> PrepareOrder(PrepareOrderRequest orderReq);
+        Task<Guid> PlaceStoreOrder(PrepareOrderRequest createNewOrderRequest);
     }
 }

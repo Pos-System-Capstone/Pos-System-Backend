@@ -15,7 +15,7 @@ namespace Pos_System.Domain.Models
         public string? Address { get; set; }
         public string Status { get; set; } = null!;
         public DateTime CreatedAt { get; set; }
-        public DateTime CompletedAt { get; set; }
+        public DateTime? CompletedAt { get; set; }
         public Guid? UserId { get; set; }
         public string? Note { get; set; }
         public string? Name { get; set; }

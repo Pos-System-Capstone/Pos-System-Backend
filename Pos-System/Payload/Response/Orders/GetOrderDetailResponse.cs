@@ -56,6 +56,8 @@ namespace Pos_System.API.Payload.Response.Orders
         public string PromotionName { get; set; }
         public double DiscountAmount { get; set; }
         public int Quantity { get; set; }
+        
+        public string? EffectType { get; set; }
     }
 
     public class OrderUserResponse
@@ -63,6 +65,10 @@ namespace Pos_System.API.Payload.Response.Orders
         public Guid? Id { get; set; }
         public string? Name { get; set; }
         public string? Phone { get; set; }
-        public string Address { get; set; }
+        public string? Address { get; set; }
+        
+        public string? CustomerType { get; set; }
+        
+        public OrderSourceStatus? DeliStatus { get; set; }
     }
 }

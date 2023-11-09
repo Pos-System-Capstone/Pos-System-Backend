@@ -64,5 +64,23 @@ namespace Pos_System.API.Controllers
             var response = await _orderService.UpdatePaymentOrder(id, req);
             return Ok(response);
         }
+        
+        [HttpPost("orders/prepare")]
+        [ProducesResponseType(typeof(PrepareOrderRequest), StatusCodes.Status200OK)]
+        public async Task<IActionResult> PrepareOrder(
+            [FromBody] PrepareOrderRequest prepareOrderRequest)
+        {
+            var response = await _orderService.PrepareOrder(prepareOrderRequest);
+            return Ok(response);
+        }
+
+        [HttpPost("orders/create")]
+        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
+        [ProducesResponseType(typeof(PrepareOrderRequest), StatusCodes.Status200OK)]
+        public async Task<IActionResult> PlaceOrder([FromBody] PrepareOrderRequest orderReq)
+        {
+            var response = await _orderService.PlaceStoreOrder(orderReq);
+            return Ok(response);
+        }
     }
 }

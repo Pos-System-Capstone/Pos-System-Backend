@@ -112,6 +112,8 @@ public static class MessageConstant
         public const string EmptyOrderIdMessage = "Id của order không hợp lệ";
         public const string OrderNotFoundMessage = "Order không tồn tại trong hệ thống";
         public const string PaymentNotFound = "Đơn hàng chưa được thanh toán thành công";
+        public const string CanNotCreateOrderInThisTime = "Không thể tạo đơn trong khoản thời gian này";
+        public const string CanNotCancelOrder = "Đơn hàng đã làm ko thể huỷ";
     }
 
     public static class Session

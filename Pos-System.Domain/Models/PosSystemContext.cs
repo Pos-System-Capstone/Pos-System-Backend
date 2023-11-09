@@ -41,6 +41,7 @@ namespace Pos_System.Domain.Models
         public virtual DbSet<Session> Sessions { get; set; } = null!;
         public virtual DbSet<Store> Stores { get; set; } = null!;
         public virtual DbSet<StoreAccount> StoreAccounts { get; set; } = null!;
+        public virtual DbSet<Transaction> Transactions { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -534,6 +535,10 @@ namespace Pos_System.Domain.Models
 
                 entity.Property(e => e.Id).ValueGeneratedNever();
 
+                entity.Property(e => e.EffectType)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
                 entity.HasOne(d => d.Order)
                     .WithMany(p => p.PromotionOrderMappings)
                     .HasForeignKey(d => d.OrderId)
@@ -656,6 +661,23 @@ namespace Pos_System.Domain.Models
                     .HasForeignKey(d => d.StoreId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_StoreAccount_Store");
+            });
+
+            modelBuilder.Entity<Transaction>(entity =>
+            {
+                entity.ToTable("Transaction");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.Amount).HasColumnType("decimal(18, 0)");
+
+                entity.Property(e => e.Currency).HasMaxLength(20);
+
+                entity.Property(e => e.InsDate).HasColumnType("datetime");
+
+                entity.Property(e => e.Type).HasMaxLength(50);
+
+                entity.Property(e => e.UpsDate).HasColumnType("datetime");
             });
 
             modelBuilder.Entity<User>(entity =>
