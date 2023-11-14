@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
+using Pos_System.API.Payload.Pointify;
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Request.User;
 using Pos_System.API.Payload.Response.BlogPost;
@@ -80,10 +81,10 @@ namespace Pos_System.API.Controllers
         }
 
         [HttpGet(ApiEndPointConstant.User.UserEndpoint)]
-        [ProducesResponseType(typeof(GetUserResponse), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetUserById(Guid userId)
+        [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUserById(Guid id)
         {
-            var userResponse = _userService.GetUserById(userId);
+            var userResponse = await _userService.GetUserById(id);
             return Ok(userResponse);
         }
 
@@ -119,6 +120,22 @@ namespace Pos_System.API.Controllers
         {
             var response = await _orderService.GetOrderDetailUser(id);
             return Ok(response);
+        }
+
+        [HttpGet("users/scan")]
+        [ProducesResponseType(typeof(GetUserInfo), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ScanUser([FromQuery] string phone)
+        {
+            var userResponse = await _userService.ScanUser(phone);
+            return Ok(userResponse);
+        }
+
+        [HttpGet("users/promotions")]
+        [ProducesResponseType(typeof(IEnumerable<PromotionPointifyResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUserPromotion([FromQuery] string brandCode)
+        {
+            var userResponse = await _userService.GetPromotionsAsync(brandCode);
+            return Ok(userResponse);
         }
     }
 }

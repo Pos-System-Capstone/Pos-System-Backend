@@ -18,6 +18,7 @@ namespace Pos_System.API.Utils
             var response = await httpClient.PostAsync(url, content);
             return response;
         }
+        
         public static async Task<Object> GenerateObjectFromResponse(HttpResponseMessage response)
         {
             var responseString = await response.Content.ReadAsStringAsync();

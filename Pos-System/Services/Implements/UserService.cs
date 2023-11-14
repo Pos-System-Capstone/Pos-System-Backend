@@ -14,12 +14,17 @@ using Pos_System.Domain.Models;
 using Pos_System.Repository.Interfaces;
 using System.Data;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
-using System.Text.Json;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using Pos_System.API.Payload.Pointify;
 using Pos_System.API.Payload.Request.Orders;
 using ZaloPay.Helper;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Pos_System.API.Services.Implements
 {
@@ -323,18 +328,45 @@ namespace Pos_System.API.Services.Implements
             return isSuccessful;
         }
 
-        public async Task<GetUserResponse> GetUserById(Guid userId)
+        public async Task<UserResponse> GetUserById(Guid userId)
         {
             if (userId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.User.EmptyUserId);
 
-            GetUserResponse userResponse = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
-                selector: x => new GetUserResponse(x.PhoneNumber, x.FullName, x.Gender, x.Email),
+            User user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
                 predicate: x => x.Id.Equals(userId));
+            if (user == null)
+            {
+                throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
+            }
 
+            using var client = new HttpClient();
+            var url =
+                $"https://api-pointify.reso.vn/api/memberships/{userId}";
+            var msg = new HttpRequestMessage(HttpMethod.Get, url);
+            var response = await client.SendAsync(msg);
+            if (!response.StatusCode.Equals(HttpStatusCode.OK))
+                throw new BadHttpRequestException(MessageConstant.User.MembershipNotFound);
+            var responseContent =
+                JsonConvert.DeserializeObject<MemberDetailsResponse>(response.Content
+                    .ReadAsStringAsync().Result);
+            UserResponse userResponse = new UserResponse()
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                PhoneNumber = user.PhoneNumber,
+                Email = user.Email,
+                Gender = user.Gender,
+                UrlImg = user.UrlImg,
+                BrandId = user.BrandId,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt,
+                Wallets = responseContent?.MemberWallet,
+                Level = responseContent?.MemberLevel
+            };
             return userResponse;
         }
 
-       public async Task<Guid> CreateNewUserOrder(PrepareOrderRequest createNewOrderRequest)
+        public async Task<Guid> CreateNewUserOrder(PrepareOrderRequest createNewOrderRequest)
         {
             Store store = await _unitOfWork.GetRepository<Store>()
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(createNewOrderRequest.StoreId));
@@ -453,7 +485,7 @@ namespace Pos_System.API.Services.Implements
             {
                 Id = Guid.NewGuid(),
                 UserType = createNewOrderRequest.CustomerId == null ? "GUEST" : "USER",
-                UserId = createNewOrderRequest.CustomerId ?? Guid.Parse("6CFADCDC-25C2-4F0C-8335-5B45698B2375"),
+                UserId = createNewOrderRequest.CustomerId ?? null,
                 Address = createNewOrderRequest.DeliveryAddress,
                 Name = createNewOrderRequest.CustomerName,
                 Phone = createNewOrderRequest.CustomerPhone,
@@ -467,6 +499,37 @@ namespace Pos_System.API.Services.Implements
             await _unitOfWork.GetRepository<OrderUser>().InsertAsync(orderSource);
             await _unitOfWork.CommitAsync();
             return newOrder.Id;
+        }
+
+        public async Task<GetUserInfo> ScanUser(string phone)
+        {
+            string modifiedPhoneNumber = Regex.Replace(phone, @"^0", "+84");
+            GetUserInfo user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
+                selector: x => new GetUserInfo(x.Id, x.PhoneNumber, x.FullName, x.Gender, x.Email),
+                predicate: x =>
+                    x.PhoneNumber.Equals(modifiedPhoneNumber)
+                    && x.Status.Equals("Active"));
+            if (user == null)
+            {
+                throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
+            }
+
+            return user;
+        }
+
+        public async Task<IEnumerable<PromotionPointifyResponse>?> GetPromotionsAsync(string brandCode
+        )
+        {
+            using var client = new HttpClient();
+            var url =
+                $"https://api-pointify.reso.vn/api/channels/list-promotions?brandCode={brandCode}&ChannelType=2";
+            var msg = new HttpRequestMessage(HttpMethod.Get, url);
+            var response = await client.SendAsync(msg);
+            if (!response.StatusCode.Equals(HttpStatusCode.OK)) return null;
+            var responseContent =
+                JsonConvert.DeserializeObject<IEnumerable<PromotionPointifyResponse>>(response.Content
+                    .ReadAsStringAsync().Result);
+            return responseContent;
         }
     }
 }

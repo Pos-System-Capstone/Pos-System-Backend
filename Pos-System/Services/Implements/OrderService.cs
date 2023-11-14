@@ -7,6 +7,7 @@ using Pos_System.API.Constants;
 using Pos_System.API.Enums;
 using Pos_System.API.Extensions;
 using Pos_System.API.Helpers;
+using Pos_System.API.Payload.Request;
 using Pos_System.API.Payload.Request.CheckoutOrder;
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Response.CheckoutOrderResponse;
@@ -340,45 +341,55 @@ namespace Pos_System.API.Services.Implements
             Store store = await _unitOfWork.GetRepository<Store>()
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(storeId));
             if (store == null) throw new BadHttpRequestException(MessageConstant.Store.StoreNotFoundMessage);
-
             string currentUserName = GetUsernameFromJwt();
             Account currentUser = await _unitOfWork.GetRepository<Account>()
                 .SingleOrDefaultAsync(predicate: x => x.Username.Equals(currentUserName));
             DateTime currentTime = TimeUtils.GetCurrentSEATime();
-            Session currentUserSession = await _unitOfWork.GetRepository<Session>().SingleOrDefaultAsync(predicate: x =>
-                x.StoreId.Equals(storeId)
-                && DateTime.Compare(x.StartDateTime, currentTime) < 0
-                && DateTime.Compare(x.EndDateTime, currentTime) > 0);
-
             Order order = await _unitOfWork.GetRepository<Order>()
-                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId));
-            if (currentUserSession == null)
-                throw new BadHttpRequestException(MessageConstant.Order.UserNotInSessionMessage);
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId), include: x => x.Include(p=> p.PromotionOrderMappings));
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
-            if (updateOrderRequest.Status.Equals(OrderStatus.CANCELED))
-            {
-                currentUserSession.NumberOfOrders--;
-            }
-
-            if (updateOrderRequest.Status.Equals(OrderStatus.PAID))
-            {
-                currentUserSession.TotalAmount += order.TotalAmount;
-                currentUserSession.TotalFinalAmount += order.FinalAmount;
-                currentUserSession.TotalDiscountAmount += order.Discount;
-                if (updateOrderRequest.PaymentType != null)
-                {
-                    if (updateOrderRequest.PaymentType.Equals(PaymentTypeEnum.CASH))
-                    {
-                        currentUserSession.TotalChangeCash += order.FinalAmount;
-                    }
-                }
-            }
-
+            // if (order.PromotionOrderMappings.Any()&&updateOrderRequest.Status.Equals(OrderStatus.PAID))
+            // {
+            //     CheckOutPointifyRequest checkOutPointify = new CheckOutPointifyRequest()
+            //     {
+            //         StoreCode = store.Code,
+            //         ListEffect = new List<ListEffect>(),
+            //         FinalAmount = order.FinalAmount
+            //     };
+            //     foreach (var promotionOrder in order.PromotionOrderMappings)
+            //     {
+            //         checkOutPointify.ListEffect.Add(new ListEffect()
+            //         {
+            //             PromotionId = promotionOrder.PromotionId,
+            //             EffectType = promotionOrder.EffectType,
+            //         });
+            //         if (promotionOrder.EffectType != null && promotionOrder.EffectType.Equals("GET_POINT"))
+            //         {
+            //             checkOutPointify.BonusPoint = promotionOrder.DiscountAmount ?? 0;
+            //         }
+            //     }
+            //
+            //     if (order.OrderSourceId != null)
+            //     {
+            //         OrderUser orderUser = await _unitOfWork.GetRepository<OrderUser>()
+            //             .SingleOrDefaultAsync(predicate: x => x.Id.Equals(order.OrderSourceId));
+            //         if (orderUser.UserId != null && orderUser.UserType != null && orderUser.UserType.Equals("USER"))
+            //         {
+            //             checkOutPointify.UserId = (Guid) orderUser.UserId;
+            //         }
+            //     }
+            //
+            //     string url = "https://api-pointify.reso.vn/api/promotions/check-out-promotion";
+            //     var response = await CallApiUtils.CallApiEndpoint(url, checkOutPointify);
+            //     if (!response.StatusCode.Equals(HttpStatusCode.OK))
+            //     {
+            //         throw new HttpRequestException("Cập nhật khuyến mãi đơn hàng thất bại");
+            //     }
+            // }
             order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
             order.PaymentType = updateOrderRequest.PaymentType.GetDescriptionFromEnum();
             order.Status = updateOrderRequest.Status.GetDescriptionFromEnum();
-            _unitOfWork.GetRepository<Session>().UpdateAsync(currentUserSession);
             _unitOfWork.GetRepository<Order>().UpdateAsync(order);
             await _unitOfWork.CommitAsync();
             return order.Id;
