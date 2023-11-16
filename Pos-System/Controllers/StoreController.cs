@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
+using Pos_System.API.Payload.Pointify;
 using Pos_System.API.Payload.Request.Accounts;
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Request.Sessions;
@@ -174,6 +175,14 @@ namespace Pos_System.API.Controllers
         {
             var response = await _orderService.GetPromotion(id);
             return Ok(response);
+        }
+        
+        [HttpGet(ApiEndPointConstant.Store.GetListPromotion)]
+        [ProducesResponseType(typeof(IEnumerable<PromotionPointifyResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetPromotionInStore(Guid id)
+        {
+            var userResponse = await _storeService.GetPromotionInStore(id);
+            return Ok(userResponse);
         }
     }
 }

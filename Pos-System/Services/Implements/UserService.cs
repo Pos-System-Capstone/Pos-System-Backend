@@ -307,7 +307,7 @@ namespace Pos_System.API.Services.Implements
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(userId));
 
             if (updatedUser == null) throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
-
+            var currentTime = TimeUtils.GetCurrentSEATime();
             _logger.LogInformation($"Start update user {userId}");
             updatedUserRequest.TrimString();
             updatedUser.FullName = string.IsNullOrEmpty(updatedUserRequest.FullName)
@@ -322,6 +322,10 @@ namespace Pos_System.API.Services.Implements
             updatedUser.PhoneNumber = string.IsNullOrEmpty(updatedUserRequest.PhoneNunmer)
                 ? updatedUser.PhoneNumber
                 : updatedUserRequest.PhoneNunmer;
+            updatedUser.UrlImg = string.IsNullOrEmpty(updatedUserRequest.UrlImg)
+                ? updatedUser.UrlImg
+                : updatedUserRequest.UrlImg;
+            updatedUser.UpdatedAt = currentTime;
             _unitOfWork.GetRepository<User>().UpdateAsync(updatedUser);
 
             bool isSuccessful = await _unitOfWork.CommitAsync() > 0;

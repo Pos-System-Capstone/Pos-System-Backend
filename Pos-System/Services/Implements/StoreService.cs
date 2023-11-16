@@ -1,9 +1,12 @@
-﻿using System.Runtime.Intrinsics.X86;
+﻿using System.Net;
+using System.Runtime.Intrinsics.X86;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
 using Pos_System.API.Helpers;
+using Pos_System.API.Payload.Pointify;
 using Pos_System.API.Payload.Request.Stores;
 using Pos_System.API.Payload.Response.Menus;
 using Pos_System.API.Payload.Response.Products;
@@ -375,5 +378,26 @@ public class StoreService : BaseService<StoreService>, IStoreService
             size: size
         );
         return storesInBrandResponse;
+    }
+
+    public async Task<IEnumerable<PromotionPointifyResponse>?> GetPromotionInStore(Guid storeId)
+    {
+        Guid userStoreId = Guid.Parse(GetStoreIdFromJwt());
+        if (userStoreId != storeId)
+            throw new BadHttpRequestException(MessageConstant.Store.GetStoreSessionUnAuthorized);
+        if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
+        Store store = await _unitOfWork.GetRepository<Store>()
+            .SingleOrDefaultAsync(predicate: x => x.Id.Equals(storeId), include: x => x.Include(b => b.Brand));
+        if (store == null) throw new BadHttpRequestException(MessageConstant.Store.StoreNotFoundMessage);
+        using var client = new HttpClient();
+        var url =
+            $"https://api-pointify.reso.vn/api/stores/promotions?storeCode={store.Code}&brandCode={store.Brand.BrandCode}";
+        var msg = new HttpRequestMessage(HttpMethod.Get, url);
+        var response = await client.SendAsync(msg);
+        if (!response.StatusCode.Equals(HttpStatusCode.OK)) return null;
+        var responseContent =
+            JsonConvert.DeserializeObject<IEnumerable<PromotionPointifyResponse>>(response.Content
+                .ReadAsStringAsync().Result);
+        return responseContent;
     }
 }
