@@ -12,6 +12,7 @@ using Pos_System.API.Services.Implements;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.Domain.Models;
 using Pos_System.Domain.Paginate;
+using Transaction = System.Transactions.Transaction;
 
 namespace Pos_System.API.Controllers
 {
@@ -136,6 +137,22 @@ namespace Pos_System.API.Controllers
         {
             var userResponse = await _userService.GetPromotionsAsync(brandCode);
             return Ok(userResponse);
+        }
+
+        [HttpGet("users/{id}/voucher")]
+        [ProducesResponseType(typeof(IEnumerable<VoucherResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUserPromotion(Guid id)
+        {
+            var voucherResponses = await _userService.GetVoucherOfUser(id);
+            return Ok(voucherResponses);
+        }
+
+        [HttpGet("users/{id}/transactions")]
+        [ProducesResponseType(typeof(IPaginate<Transaction>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUserTransactions(Guid id, [FromQuery] int page, [FromQuery] int size)
+        {
+            var transactions = await _userService.GetListTransactionOfUser(id, page, size);
+            return Ok(transactions);
         }
     }
 }

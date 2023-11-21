@@ -346,7 +346,8 @@ namespace Pos_System.API.Services.Implements
                 .SingleOrDefaultAsync(predicate: x => x.Username.Equals(currentUserName));
             DateTime currentTime = TimeUtils.GetCurrentSEATime();
             Order order = await _unitOfWork.GetRepository<Order>()
-                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId), include: x => x.Include(p=> p.PromotionOrderMappings));
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId),
+                    include: x => x.Include(p => p.PromotionOrderMappings));
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
             // if (order.PromotionOrderMappings.Any()&&updateOrderRequest.Status.Equals(OrderStatus.PAID))
             // {
@@ -395,6 +396,88 @@ namespace Pos_System.API.Services.Implements
             return order.Id;
         }
 
+        public async Task<Guid> CheckoutOrder(Guid storeId, Guid orderId, UpdateOrderRequest updateOrderRequest)
+        {
+            if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
+            Store store = await _unitOfWork.GetRepository<Store>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(storeId));
+            if (store == null) throw new BadHttpRequestException(MessageConstant.Store.StoreNotFoundMessage);
+            string currentUserName = GetUsernameFromJwt();
+            Account currentUser = await _unitOfWork.GetRepository<Account>()
+                .SingleOrDefaultAsync(predicate: x => x.Username.Equals(currentUserName));
+            DateTime currentTime = TimeUtils.GetCurrentSEATime();
+            Order order = await _unitOfWork.GetRepository<Order>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId),
+                    include: x => x.Include(p => p.PromotionOrderMappings));
+            if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
+            order.PaymentType = updateOrderRequest.PaymentType.GetDescriptionFromEnum();
+            order.Status = updateOrderRequest.Status.GetDescriptionFromEnum();
+            List<Transaction> transactions = new List<Transaction>();
+            if (order.PromotionOrderMappings.Any() && updateOrderRequest.Status.Equals(OrderStatus.PAID))
+            {
+                CheckOutPointifyRequest checkOutPointify = new CheckOutPointifyRequest()
+                {
+                    StoreCode = store.Code,
+                    ListEffect = new List<ListEffect>(),
+                    FinalAmount = order.FinalAmount
+                };
+                if (order.OrderSourceId != null)
+                {
+                    OrderUser orderUser = await _unitOfWork.GetRepository<OrderUser>()
+                        .SingleOrDefaultAsync(predicate: x => x.Id.Equals(order.OrderSourceId));
+                    if (orderUser is {UserId: not null, UserType: "USER"})
+                    {
+                        checkOutPointify.UserId = (Guid) orderUser.UserId;
+                    }
+                }
+
+                foreach (var promotionOrder in order.PromotionOrderMappings)
+                {
+                    checkOutPointify.ListEffect.Add(new ListEffect()
+                    {
+                        PromotionId = promotionOrder.PromotionId,
+                        EffectType = promotionOrder.EffectType,
+                    });
+                    if (promotionOrder.EffectType != null && promotionOrder.EffectType.Equals("GET_POINT"))
+                    {
+                        Transaction newTransaction = new Transaction()
+                        {
+                            Id = Guid.NewGuid(),
+                            CreatedDate = currentTime,
+                            Amount = (decimal) (promotionOrder.DiscountAmount ?? 0),
+                            BrandId = store.BrandId,
+                            Currency = "Point",
+                            IsIncrease = true,
+                            OrderId = orderId,
+                            UserId = checkOutPointify.UserId, Status = "SUCCESS",
+                            Type = "GET_POINT"
+                        };
+                        transactions.Add(newTransaction);
+                        checkOutPointify.BonusPoint = promotionOrder.DiscountAmount ?? 0;
+                    }
+
+                    if (promotionOrder.VoucherCode != null)
+                    {
+                        checkOutPointify.VoucherCode = promotionOrder.VoucherCode;
+                    }
+                }
+
+                checkOutPointify.InvoiceId = order.InvoiceId;
+
+                string url = "https://api-pointify.reso.vn/api/promotions/check-out-promotion";
+                var response = await CallApiUtils.CallApiEndpoint(url, checkOutPointify);
+                if (!response.StatusCode.Equals(HttpStatusCode.OK))
+                {
+                    throw new BadHttpRequestException("Cập nhật khuyến mãi đơn hàng thất bại");
+                }
+            }
+            order.CheckInPerson = currentUser.Id;
+            order.CheckOutDate = currentTime;
+            await _unitOfWork.GetRepository<Transaction>().InsertRangeAsync(transactions);
+            _unitOfWork.GetRepository<Order>().UpdateAsync(order);
+            await _unitOfWork.CommitAsync();
+            return order.Id;
+        }
         public async Task<List<GetPromotionResponse>> GetPromotion(Guid storeId)
         {
             RoleEnum userRole = EnumUtil.ParseEnum<RoleEnum>(GetRoleFromJwt());
@@ -852,7 +935,8 @@ namespace Pos_System.API.Services.Implements
                             Quantity = 1,
                             DiscountAmount = product.Discount,
                             OrderDetailId = masterOrderDetailId,
-                            EffectType = promotionPrepare.EffectType
+                            EffectType = promotionPrepare.EffectType,
+                            VoucherCode = createNewOrderRequest.VoucherCode
                         });
                         createNewOrderRequest.PromotionList.Remove(promotionPrepare);
                     }
@@ -869,7 +953,8 @@ namespace Pos_System.API.Services.Implements
                         OrderId = newOrder.Id,
                         Quantity = 1,
                         DiscountAmount = orderPromotion.DiscountAmount,
-                        EffectType = orderPromotion.EffectType
+                        EffectType = orderPromotion.EffectType,
+                        VoucherCode = createNewOrderRequest.VoucherCode
                     });
                 });
             }

@@ -2,6 +2,8 @@
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Request.User;
 using Pos_System.API.Payload.Response.User;
+using Pos_System.Domain.Models;
+using Pos_System.Domain.Paginate;
 
 namespace Pos_System.API.Services.Interfaces
 {
@@ -16,5 +18,8 @@ namespace Pos_System.API.Services.Interfaces
         Task<GetUserInfo> ScanUser(string phone);
 
         Task<IEnumerable<PromotionPointifyResponse>?> GetPromotionsAsync(string brandCode);
+
+        Task<IEnumerable<VoucherResponse>?> GetVoucherOfUser(Guid userId);
+        Task<IPaginate<Transaction>> GetListTransactionOfUser(Guid userId, int page, int size);
     }
 }

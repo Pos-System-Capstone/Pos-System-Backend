@@ -16,6 +16,7 @@ public class CheckOutPointifyRequest
     public double FinalAmount { get; set; }
 
     public double BonusPoint { get; set; }
+    public string InvoiceId { get; set; }
 }
 
 public  class ListEffect

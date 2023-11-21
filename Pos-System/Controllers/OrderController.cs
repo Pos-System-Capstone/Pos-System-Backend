@@ -64,7 +64,7 @@ namespace Pos_System.API.Controllers
             var response = await _orderService.UpdatePaymentOrder(id, req);
             return Ok(response);
         }
-        
+
         [HttpPost("orders/prepare")]
         [ProducesResponseType(typeof(PrepareOrderRequest), StatusCodes.Status200OK)]
         public async Task<IActionResult> PrepareOrder(
@@ -75,11 +75,21 @@ namespace Pos_System.API.Controllers
         }
 
         [HttpPost("orders/create")]
-        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
+        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager, RoleEnum.User)]
         [ProducesResponseType(typeof(PrepareOrderRequest), StatusCodes.Status200OK)]
         public async Task<IActionResult> PlaceOrder([FromBody] PrepareOrderRequest orderReq)
         {
             var response = await _orderService.PlaceStoreOrder(orderReq);
+            return Ok(response);
+        }
+
+        [HttpPost("orders/{id}/checkout")]
+        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
+        [ProducesResponseType(typeof(PrepareOrderRequest), StatusCodes.Status200OK)]
+        public async Task<IActionResult> PlaceOrder(Guid id, [FromQuery] Guid storeId,
+            [FromBody] UpdateOrderRequest updateOrderRequest)
+        {
+            var response = await _orderService.CheckoutOrder(storeId, id, updateOrderRequest);
             return Ok(response);
         }
     }

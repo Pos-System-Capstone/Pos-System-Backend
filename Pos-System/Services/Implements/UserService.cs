@@ -23,6 +23,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Pos_System.API.Payload.Pointify;
 using Pos_System.API.Payload.Request.Orders;
+using Pos_System.Domain.Paginate;
 using ZaloPay.Helper;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -459,7 +460,9 @@ namespace Pos_System.API.Services.Implements
                         Quantity = 1,
                         DiscountAmount = product.Discount,
                         OrderDetailId = masterOrderDetailId,
-                        EffectType = promotionPrepare.EffectType
+                        EffectType = promotionPrepare.EffectType,
+                        VoucherCode = createNewOrderRequest.VoucherCode
+                        
                     });
                     createNewOrderRequest.PromotionList.Remove(promotionPrepare);
                 }
@@ -475,7 +478,8 @@ namespace Pos_System.API.Services.Implements
                         OrderId = newOrder.Id,
                         Quantity = 1,
                         DiscountAmount = orderPromotion.DiscountAmount,
-                        EffectType = orderPromotion.EffectType
+                        EffectType = orderPromotion.EffectType,
+                        VoucherCode = createNewOrderRequest.VoucherCode
                     });
                 });
             }
@@ -534,6 +538,31 @@ namespace Pos_System.API.Services.Implements
                 JsonConvert.DeserializeObject<IEnumerable<PromotionPointifyResponse>>(response.Content
                     .ReadAsStringAsync().Result);
             return responseContent;
+        }
+
+        public async Task<IEnumerable<VoucherResponse>?> GetVoucherOfUser(Guid userId)
+        {
+            using var client = new HttpClient();
+            var url =
+                $"https://api-pointify.reso.vn/api/vouchers/membership?membershipId={userId}";
+            var msg = new HttpRequestMessage(HttpMethod.Get, url);
+            var response = await client.SendAsync(msg);
+            if (!response.StatusCode.Equals(HttpStatusCode.OK)) return null;
+            var responseContent =
+                JsonConvert.DeserializeObject<IEnumerable<VoucherResponse>>(response.Content
+                    .ReadAsStringAsync().Result);
+            return responseContent;
+        }
+
+        public async Task<IPaginate<Transaction>> GetListTransactionOfUser(Guid userId, int page, int size)
+        {
+            IPaginate<Transaction> listTrans = await _unitOfWork.GetRepository<Transaction>().GetPagingListAsync(
+                predicate: x => x.UserId.Equals(userId),
+                page: page,
+                size: size
+            );
+            
+            return listTrans;
         }
     }
 }

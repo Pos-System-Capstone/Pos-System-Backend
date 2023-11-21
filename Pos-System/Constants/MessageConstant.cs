@@ -147,7 +147,7 @@ public static class MessageConstant
     }
 
     public static class User
-    {
+    { 
         public const string CreateNewUserFailedMessage = "Tạo mới User thất bại";
         public const string UpdateUserFailedMessage = "Cập nhật thông tin User thất bại";
         public const string UpdateUserSuccessfulMessage = "Cập nhật thông tin User thành công";

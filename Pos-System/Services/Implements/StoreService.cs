@@ -372,7 +372,7 @@ public class StoreService : BaseService<StoreService>, IStoreService
             selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Code, x.Email, x.Address,
                 x.Status,
                 x.WifiName, x.WifiPassword, x.Lat, x.Long),
-            predicate: x => x.BrandId.Equals(brand.Id),
+            predicate: x => x.BrandId.Equals(brand.Id) && x.Status.Equals(StoreStatus.Active.GetDescriptionFromEnum()),
             orderBy: x => x.OrderBy(x => x.ShortName),
             page: page,
             size: size

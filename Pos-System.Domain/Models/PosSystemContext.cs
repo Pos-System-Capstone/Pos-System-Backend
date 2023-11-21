@@ -539,6 +539,10 @@ namespace Pos_System.Domain.Models
                     .HasMaxLength(50)
                     .IsUnicode(false);
 
+                entity.Property(e => e.VoucherCode)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+
                 entity.HasOne(d => d.Order)
                     .WithMany(p => p.PromotionOrderMappings)
                     .HasForeignKey(d => d.OrderId)
@@ -671,13 +675,21 @@ namespace Pos_System.Domain.Models
 
                 entity.Property(e => e.Amount).HasColumnType("decimal(18, 0)");
 
+                entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+
                 entity.Property(e => e.Currency).HasMaxLength(20);
 
-                entity.Property(e => e.InsDate).HasColumnType("datetime");
+                entity.Property(e => e.Status)
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.Type).HasMaxLength(50);
 
-                entity.Property(e => e.UpsDate).HasColumnType("datetime");
+                entity.HasOne(d => d.Brand)
+                    .WithMany(p => p.Transactions)
+                    .HasForeignKey(d => d.BrandId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("Transaction___fk_brand");
             });
 
             modelBuilder.Entity<User>(entity =>
