@@ -7,6 +7,7 @@ using Pos_System.API.Constants;
 using Pos_System.API.Enums;
 using Pos_System.API.Extensions;
 using Pos_System.API.Helpers;
+using Pos_System.API.Payload.Pointify;
 using Pos_System.API.Payload.Request;
 using Pos_System.API.Payload.Request.CheckoutOrder;
 using Pos_System.API.Payload.Request.Orders;
@@ -26,10 +27,13 @@ namespace Pos_System.API.Services.Implements
     {
         public const double VAT_PERCENT = 0.1;
         public const double VAT_STANDARD = 1.1;
+        private readonly IUserService _userService;
 
         public OrderService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<OrderService> logger, IMapper mapper,
-            IHttpContextAccessor httpContextAccessor) : base(unitOfWork, logger, mapper, httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor, IUserService userService) : base(unitOfWork, logger, mapper,
+            httpContextAccessor)
         {
+            _userService = userService;
         }
 
         public async Task<Guid> CreateNewOrder(Guid storeId, CreateNewOrderRequest createNewOrderRequest)
@@ -349,44 +353,7 @@ namespace Pos_System.API.Services.Implements
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId),
                     include: x => x.Include(p => p.PromotionOrderMappings));
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
-            // if (order.PromotionOrderMappings.Any()&&updateOrderRequest.Status.Equals(OrderStatus.PAID))
-            // {
-            //     CheckOutPointifyRequest checkOutPointify = new CheckOutPointifyRequest()
-            //     {
-            //         StoreCode = store.Code,
-            //         ListEffect = new List<ListEffect>(),
-            //         FinalAmount = order.FinalAmount
-            //     };
-            //     foreach (var promotionOrder in order.PromotionOrderMappings)
-            //     {
-            //         checkOutPointify.ListEffect.Add(new ListEffect()
-            //         {
-            //             PromotionId = promotionOrder.PromotionId,
-            //             EffectType = promotionOrder.EffectType,
-            //         });
-            //         if (promotionOrder.EffectType != null && promotionOrder.EffectType.Equals("GET_POINT"))
-            //         {
-            //             checkOutPointify.BonusPoint = promotionOrder.DiscountAmount ?? 0;
-            //         }
-            //     }
-            //
-            //     if (order.OrderSourceId != null)
-            //     {
-            //         OrderUser orderUser = await _unitOfWork.GetRepository<OrderUser>()
-            //             .SingleOrDefaultAsync(predicate: x => x.Id.Equals(order.OrderSourceId));
-            //         if (orderUser.UserId != null && orderUser.UserType != null && orderUser.UserType.Equals("USER"))
-            //         {
-            //             checkOutPointify.UserId = (Guid) orderUser.UserId;
-            //         }
-            //     }
-            //
-            //     string url = "https://api-pointify.reso.vn/api/promotions/check-out-promotion";
-            //     var response = await CallApiUtils.CallApiEndpoint(url, checkOutPointify);
-            //     if (!response.StatusCode.Equals(HttpStatusCode.OK))
-            //     {
-            //         throw new HttpRequestException("Cập nhật khuyến mãi đơn hàng thất bại");
-            //     }
-            // }
+           
             order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
             order.PaymentType = updateOrderRequest.PaymentType.GetDescriptionFromEnum();
@@ -471,6 +438,7 @@ namespace Pos_System.API.Services.Implements
                     throw new BadHttpRequestException("Cập nhật khuyến mãi đơn hàng thất bại");
                 }
             }
+
             order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
             await _unitOfWork.GetRepository<Transaction>().InsertRangeAsync(transactions);
@@ -478,6 +446,7 @@ namespace Pos_System.API.Services.Implements
             await _unitOfWork.CommitAsync();
             return order.Id;
         }
+
         public async Task<List<GetPromotionResponse>> GetPromotion(Guid storeId)
         {
             RoleEnum userRole = EnumUtil.ParseEnum<RoleEnum>(GetRoleFromJwt());
@@ -533,37 +502,83 @@ namespace Pos_System.API.Services.Implements
             return responese;
         }
 
-        public async Task<Payment> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req)
+        public async Task<PaymentOrderResponse> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req)
         {
             Order order = await _unitOfWork.GetRepository<Order>()
-                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId));
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId),
+                    include: s => s.Include(x => x.Session).ThenInclude(s => s.Store));
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
-            Payment newPayment = new Payment()
+            if (order.Status.Equals(OrderStatus.PAID.GetDescriptionFromEnum()))
             {
-                Id = Guid.NewGuid(),
-                OrderId = order.Id,
-                Amount = order.FinalAmount,
-                CurrencyCode = "VND",
-                PayTime = TimeUtils.GetCurrentSEATime(),
-                Type = req.PaymentType.GetDescriptionFromEnum(),
-                Status = req.Status.GetDescriptionFromEnum()
-            };
-            //if(payment.Type.Equals(PaymentTypeEnum.POINTIFY_WALLET.GetDescriptionFromEnum()))
-            //{
-            //    payment.Status = OrderStatus.PAID.GetDescriptionFromEnum();
-            //    _unitOfWork.GetRepository<Payment>().UpdateAsync(payment);
-            //    await _unitOfWork.CommitAsync();
-            //    var data = new { 
+                throw new BadHttpRequestException(MessageConstant.Order.OrderCompleteBefore);
+            }
 
-            //    };
-            //}
-            //else
-            //{
-            //    order.Status = OrderStatus.PENDING.GetDescriptionFromEnum();
-            //}
-            await _unitOfWork.GetRepository<Payment>().InsertAsync(newPayment);
-            await _unitOfWork.CommitAsync();
-            return newPayment;
+            PaymentOrderResponse paymentOrderResponse = new PaymentOrderResponse()
+            {
+                OrderId = order.Id,
+                PaymentType = req.PaymentType,
+                Status = PaymentStatusEnum.FAIL.GetDescriptionFromEnum()
+            };
+            switch (EnumUtil.ParseEnum<PaymentTypeEnum>(req.PaymentType))
+            {
+                case PaymentTypeEnum.POINTIFY:
+                {
+                    var user = await _userService.ScanUser(req.Code);
+                    MemberActionRequest request = new MemberActionRequest()
+                    {
+                        ApiKey = user.BrandId,
+                        StoreCode = order.Session.Store.Code,
+                        Amount = order.FinalAmount,
+                        Description = order.InvoiceId,
+                        MembershipId = user.Id,
+                        MemberActionType = MemberActionType.PAYMENT.GetDescriptionFromEnum()
+                    };
+                    var url = "https://api-pointify.reso.vn/api/member-action";
+                    var response = await CallApiUtils.CallApiEndpoint(url, request);
+                    if (!response.StatusCode.Equals(HttpStatusCode.OK))
+                    {
+                        paymentOrderResponse.Message = "Thanh toán thất bại";
+                        return paymentOrderResponse;
+                    }
+
+                    var actionResponse =
+                        JsonConvert.DeserializeObject<MemberActionResponse>(response.Content
+                            .ReadAsStringAsync().Result);
+                    if (actionResponse != null &&
+                        actionResponse.Status.Equals(MemberActionStatus.SUCCESS.GetDescriptionFromEnum()))
+                    {
+                        Transaction transaction = new Transaction()
+                        {
+                            Id = Guid.NewGuid(),
+                            BrandId = user.BrandId,
+                            TransactionJson = response.Content
+                                .ReadAsStringAsync().Result,
+                            Amount = (decimal) order.FinalAmount,
+                            CreatedDate = TimeUtils.GetCurrentSEATime(),
+                            UserId = user.Id,
+                            OrderId = order.Id,
+                            IsIncrease = false,
+                            Type = TransactionTypeEnum.PAYMENT.GetDescriptionFromEnum(),
+                            Currency = "đ",
+                            Status = TransactionStatusEnum.SUCCESS.GetDescriptionFromEnum(),
+                        };
+                        await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
+                        order.PaymentType = req.PaymentType.GetDescriptionFromEnum();
+                        _unitOfWork.GetRepository<Order>().UpdateAsync(order);
+                        paymentOrderResponse.Message = "Thanh toán đơn hàng" + actionResponse.Description;
+                        paymentOrderResponse.Status = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
+                        await _unitOfWork.CommitAsync();
+                    }
+                    else
+                    {
+                        paymentOrderResponse.Message = actionResponse?.Description;
+                    }
+
+                    break;
+                }
+            }
+
+            return paymentOrderResponse;
         }
 
         public async Task<IPaginate<ViewOrdersResponse>> GetListOrderByUserId(Guid userId, OrderStatus status, int page,

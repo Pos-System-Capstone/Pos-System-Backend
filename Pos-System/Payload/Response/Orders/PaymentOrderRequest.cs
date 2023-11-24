@@ -4,7 +4,7 @@ namespace Pos_System.API.Payload.Response.Orders
 {
     public class PaymentOrderRequest
     {
-        public PaymentTypeEnum PaymentType { get; set; }
-        public PaymentStatusEnum Status { get; set; }
+        public string PaymentType { get; set; }
+        public string? Code { get; set; }
     }
 }

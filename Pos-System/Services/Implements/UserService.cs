@@ -1,30 +1,22 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
-using Pos_System.API.Payload.Request.Brands;
 using Pos_System.API.Payload.Request.User;
-using Pos_System.API.Payload.Response;
 using Pos_System.API.Payload.Response.User;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.API.Utils;
 using Pos_System.Domain.Models;
 using Pos_System.Repository.Interfaces;
-using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
-using System.Net.Http;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Pos_System.API.Payload.Pointify;
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.Domain.Paginate;
-using ZaloPay.Helper;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Pos_System.API.Services.Implements
@@ -462,7 +454,6 @@ namespace Pos_System.API.Services.Implements
                         OrderDetailId = masterOrderDetailId,
                         EffectType = promotionPrepare.EffectType,
                         VoucherCode = createNewOrderRequest.VoucherCode
-                        
                     });
                     createNewOrderRequest.PromotionList.Remove(promotionPrepare);
                 }
@@ -513,7 +504,7 @@ namespace Pos_System.API.Services.Implements
         {
             string modifiedPhoneNumber = Regex.Replace(phone, @"^0", "+84");
             GetUserInfo user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
-                selector: x => new GetUserInfo(x.Id, x.PhoneNumber, x.FullName, x.Gender, x.Email),
+                selector: x => new GetUserInfo(x.Id, x.BrandId, x.PhoneNumber, x.FullName, x.Gender, x.Email),
                 predicate: x =>
                     x.PhoneNumber.Equals(modifiedPhoneNumber)
                     && x.Status.Equals("Active"));
@@ -525,7 +516,7 @@ namespace Pos_System.API.Services.Implements
             return user;
         }
 
-        public async Task<IEnumerable<PromotionPointifyResponse>?> GetPromotionsAsync(string brandCode
+        public async Task<List<PromotionPointifyResponse>?> GetPromotionsAsync(string brandCode, Guid userId
         )
         {
             using var client = new HttpClient();
@@ -534,10 +525,42 @@ namespace Pos_System.API.Services.Implements
             var msg = new HttpRequestMessage(HttpMethod.Get, url);
             var response = await client.SendAsync(msg);
             if (!response.StatusCode.Equals(HttpStatusCode.OK)) return null;
-            var responseContent =
-                JsonConvert.DeserializeObject<IEnumerable<PromotionPointifyResponse>>(response.Content
+            var promotionPointifyResponses =
+                JsonConvert.DeserializeObject<List<PromotionPointifyResponse>>(response.Content
                     .ReadAsStringAsync().Result);
-            return responseContent;
+            List<PromotionPointifyResponse> listPromotionToRemove = new List<PromotionPointifyResponse>();
+            var voucherList = await GetVoucherOfUser(userId);
+            if (promotionPointifyResponses != null)
+            {
+                foreach (var promotion in promotionPointifyResponses)
+                {
+                    if (promotion.PromotionType.Equals((int) PromotionPointifyType.Automatic))
+                    {
+                        listPromotionToRemove.Add(promotion);
+                        continue;
+                    }
+
+                    if (voucherList == null) continue;
+                    foreach (var voucher in voucherList)
+                    {
+                        if (voucher.PromotionId.Equals(promotion.PromotionId))
+                        {
+                            promotion.ListVoucher?.Add(voucher);
+                        }
+                    }
+
+                    if (promotion.ListVoucher != null) promotion.CurrentVoucherQuantity = promotion.ListVoucher.Count;
+                }
+
+                foreach (var promotionRemove in listPromotionToRemove)
+                {
+                    promotionPointifyResponses.Remove(promotionRemove);
+                }
+
+                return promotionPointifyResponses;
+            }
+
+            return null;
         }
 
         public async Task<IEnumerable<VoucherResponse>?> GetVoucherOfUser(Guid userId)
@@ -559,10 +582,29 @@ namespace Pos_System.API.Services.Implements
             IPaginate<Transaction> listTrans = await _unitOfWork.GetRepository<Transaction>().GetPagingListAsync(
                 predicate: x => x.UserId.Equals(userId),
                 page: page,
-                size: size
+                size: size,
+                orderBy: x =>
+                    x.OrderByDescending(x => x.CreatedDate)
             );
-            
+
             return listTrans;
+        }
+
+        public async Task<GetUserInfo> UserPayment(string phone)
+        {
+            string modifiedPhoneNumber = Regex.Replace(phone, @"^0", "+84");
+            GetUserInfo user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
+                selector: x => new GetUserInfo(x.Id, x.BrandId, x.PhoneNumber, x.FullName, x.Gender, x.Email),
+                predicate: x =>
+                    x.PhoneNumber.Equals(modifiedPhoneNumber)
+                    && x.Status.Equals("Active")
+            );
+            if (user == null)
+            {
+                throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
+            }
+
+            return user;
         }
     }
 }

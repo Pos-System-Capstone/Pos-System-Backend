@@ -56,8 +56,8 @@ namespace Pos_System.API.Controllers
             return Ok(response);
         }
 
-        [HttpPut("orders/{id}/payment")]
-        [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+        [HttpPost("orders/{id}/payment")]
+        [ProducesResponseType(typeof(PaymentOrderResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdatePaymentOrder(Guid id, [FromBody] PaymentOrderRequest req)
 
         {

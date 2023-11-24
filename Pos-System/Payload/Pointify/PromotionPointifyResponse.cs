@@ -14,4 +14,7 @@ public class PromotionPointifyResponse
     public long PromotionType { get; set; }
     public long TierIndex { get; set; }
     public DateTimeOffset EndDate { get; set; }
+    public List<VoucherResponse>? ListVoucher { get; set; } = new List<VoucherResponse>();
+    
+    public int? CurrentVoucherQuantity { get; set; }
 }

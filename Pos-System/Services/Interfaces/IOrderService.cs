@@ -18,7 +18,7 @@ namespace Pos_System.API.Services.Interfaces
 
         public Task<List<GetPromotionResponse>> GetPromotion(Guid storeId);
 
-        Task<Payment> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req);
+        Task<PaymentOrderResponse> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req);
         Task<IPaginate<ViewOrdersResponse>> GetListOrderByUserId(Guid userId, OrderStatus status, int page, int size);
         Task<GetOrderDetailResponse> GetOrderDetailUser(Guid orderId);
         Task<PrepareOrderRequest> PrepareOrder(PrepareOrderRequest orderReq);

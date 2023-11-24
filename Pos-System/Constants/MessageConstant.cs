@@ -111,9 +111,11 @@ public static class MessageConstant
         public const string CreateOrderFailedMessage = "Tạo mới order thất bại";
         public const string EmptyOrderIdMessage = "Id của order không hợp lệ";
         public const string OrderNotFoundMessage = "Order không tồn tại trong hệ thống";
-        public const string PaymentNotFound = "Đơn hàng chưa được thanh toán thành công";
+        public const string PaymentError= "Đơn hàng chưa được thanh toán thành công";
         public const string CanNotCreateOrderInThisTime = "Không thể tạo đơn trong khoản thời gian này";
         public const string CanNotCancelOrder = "Đơn hàng đã làm ko thể huỷ";
+        
+        public const string OrderCompleteBefore= "Đơn hàng đã hoàn thành rồi";
     }
 
     public static class Session
@@ -148,11 +150,11 @@ public static class MessageConstant
 
     public static class User
     { 
-        public const string CreateNewUserFailedMessage = "Tạo mới User thất bại";
-        public const string UpdateUserFailedMessage = "Cập nhật thông tin User thất bại";
-        public const string UpdateUserSuccessfulMessage = "Cập nhật thông tin User thành công";
-        public const string EmptyUserId = "Id của User bị trống";
-        public const string UserNotFound = "User không tồn tại trong hệ thống";
+        public const string CreateNewUserFailedMessage = "Tạo mới Người dùng thất bại";
+        public const string UpdateUserFailedMessage = "Cập nhật thông tin Người dùng thất bại";
+        public const string UpdateUserSuccessfulMessage = "Cập nhật thông tin Người dùng thành công";
+        public const string EmptyUserId = "Id của Người dùng bị trống";
+        public const string UserNotFound = "Người dùng không tồn tại trong hệ thống";
         public const string MembershipNotFound = "Không tồn tại thông tin thành viên";
 
     }

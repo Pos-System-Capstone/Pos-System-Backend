@@ -17,7 +17,7 @@ namespace Pos_System.API.Services.Interfaces
         Task<Guid> CreateNewUserOrder(PrepareOrderRequest createNewOrderRequest);
         Task<GetUserInfo> ScanUser(string phone);
 
-        Task<IEnumerable<PromotionPointifyResponse>?> GetPromotionsAsync(string brandCode);
+        Task<List<PromotionPointifyResponse>?> GetPromotionsAsync(string brandCode, Guid id);
 
         Task<IEnumerable<VoucherResponse>?> GetVoucherOfUser(Guid userId);
         Task<IPaginate<Transaction>> GetListTransactionOfUser(Guid userId, int page, int size);

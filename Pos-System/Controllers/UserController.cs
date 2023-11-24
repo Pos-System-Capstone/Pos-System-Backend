@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
 using Pos_System.API.Payload.Pointify;
@@ -8,11 +7,9 @@ using Pos_System.API.Payload.Request.User;
 using Pos_System.API.Payload.Response.BlogPost;
 using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.User;
-using Pos_System.API.Services.Implements;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.Domain.Models;
 using Pos_System.Domain.Paginate;
-using Transaction = System.Transactions.Transaction;
 
 namespace Pos_System.API.Controllers
 {
@@ -131,22 +128,14 @@ namespace Pos_System.API.Controllers
             return Ok(userResponse);
         }
 
-        [HttpGet("users/promotions")]
+        [HttpGet("users/{id}/promotions")]
         [ProducesResponseType(typeof(IEnumerable<PromotionPointifyResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetUserPromotion([FromQuery] string brandCode)
+        public async Task<IActionResult> GetUserPromotion(Guid id,[FromQuery] string brandCode)
         {
-            var userResponse = await _userService.GetPromotionsAsync(brandCode);
+            var userResponse = await _userService.GetPromotionsAsync(brandCode, id);
             return Ok(userResponse);
         }
-
-        [HttpGet("users/{id}/voucher")]
-        [ProducesResponseType(typeof(IEnumerable<VoucherResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetUserPromotion(Guid id)
-        {
-            var voucherResponses = await _userService.GetVoucherOfUser(id);
-            return Ok(voucherResponses);
-        }
-
+        
         [HttpGet("users/{id}/transactions")]
         [ProducesResponseType(typeof(IPaginate<Transaction>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUserTransactions(Guid id, [FromQuery] int page, [FromQuery] int size)
