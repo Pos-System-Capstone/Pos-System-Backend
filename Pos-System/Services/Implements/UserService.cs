@@ -702,11 +702,13 @@ namespace Pos_System.API.Services.Implements
                     Currency = "đ",
                     Status = TransactionStatusEnum.SUCCESS.GetDescriptionFromEnum(),
                 };
+                newOrder.Status = OrderStatus.PAID.GetDescriptionFromEnum();
                 await _unitOfWork.GetRepository<Order>().InsertAsync(newOrder);
                 await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
                 topUpUserWalletResponse.Message =
                     "Nạp tiền thành công cho người dùng " + user.FullName + ":" + actionResponse.Description;
                 topUpUserWalletResponse.Status = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
+                
                 await _unitOfWork.CommitAsync();
             }
             else
