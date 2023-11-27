@@ -145,7 +145,7 @@ namespace Pos_System.API.Controllers
             return Ok(transactions);
         }
 
-        [HttpPost("/users/top-up-wallet")]
+        [HttpPost("users/top-up-wallet")]
         [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
         [ProducesResponseType(typeof(TopUpUserWalletResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> TopUpUserWallet(
