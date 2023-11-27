@@ -8,6 +8,7 @@ using Pos_System.API.Payload.Response.BlogPost;
 using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.User;
 using Pos_System.API.Services.Interfaces;
+using Pos_System.API.Validators;
 using Pos_System.Domain.Models;
 using Pos_System.Domain.Paginate;
 
@@ -130,18 +131,28 @@ namespace Pos_System.API.Controllers
 
         [HttpGet("users/{id}/promotions")]
         [ProducesResponseType(typeof(IEnumerable<PromotionPointifyResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetUserPromotion(Guid id,[FromQuery] string brandCode)
+        public async Task<IActionResult> GetUserPromotion(Guid id, [FromQuery] string brandCode)
         {
             var userResponse = await _userService.GetPromotionsAsync(brandCode, id);
             return Ok(userResponse);
         }
-        
+
         [HttpGet("users/{id}/transactions")]
         [ProducesResponseType(typeof(IPaginate<Transaction>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUserTransactions(Guid id, [FromQuery] int page, [FromQuery] int size)
         {
             var transactions = await _userService.GetListTransactionOfUser(id, page, size);
             return Ok(transactions);
+        }
+
+        [HttpPost("/users/top-up-wallet")]
+        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
+        [ProducesResponseType(typeof(TopUpUserWalletResponse), StatusCodes.Status200OK)]
+        public async Task<IActionResult> TopUpUserWallet(
+            [FromBody] TopUpUserWalletRequest request)
+        {
+            var response = await _userService.TopUpUserWallet(request);
+            return Ok(response);
         }
     }
 }

@@ -606,5 +606,115 @@ namespace Pos_System.API.Services.Implements
 
             return user;
         }
+
+        public async Task<TopUpUserWalletResponse> TopUpUserWallet(TopUpUserWalletRequest req)
+        {
+            if (req.StoreId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
+            Store store = await _unitOfWork.GetRepository<Store>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(req.StoreId));
+            if (store == null) throw new BadHttpRequestException(MessageConstant.Store.StoreNotFoundMessage);
+
+            string currentUserName = GetUsernameFromJwt();
+            DateTime currentTime = TimeUtils.GetCurrentSEATime();
+            string currentTimeStamp = TimeUtils.GetTimestamp(currentTime);
+            Account currentUser = await _unitOfWork.GetRepository<Account>()
+                .SingleOrDefaultAsync(predicate: x => x.Username.Equals(currentUserName));
+            Session currentUserSession = await _unitOfWork.GetRepository<Session>().SingleOrDefaultAsync(predicate: x =>
+                x.StoreId.Equals(req.StoreId)
+                && DateTime.Compare(x.StartDateTime, currentTime) < 0
+                && DateTime.Compare(x.EndDateTime, currentTime) > 0);
+
+            if (currentUserSession == null)
+                throw new BadHttpRequestException(MessageConstant.Order.UserNotInSessionMessage);
+            string newInvoiceId = store.Code + currentTimeStamp;
+            Order newOrder = new Order()
+            {
+                Id = Guid.NewGuid(),
+                CheckInPerson = currentUser.Id,
+                CheckInDate = currentTime,
+                CheckOutDate = currentTime,
+                InvoiceId = newInvoiceId,
+                TotalAmount = req.Amount,
+                Discount = 0,
+                FinalAmount = req.Amount,
+                Vat = 0,
+                Vatamount = 0,
+                OrderType = OrderType.TOP_UP.GetDescriptionFromEnum(),
+                NumberOfGuest = 1,
+                Status = OrderStatus.PENDING.GetDescriptionFromEnum(),
+                SessionId = currentUserSession.Id,
+                PaymentType = req.PaymentType.GetDescriptionFromEnum(),
+            };
+
+            User user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
+                predicate: x =>
+                    x.Id.Equals(req.UserId)
+                    && x.Status.Equals("Active")
+            );
+            if (user == null)
+            {
+                throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
+            }
+
+            MemberActionRequest request = new MemberActionRequest()
+            {
+                ApiKey = store.BrandId,
+                StoreCode = store.Code,
+                Amount = req.Amount,
+                Description = newInvoiceId,
+                MembershipId = user.Id,
+                MemberActionType = MemberActionType.TOP_UP.GetDescriptionFromEnum()
+            };
+
+            TopUpUserWalletResponse topUpUserWalletResponse = new TopUpUserWalletResponse()
+            {
+                OrderId = newOrder.Id,
+                UserId = req.UserId,
+                PaymentType = req.PaymentType.GetDescriptionFromEnum(),
+                Status = PaymentStatusEnum.FAIL.GetDescriptionFromEnum()
+            };
+            var url = "https://api-pointify.reso.vn/api/member-action";
+            var response = await CallApiUtils.CallApiEndpoint(url, request);
+            if (!response.StatusCode.Equals(HttpStatusCode.OK))
+            {
+                topUpUserWalletResponse.Message = "Nạp tiền thất bại, vui lòng kiểm tra lại";
+                return topUpUserWalletResponse;
+            }
+
+            var actionResponse =
+                JsonConvert.DeserializeObject<MemberActionResponse>(response.Content
+                    .ReadAsStringAsync().Result);
+            if (actionResponse != null &&
+                actionResponse.Status.Equals(MemberActionStatus.SUCCESS.GetDescriptionFromEnum()))
+            {
+                Transaction transaction = new Transaction()
+                {
+                    Id = Guid.NewGuid(),
+                    BrandId = user.BrandId,
+                    TransactionJson = response.Content
+                        .ReadAsStringAsync().Result,
+                    Amount = (decimal) req.Amount,
+                    CreatedDate = TimeUtils.GetCurrentSEATime(),
+                    UserId = user.Id,
+                    OrderId = newOrder.Id,
+                    IsIncrease = true,
+                    Type = TransactionTypeEnum.TOP_UP.GetDescriptionFromEnum(),
+                    Currency = "đ",
+                    Status = TransactionStatusEnum.SUCCESS.GetDescriptionFromEnum(),
+                };
+                await _unitOfWork.GetRepository<Order>().InsertAsync(newOrder);
+                await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
+                topUpUserWalletResponse.Message =
+                    "Nạp tiền thành công cho người dùng " + user.FullName + ":" + actionResponse.Description;
+                topUpUserWalletResponse.Status = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
+                await _unitOfWork.CommitAsync();
+            }
+            else
+            {
+                topUpUserWalletResponse.Message = actionResponse?.Description;
+            }
+
+            return topUpUserWalletResponse;
+        }
     }
 }

@@ -154,7 +154,7 @@ public static class MessageConstant
         public const string UpdateUserFailedMessage = "Cập nhật thông tin Người dùng thất bại";
         public const string UpdateUserSuccessfulMessage = "Cập nhật thông tin Người dùng thành công";
         public const string EmptyUserId = "Id của Người dùng bị trống";
-        public const string UserNotFound = "Người dùng không tồn tại trong hệ thống";
+        public const string UserNotFound = "Người dùng không tồn tại trong hệ thống hoặc ngừng hoạt động";
         public const string MembershipNotFound = "Không tồn tại thông tin thành viên";
 
     }

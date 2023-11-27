@@ -21,5 +21,7 @@ namespace Pos_System.API.Services.Interfaces
 
         Task<IEnumerable<VoucherResponse>?> GetVoucherOfUser(Guid userId);
         Task<IPaginate<Transaction>> GetListTransactionOfUser(Guid userId, int page, int size);
+
+        Task<TopUpUserWalletResponse> TopUpUserWallet(TopUpUserWalletRequest req);
     }
 }

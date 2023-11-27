@@ -417,7 +417,7 @@ namespace Pos_System.API.Services.Implements
                             IsIncrease = true,
                             OrderId = orderId,
                             UserId = checkOutPointify.UserId, Status = "SUCCESS",
-                            Type = "GET_POINT"
+                            Type = TransactionTypeEnum.GET_POINT.GetDescriptionFromEnum()
                         };
                         transactions.Add(newTransaction);
                         checkOutPointify.BonusPoint = promotionOrder.DiscountAmount ?? 0;
@@ -438,7 +438,6 @@ namespace Pos_System.API.Services.Implements
                     throw new BadHttpRequestException("Cập nhật khuyến mãi đơn hàng thất bại");
                 }
             }
-
             order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
             await _unitOfWork.GetRepository<Transaction>().InsertRangeAsync(transactions);
