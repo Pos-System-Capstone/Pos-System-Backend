@@ -52,6 +52,7 @@ namespace Pos_System.API.Services.Implements
                 FullName = newUserRequest.FullName,
                 BrandId = brand.Id,
                 Gender = newUserRequest.Gender,
+                Fcmtoken = newUserRequest.FcmToken,
                 FireBaseUid = newUserRequest.FireBaseUid,
                 CreatedAt = TimeUtils.GetCurrentSEATime(),
                 UpdatedAt = TimeUtils.GetCurrentSEATime(),
@@ -118,7 +119,8 @@ namespace Pos_System.API.Services.Implements
                     PhoneNunmer = phone,
                     FullName = "Người dùng",
                     Gender = "ORTHER",
-                    FireBaseUid = uid
+                    FireBaseUid = uid,
+                    FcmToken = req.FcmToken
                 };
                 var newUser = await CreateNewUser(newUserRequest, req.BrandCode);
 
@@ -182,6 +184,7 @@ namespace Pos_System.API.Services.Implements
                 selector: brand => brand.Id,
                 predicate: brand => brand.BrandCode.Equals(req.BrandCode)
             );
+            userLogin.Fcmtoken = req.FcmToken;
             guidClaim = new Tuple<string, Guid>("brandId", brandId);
             configuration = new ConfigurationBuilder()
                 .AddEnvironmentVariables(EnvironmentVariableConstant.Prefix).Build();
@@ -202,6 +205,7 @@ namespace Pos_System.API.Services.Implements
                 : DateTime.Now.AddMinutes(configuration.GetValue<long>(JwtConstant.TokenExpireInMinutes));
             token = new JwtSecurityToken(issuer, null, claims, notBefore: DateTime.Now, expires, credentials);
             accesstken = jwtHandler.WriteToken(token);
+            _unitOfWork.GetRepository<User>().UpdateAsync(userLogin);
             return new SignInResponse
             {
                 message = "Login success",
@@ -223,76 +227,7 @@ namespace Pos_System.API.Services.Implements
                 }
             };
         }
-
-        public async Task<SignInResponse> SignUpUser(CreateNewUserRequest newUserRequest, string? brandCode)
-        {
-            var newUser = await CreateNewUser(newUserRequest, brandCode);
-            if (newUser == null)
-            {
-                return new SignInResponse
-                {
-                    message = "Create new user failed"
-                };
-            }
-
-            User user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(predicate: x =>
-                x.Id.Equals(newUser.Id)
-                && x.Status.Equals("Active"));
-            Guid brandId = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
-                selector: brand => brand.Id,
-                predicate: brand => brand.BrandCode.Equals(brandCode)
-            );
-            Guid storeId = await _unitOfWork.GetRepository<Store>().SingleOrDefaultAsync(
-                selector: x => x.Id,
-                predicate: x => x.BrandId.Equals(brandId));
-            Tuple<string, Guid> guidClaim = new Tuple<string, Guid>("storeId", storeId);
-            //string? brandPicUrl = await _unitOfWork.GetRepository<Store>().SingleOrDefaultAsync(
-            //    selector: store => store.Brand.PicUrl,
-            //    predicate: store => store.Id.Equals(storeId),
-            //    include: store => store.Include(store => store.Brand)
-
-            //);
-            IConfiguration configuration = new ConfigurationBuilder()
-                .AddEnvironmentVariables(EnvironmentVariableConstant.Prefix).Build();
-            JwtSecurityTokenHandler jwtHandler = new JwtSecurityTokenHandler();
-            SymmetricSecurityKey secrectKey =
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration.GetValue<string>(JwtConstant.SecretKey)));
-            var credentials = new SigningCredentials(secrectKey, SecurityAlgorithms.HmacSha256Signature);
-            string issuer = configuration.GetValue<string>(JwtConstant.Issuer);
-            List<Claim> claims = new List<Claim>()
-            {
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Sub, newUser.FullName),
-                new Claim(ClaimTypes.Role, "User"),
-            };
-            if (guidClaim != null) claims.Add(new Claim(guidClaim.Item1, guidClaim.Item2.ToString()));
-            var expires = "User".Equals(RoleEnum.User.GetDescriptionFromEnum())
-                ? DateTime.Now.AddDays(1)
-                : DateTime.Now.AddMinutes(configuration.GetValue<long>(JwtConstant.TokenExpireInMinutes));
-            var token = new JwtSecurityToken(issuer, null, claims, notBefore: DateTime.Now, expires, credentials);
-            string accesstken = jwtHandler.WriteToken(token);
-            return new SignInResponse
-            {
-                message = "Sign Up success",
-                AccessToken = accesstken,
-                UserInfo = new UserResponse()
-                {
-                    Id = user.Id,
-                    FullName = user.FullName,
-                    PhoneNumber = user.PhoneNumber,
-                    BrandId = brandId,
-                    Email = user.Email,
-                    FireBaseUid = user.FireBaseUid,
-                    CreatedAt = user.CreatedAt,
-                    Fcmtoken = user.Fcmtoken,
-                    Gender = user.Gender,
-                    Status = user.Status,
-                    UpdatedAt = user.UpdatedAt,
-                    UrlImg = user.UrlImg
-                }
-            };
-        }
-
+        
         public async Task<bool> UpdateUserInformation(Guid userId, UpdateUserRequest updatedUserRequest)
         {
             if (userId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.User.EmptyUserId);

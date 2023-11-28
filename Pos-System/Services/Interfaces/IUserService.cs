@@ -13,7 +13,6 @@ namespace Pos_System.API.Services.Interfaces
         Task<bool> UpdateUserInformation(Guid userId, UpdateUserRequest updateUserRequest);
         Task<UserResponse> GetUserById(Guid userId);
         Task<SignInResponse> LoginUser(LoginFirebase req);
-        Task<SignInResponse> SignUpUser(CreateNewUserRequest newUserRequest, string? brandCode);
         Task<Guid> CreateNewUserOrder(PrepareOrderRequest createNewOrderRequest);
         Task<GetUserInfo> ScanUser(string phone);
 

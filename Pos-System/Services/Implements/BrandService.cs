@@ -169,7 +169,7 @@ public class BrandService : BaseService<BrandService>, IBrandService
                 x.DisplayOrder,
                 x.Description,
                 x.PicUrl
-            ), predicate: x => x.BrandId.Equals(brand.Id));
+            ), predicate: x => x.BrandId.Equals(brand.Id) && x.Status.Equals(CategoryStatus.Active.GetDescriptionFromEnum()));
 
         //Use to filter which productInGroups is added to menu
         List<Guid> productIdsInMenu = menuOfStore.ProductsInMenu.Select(x => x.Id).ToList();
