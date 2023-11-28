@@ -227,7 +227,7 @@ namespace Pos_System.API.Services.Implements
                 }
             };
         }
-        
+
         public async Task<bool> UpdateUserInformation(Guid userId, UpdateUserRequest updatedUserRequest)
         {
             if (userId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.User.EmptyUserId);
@@ -292,7 +292,6 @@ namespace Pos_System.API.Services.Implements
                 BrandId = user.BrandId,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
-                Wallets = responseContent?.MemberWallet,
                 Level = responseContent?.MemberLevel
             };
             return userResponse;
@@ -643,7 +642,7 @@ namespace Pos_System.API.Services.Implements
                 topUpUserWalletResponse.Message =
                     "Nạp tiền thành công cho người dùng " + user.FullName + ":" + actionResponse.Description;
                 topUpUserWalletResponse.Status = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
-                
+
                 await _unitOfWork.CommitAsync();
             }
             else

@@ -23,7 +23,6 @@ namespace Pos_System.API.Payload.Response.User
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string? UrlImg { get; set; }
-        public List<MemberWallet>? Wallets { get; set; } = new List<MemberWallet>();
         public MemberLevel? Level { get; set; }
     }
 }
