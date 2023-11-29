@@ -52,7 +52,7 @@ namespace Pos_System.Domain.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Data Source=120.72.85.82,9033;Database=PosSystem;User Id=sa;Password=f0^wyhMfl*25;MultipleActiveResultSets=true;TrustServerCertificate=true");
+                optionsBuilder.UseSqlServer("Server=120.72.85.82,9033;Database=PosSystem;User Id=sa;Password=f0^wyhMfl*25;Encrypt=True;TrustServerCertificate=True");
             }
         }
 

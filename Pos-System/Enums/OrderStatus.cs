@@ -6,4 +6,11 @@
         PAID,
         CANCELED
     }
+    public enum OrderSourceStatus
+    {
+        PENDING,
+        DELIVERING,
+        DELIVERED,
+        CANCELED
+    }
 }

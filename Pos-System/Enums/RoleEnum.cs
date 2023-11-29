@@ -6,5 +6,6 @@ public enum RoleEnum
 	BrandManager,
 	BrandAdmin,
 	StoreManager,
-	Staff
+	Staff,
+	User
 }

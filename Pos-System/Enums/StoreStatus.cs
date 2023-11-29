@@ -2,5 +2,6 @@
 
 public enum StoreStatus
 {
-	Active
+	Active,
+	Deactive
 }

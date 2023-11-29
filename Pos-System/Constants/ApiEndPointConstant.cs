@@ -32,7 +32,7 @@ public static class ApiEndPointConstant
         public const string ExportStoreEndDateReport = BrandsEndpoint + "/day-report";
 
         public const string BrandMenuEndpoint = BrandsEndpoint + "/menus";
-        public const string StoresInBrandCodeEndpoint = BrandsEndpoint + "/brandcode/stores";
+        public const string StoresInBrandCodeEndpoint = BrandsEndpoint + "/stores";
     }
 
     public static class Store
@@ -47,6 +47,7 @@ public static class ApiEndPointConstant
         public const string StoreSessionEndpoint = StoresEndpoint + "/{storeId}/sessions/{id}";
         public const string StoreEndDayReportEndpoint = StoreEndpoint + "/day-report";
         public const string GetPromotion = StoreEndpoint + "/promotion";
+        public const string GetListPromotion = StoreEndpoint + "/promotions";
     }
 
     public static class Account
@@ -104,6 +105,7 @@ public static class ApiEndPointConstant
     {
         public const string OrdersEndPoint = Store.StoresEndpoint + "/{storeId}/orders";
         public const string OrderEndPoint = OrdersEndPoint + "/{id}";
+        public const string PrepareOrderEndPoint = Store.StoresEndpoint + "/prepare-order";
     }
 
 
@@ -123,7 +125,11 @@ public static class ApiEndPointConstant
     public static class User
     {
         public const string UsersEndpoint = ApiEndpoint + "/users";
+        public const string UsersSignIn = UsersEndpoint + "/sign-in";
+        public const string UsersSignUp = UsersEndpoint + "/sign-up";
         public const string UserEndpoint = UsersEndpoint + "/{id}";
+        public const string UserOrderEndpoint = UserEndpoint + "/orders";
+        public const string OrderDetailsEndpoint = UsersEndpoint + "/orders/{id}";
         public const string UserBlogPostEndpoint = UsersEndpoint + "/blog";
     }
 

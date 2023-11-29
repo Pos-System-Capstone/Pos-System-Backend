@@ -4,6 +4,7 @@
     {
         EAT_IN,
         TAKE_AWAY,
-        DELIVERY
+        DELIVERY,
+        TOP_UP
     }
 }

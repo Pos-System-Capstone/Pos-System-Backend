@@ -1,4 +1,5 @@
-﻿using Pos_System.API.Payload.Request.Stores;
+﻿using Pos_System.API.Payload.Pointify;
+using Pos_System.API.Payload.Request.Stores;
 using Pos_System.API.Payload.Response.Menus;
 using Pos_System.API.Payload.Response.Stores;
 using Pos_System.Domain.Paginate;
@@ -19,6 +20,7 @@ public interface IStoreService
     public Task<GetMenuDetailForStaffResponse> GetMenuDetailForStaff();
     public Task<GetStoreEndShiftStatisticsResponse> GetStoreEndShiftStatistics(Guid storeId, Guid sessionId);
 
-    public Task<IPaginate<GetStoreResponse>> GetStoresInBrandByBrandCode(string? brandCode, string? storeCode, int page, int size);
+    public Task<IPaginate<GetStoreResponse>> GetStoresInBrandByBrandCode(string? brandCode, int page, int size);
+    public Task<IEnumerable<PromotionPointifyResponse>?> GetPromotionInStore(Guid storeId);
 
 }

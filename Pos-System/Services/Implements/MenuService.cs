@@ -466,9 +466,11 @@ namespace Pos_System.API.Services.Implements
             IPaginate<GetStoreDetailResponse> storesApplyMenu = await _unitOfWork.GetRepository<MenuStore>()
                 .GetPagingListAsync(
                     selector: menuStore => new GetStoreDetailResponse(menuStore.Store.Id, menuStore.Store.BrandId,
-                        menuStore.Store.Name, menuStore.Store.ShortName, menuStore.Store.Email, menuStore.Store.Address,
+                        menuStore.Store.Name, menuStore.Store.ShortName, menuStore.Store.Email,
+                        menuStore.Store.Address,
                         menuStore.Store.Status, menuStore.Store.Phone, menuStore.Store.Code,
-                        menuStore.Store.Brand.PicUrl, menuStore.Store.WifiName, menuStore.Store.WifiPassword),
+                        menuStore.Store.Brand.PicUrl, menuStore.Store.WifiName, menuStore.Store.WifiPassword,
+                        menuStore.Store.Lat, menuStore.Store.Long),
                     predicate: string.IsNullOrEmpty(storeName)
                         ? menuStore => menuStore.MenuId.Equals(menuId)
                         : menuStore => menuStore.MenuId.Equals(menuId) &&

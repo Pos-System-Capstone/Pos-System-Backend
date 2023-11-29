@@ -14,5 +14,8 @@ namespace Pos_System.API.Payload.Response.Orders
         public OrderStatus Status { get; set; }
         public PaymentTypeEnum PaymentType { get; set; }
 
+        public string? CustomerName { get; set; }
+        public string? Phone { get; set; }
+        public string? Address { get; set; }
     }
 }

@@ -1,9 +1,12 @@
-﻿using System.Runtime.Intrinsics.X86;
+using System.Net;
+using System.Runtime.Intrinsics.X86;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
 using Pos_System.API.Helpers;
+using Pos_System.API.Payload.Pointify;
 using Pos_System.API.Payload.Request.Stores;
 using Pos_System.API.Payload.Response.Menus;
 using Pos_System.API.Payload.Response.Products;
@@ -33,8 +36,9 @@ public class StoreService : BaseService<StoreService>, IStoreService
         if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
         searchShortName = searchShortName?.Trim().ToLower();
         IPaginate<GetStoreResponse> storesInBrandResponse = await _unitOfWork.GetRepository<Store>().GetPagingListAsync(
-            selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Email, x.Address, x.Status,
-                x.WifiName, x.WifiPassword),
+            selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Code, x.Email, x.Address,
+                x.Status,
+                x.WifiName, x.WifiPassword, x.Lat, x.Long),
             predicate: string.IsNullOrEmpty(searchShortName)
                 ? x => x.BrandId.Equals(brandId)
                 : x => x.BrandId.Equals(brandId) && x.ShortName.ToLower().Contains(searchShortName),
@@ -49,8 +53,9 @@ public class StoreService : BaseService<StoreService>, IStoreService
     {
         if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
         GetStoreDetailResponse storeDetailResponse = await _unitOfWork.GetRepository<Store>().SingleOrDefaultAsync(
-            selector: x => new GetStoreDetailResponse(x.Id, x.BrandId, x.Name, x.Name, x.Email, x.Address, x.Status,
-                x.Phone, x.Code, x.Brand.PicUrl, x.WifiName, x.WifiPassword),
+            selector: x => new GetStoreDetailResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Email, x.Address,
+                x.Status,
+                x.Phone, x.Code, x.Brand.PicUrl, x.WifiName, x.WifiPassword, x.Lat, x.Long),
             include: x => x.Include(x => x.Brand),
             predicate: x => x.Id.Equals(storeId)
         );
@@ -363,16 +368,11 @@ public class StoreService : BaseService<StoreService>, IStoreService
             .SingleOrDefaultAsync(predicate: x => x.BrandCode.Equals(brandCode));
         if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
 
-        Store store = await _unitOfWork.GetRepository<Store>() .SingleOrDefaultAsync(predicate: x => x.Code.Equals(storeCode));
-
-        IPaginate<GetStoreResponse> storesInBrandResponse = null;
-
-        if (store == null)
-        {
-            storesInBrandResponse = await _unitOfWork.GetRepository<Store>().GetPagingListAsync(
-            selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Email, x.Address, x.Status,
-                x.WifiName, x.WifiPassword),
-            predicate: x => x.BrandId.Equals(brand.Id),
+        IPaginate<GetStoreResponse> storesInBrandResponse = await _unitOfWork.GetRepository<Store>().GetPagingListAsync(
+            selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Code, x.Email, x.Address,
+                x.Status,
+                x.WifiName, x.WifiPassword, x.Lat, x.Long),
+            predicate: x => x.BrandId.Equals(brand.Id) && x.Status.Equals(StoreStatus.Active.GetDescriptionFromEnum()),
             orderBy: x => x.OrderBy(x => x.ShortName),
             page: page,
             size: size
@@ -391,5 +391,26 @@ public class StoreService : BaseService<StoreService>, IStoreService
         }
 
         return storesInBrandResponse;
+    }
+
+    public async Task<IEnumerable<PromotionPointifyResponse>?> GetPromotionInStore(Guid storeId)
+    {
+        Guid userStoreId = Guid.Parse(GetStoreIdFromJwt());
+        if (userStoreId != storeId)
+            throw new BadHttpRequestException(MessageConstant.Store.GetStoreSessionUnAuthorized);
+        if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
+        Store store = await _unitOfWork.GetRepository<Store>()
+            .SingleOrDefaultAsync(predicate: x => x.Id.Equals(storeId), include: x => x.Include(b => b.Brand));
+        if (store == null) throw new BadHttpRequestException(MessageConstant.Store.StoreNotFoundMessage);
+        using var client = new HttpClient();
+        var url =
+            $"https://api-pointify.reso.vn/api/stores/promotions?storeCode={store.Code}&brandCode={store.Brand.BrandCode}";
+        var msg = new HttpRequestMessage(HttpMethod.Get, url);
+        var response = await client.SendAsync(msg);
+        if (!response.StatusCode.Equals(HttpStatusCode.OK)) return null;
+        var responseContent =
+            JsonConvert.DeserializeObject<IEnumerable<PromotionPointifyResponse>>(response.Content
+                .ReadAsStringAsync().Result);
+        return responseContent;
     }
 }

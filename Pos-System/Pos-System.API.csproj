@@ -12,7 +12,10 @@
     <PackageReference Include="AutoMapper" Version="12.0.0" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.0" />
     <PackageReference Include="EPPlus" Version="7.0.0-preview1" />
+    <PackageReference Include="FirebaseAdmin" Version="2.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.10" />
+    <PackageReference Include="morelinq" Version="4.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NLog" Version="5.0.5" />
     <PackageReference Include="NLog.Web.AspNetCore" Version="5.1.5" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
@@ -23,7 +26,6 @@
     <Folder Include="Mappers\Accounts\" />
     <Folder Include="Mappers\Brands\" />
     <Folder Include="Middlewares\" />
-    <Folder Include="Helpers\" />
     <Folder Include="Payload\Request\Categories\" />
     <Folder Include="Payload\Request\Collections\" />
     <Folder Include="Payload\Response\Brands\" />

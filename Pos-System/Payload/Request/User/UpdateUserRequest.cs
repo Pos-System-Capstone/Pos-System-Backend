@@ -10,6 +10,8 @@ namespace Pos_System.API.Payload.Request.User
         public string? Gender { get; set; }
         [EmailAddress(ErrorMessage = "Email sai format")]
         public string? Email { get; set; }
+        
+        public string? UrlImg { get; set; }
 
         public void TrimString()
         {
@@ -17,6 +19,7 @@ namespace Pos_System.API.Payload.Request.User
             Gender = Gender?.Trim();
             Email = Email?.Trim();
             PhoneNunmer = PhoneNunmer?.Trim();
-    }
+            UrlImg = UrlImg?.Trim();
+        }
     }
 }

@@ -28,7 +28,7 @@ try
 	});
 	builder.Services.AddDatabase();
 	builder.Services.AddUnitOfWork();
-	builder.Services.AddServices();
+	builder.Services.AddServices(builder.Configuration);
 	builder.Services.AddJwtValidation();
 	builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 	// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
