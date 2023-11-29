@@ -16,6 +16,7 @@ namespace Pos_System.Domain.Models
         public Guid BrandId { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public string? UrlImg { get; set; }
 
         public virtual Brand Brand { get; set; } = null!;
     }

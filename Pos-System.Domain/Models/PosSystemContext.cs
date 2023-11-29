@@ -30,7 +30,7 @@ namespace Pos_System.Domain.Models
         public virtual DbSet<MenuStore> MenuStores { get; set; } = null!;
         public virtual DbSet<Order> Orders { get; set; } = null!;
         public virtual DbSet<OrderDetail> OrderDetails { get; set; } = null!;
-        public virtual DbSet<OrderSource> OrderSources { get; set; } = null!;
+        public virtual DbSet<OrderUser> OrderUsers { get; set; } = null!;
         public virtual DbSet<Payment> Payments { get; set; } = null!;
         public virtual DbSet<Product> Products { get; set; } = null!;
         public virtual DbSet<ProductInGroup> ProductInGroups { get; set; } = null!;
@@ -41,14 +41,18 @@ namespace Pos_System.Domain.Models
         public virtual DbSet<Session> Sessions { get; set; } = null!;
         public virtual DbSet<Store> Stores { get; set; } = null!;
         public virtual DbSet<StoreAccount> StoreAccounts { get; set; } = null!;
+        public virtual DbSet<Transaction> Transactions { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
+        public virtual DbSet<Variant> Variants { get; set; } = null!;
+        public virtual DbSet<VariantOption> VariantOptions { get; set; } = null!;
+        public virtual DbSet<VariantProductMapping> VariantProductMappings { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Data Source=120.72.85.82,9033;Database=PosSystem;User Id=sa;Password=f0^wyhMfl*25;MultipleActiveResultSets=true");
+                optionsBuilder.UseSqlServer("Data Source=120.72.85.82,9033;Database=PosSystem;User Id=sa;Password=f0^wyhMfl*25;MultipleActiveResultSets=true;TrustServerCertificate=true");
             }
         }
 
@@ -388,19 +392,31 @@ namespace Pos_System.Domain.Models
                     .HasConstraintName("FK_OrderDetail_Order");
             });
 
-            modelBuilder.Entity<OrderSource>(entity =>
+            modelBuilder.Entity<OrderUser>(entity =>
             {
-                entity.ToTable("OrderSource");
+                entity.ToTable("OrderUser");
 
                 entity.Property(e => e.Id).ValueGeneratedNever();
 
+                entity.Property(e => e.Address).HasMaxLength(500);
+
+                entity.Property(e => e.CompletedAt).HasColumnType("datetime");
+
                 entity.Property(e => e.CreatedAt).HasColumnType("datetime");
 
-                entity.Property(e => e.SourceType).HasMaxLength(50);
+                entity.Property(e => e.Name).HasMaxLength(100);
+
+                entity.Property(e => e.Note).HasMaxLength(256);
+
+                entity.Property(e => e.PaymentStatus)
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Phone).HasMaxLength(20);
 
                 entity.Property(e => e.Status).HasMaxLength(50);
 
-                entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+                entity.Property(e => e.UserType).HasMaxLength(50);
             });
 
             modelBuilder.Entity<Payment>(entity =>
@@ -522,6 +538,14 @@ namespace Pos_System.Domain.Models
 
                 entity.Property(e => e.Id).ValueGeneratedNever();
 
+                entity.Property(e => e.EffectType)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.VoucherCode)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+
                 entity.HasOne(d => d.Order)
                     .WithMany(p => p.PromotionOrderMappings)
                     .HasForeignKey(d => d.OrderId)
@@ -599,6 +623,10 @@ namespace Pos_System.Domain.Models
 
                 entity.Property(e => e.Email).HasMaxLength(254);
 
+                entity.Property(e => e.Lat).HasMaxLength(256);
+
+                entity.Property(e => e.Long).HasMaxLength(256);
+
                 entity.Property(e => e.Name).HasMaxLength(50);
 
                 entity.Property(e => e.Phone)
@@ -642,6 +670,31 @@ namespace Pos_System.Domain.Models
                     .HasConstraintName("FK_StoreAccount_Store");
             });
 
+            modelBuilder.Entity<Transaction>(entity =>
+            {
+                entity.ToTable("Transaction");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.Amount).HasColumnType("decimal(18, 0)");
+
+                entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+
+                entity.Property(e => e.Currency).HasMaxLength(20);
+
+                entity.Property(e => e.Status)
+                    .HasMaxLength(10)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Type).HasMaxLength(50);
+
+                entity.HasOne(d => d.Brand)
+                    .WithMany(p => p.Transactions)
+                    .HasForeignKey(d => d.BrandId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("Transaction___fk_brand");
+            });
+
             modelBuilder.Entity<User>(entity =>
             {
                 entity.ToTable("User");
@@ -679,11 +732,38 @@ namespace Pos_System.Domain.Models
 
                 entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
 
+                entity.Property(e => e.UrlImg).IsUnicode(false);
+
                 entity.HasOne(d => d.Brand)
                     .WithMany(p => p.Users)
                     .HasForeignKey(d => d.BrandId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("User_Brand_Id_fk");
+            });
+
+            modelBuilder.Entity<Variant>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("Variant");
+
+                entity.Property(e => e.Name).HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<VariantOption>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("VariantOption");
+
+                entity.Property(e => e.Percentage).HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<VariantProductMapping>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("VariantProductMapping");
             });
 
             OnModelCreatingPartial(modelBuilder);

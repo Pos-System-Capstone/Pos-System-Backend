@@ -14,6 +14,7 @@ namespace Pos_System.Domain.Models
             Products = new HashSet<Product>();
             Promotions = new HashSet<Promotion>();
             Stores = new HashSet<Store>();
+            Transactions = new HashSet<Transaction>();
             Users = new HashSet<User>();
         }
 
@@ -33,6 +34,7 @@ namespace Pos_System.Domain.Models
         public virtual ICollection<Product> Products { get; set; }
         public virtual ICollection<Promotion> Promotions { get; set; }
         public virtual ICollection<Store> Stores { get; set; }
+        public virtual ICollection<Transaction> Transactions { get; set; }
         public virtual ICollection<User> Users { get; set; }
     }
 }
