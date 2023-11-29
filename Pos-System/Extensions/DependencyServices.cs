@@ -47,6 +47,8 @@ public static class DependencyServices
         {
             Credential = GoogleCredential.FromJson(firebaseCred)
         }, "[DEFAULT]");
+
+        services.AddScoped<IVariantService, VariantService>();
         services.AddScoped<IBlogPostService, BlogPostService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IAccountService, AccountService>();

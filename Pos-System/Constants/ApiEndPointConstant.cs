@@ -143,6 +143,7 @@ public static class ApiEndPointConstant
 
     public static class Variant
     {
-
+        public const string VariantsEndpoint = ApiEndpoint + "/variants";
+        public const string VariantEndpoint = VariantsEndpoint + "/{id}";
     }
 }
