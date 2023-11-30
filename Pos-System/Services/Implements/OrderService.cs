@@ -353,7 +353,7 @@ namespace Pos_System.API.Services.Implements
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId),
                     include: x => x.Include(p => p.PromotionOrderMappings));
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
-           
+
             order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
             order.PaymentType = updateOrderRequest.PaymentType.GetDescriptionFromEnum();
@@ -438,6 +438,7 @@ namespace Pos_System.API.Services.Implements
                     throw new BadHttpRequestException("Cập nhật khuyến mãi đơn hàng thất bại");
                 }
             }
+
             order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
             await _unitOfWork.GetRepository<Transaction>().InsertRangeAsync(transactions);
@@ -843,9 +844,12 @@ namespace Pos_System.API.Services.Implements
                     if (cartItem.PromotionCodeApply == null) continue;
                     foreach (var t in orderReq.ProductList)
                     {
-                        t.Discount = (double) cartItem.Discount;
-                        t.FinalAmount = (double) cartItem.Total;
-                        t.PromotionCodeApplied = cartItem.PromotionCodeApply;
+                        if (t.Code.Equals(cartItem.ProductCode))
+                        {
+                            t.Discount = (double) cartItem.Discount;
+                            t.FinalAmount = (double) cartItem.Total;
+                            t.PromotionCodeApplied = cartItem.PromotionCodeApply;
+                        }
                     }
                 }
 
@@ -901,6 +905,7 @@ namespace Pos_System.API.Services.Implements
 
             List<OrderDetail> orderDetails = new List<OrderDetail>();
             List<PromotionOrderMapping> promotionMappingList = new List<PromotionOrderMapping>();
+            List<PromotionPrepare> promotionInProductToRemove = new List<PromotionPrepare>();
             createNewOrderRequest.ProductList.ForEach(product =>
             {
                 Guid masterOrderDetailId = Guid.NewGuid();
@@ -952,27 +957,34 @@ namespace Pos_System.API.Services.Implements
                             EffectType = promotionPrepare.EffectType,
                             VoucherCode = createNewOrderRequest.VoucherCode
                         });
-                        createNewOrderRequest.PromotionList.Remove(promotionPrepare);
+                        if (!promotionInProductToRemove.Contains(promotionPrepare))
+                        {
+                            promotionInProductToRemove.Add(promotionPrepare);
+                        }
                     }
                 }
             });
+
+
             if (createNewOrderRequest.PromotionList != null && createNewOrderRequest.PromotionList.Any())
             {
                 createNewOrderRequest.PromotionList.ForEach(orderPromotion =>
                 {
-                    promotionMappingList.Add(new PromotionOrderMapping()
+                    if (!promotionInProductToRemove.Contains(orderPromotion))
                     {
-                        Id = Guid.NewGuid(),
-                        PromotionId = orderPromotion.PromotionId ?? Guid.NewGuid(),
-                        OrderId = newOrder.Id,
-                        Quantity = 1,
-                        DiscountAmount = orderPromotion.DiscountAmount,
-                        EffectType = orderPromotion.EffectType,
-                        VoucherCode = createNewOrderRequest.VoucherCode
-                    });
+                        promotionMappingList.Add(new PromotionOrderMapping()
+                        {
+                            Id = Guid.NewGuid(),
+                            PromotionId = orderPromotion.PromotionId ?? Guid.NewGuid(),
+                            OrderId = newOrder.Id,
+                            Quantity = 1,
+                            DiscountAmount = orderPromotion.DiscountAmount,
+                            EffectType = orderPromotion.EffectType,
+                            VoucherCode = createNewOrderRequest.VoucherCode
+                        });
+                    }
                 });
             }
-
             if (promotionMappingList.Any())
             {
                 await _unitOfWork.GetRepository<PromotionOrderMapping>().InsertRangeAsync(promotionMappingList);
