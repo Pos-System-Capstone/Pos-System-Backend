@@ -289,7 +289,7 @@ namespace Pos_System.API.Services.Implements
                 predicate: p =>
                     p.SessionId.Equals(sessionId) && p.Status.Equals(OrderStatus.PAID.GetDescriptionFromEnum())
             );
-            SessionReport report = new SessionReport(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            SessionReport report = new SessionReport(0, 0, 0, 0,0,0, 0, 0, 0, 0, 0, 0, 0, 0);
             foreach (var item in orders)
             {
                 report.TotalAmount += item.TotalAmount;
@@ -311,7 +311,12 @@ namespace Pos_System.API.Services.Implements
                     report.BankingAmount += item.FinalAmount;
                     report.TotalBanking++;
                 }
-                else
+                else if (item.PaymentType == PaymentTypeEnum.POINTIFY.GetDescriptionFromEnum())
+                {
+                    report.PointifyAmount += item.FinalAmount;
+                    report.TotalPointify++;
+                }
+                else if (item.PaymentType == PaymentTypeEnum.CASH.GetDescriptionFromEnum())
                 {
                     report.CashAmount += item.FinalAmount;
                     report.TotalCash++;
