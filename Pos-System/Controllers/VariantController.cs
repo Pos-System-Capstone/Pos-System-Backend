@@ -16,15 +16,15 @@ namespace Pos_System.API.Controllers
             _variantService = variantService;
         }
 
-        public async Task<IActionResult> GetListVariant(Guid id, Guid brandId)
-        {
-            return Ok();
-        }
+        //public async Task<IActionResult> GetListVariant(Guid id, Guid brandId)
+        //{
+        //    return Ok();
+        //}
 
-        public async Task<IActionResult> CreateVariant(Guid id, Guid brandId)
-        {
-            return Ok();
-        }
+        //public async Task<IActionResult> CreateVariant(Guid id, Guid brandId)
+        //{
+        //    return Ok();
+        //}
 
         [HttpPatch(ApiEndPointConstant.Variant.VariantEndpoint)]
         public async Task<IActionResult> UpdateVariant(Guid id, Guid brandId, [FromBody]UpdateVariantRequest updateVariantRequest)
@@ -41,9 +41,9 @@ namespace Pos_System.API.Controllers
             return Ok(MessageConstant.Variant.UpdateVariantFailedMessage);
         }
 
-        public async Task<IActionResult> RemoveVariant(Guid id, Guid brandId)
-        {
-            return Ok();
-        }
+        //public async Task<IActionResult> RemoveVariant(Guid id, Guid brandId)
+        //{
+        //    return Ok();
+        //}
     }
 }
