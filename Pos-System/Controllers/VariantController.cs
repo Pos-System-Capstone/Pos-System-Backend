@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Pos_System.API.Constants;
+using Pos_System.API.Payload.Request.Variant;
 using Pos_System.API.Payload.Request.Vsriant;
 using Pos_System.API.Services.Interfaces;
 
@@ -16,15 +17,23 @@ namespace Pos_System.API.Controllers
             _variantService = variantService;
         }
 
-        //public async Task<IActionResult> GetListVariant(Guid id, Guid brandId)
-        //{
-        //    return Ok();
-        //}
+        public async Task<IActionResult> CreateNewVariant(Guid brandId, CreateNewVariantRequest createNewVariantRequest)
+        {
+            var response = await _variantService.CreateNewVariant(brandId, createNewVariantRequest);
+            if (response == null)
+            {
+                return Ok(MessageConstant.Variant.CreateVariantFailedMessage);
+            }
+            return Ok(response);
+        }
 
-        //public async Task<IActionResult> CreateVariant(Guid id, Guid brandId)
-        //{
-        //    return Ok();
-        //}
+        [HttpGet(ApiEndPointConstant.Variant.VariantsEndpoint)]
+        public async Task<IActionResult> GetListVariant(Guid brandId)
+
+        {
+            var ListVariant = await _variantService.GetListVariant(brandId);
+            return Ok(ListVariant);
+        }
 
         [HttpPatch(ApiEndPointConstant.Variant.VariantEndpoint)]
         public async Task<IActionResult> UpdateVariant(Guid id, Guid brandId, [FromBody]UpdateVariantRequest updateVariantRequest)

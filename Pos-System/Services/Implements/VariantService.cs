@@ -1,18 +1,55 @@
 ﻿using AutoMapper;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
+using Pos_System.API.Payload.Request.Variant;
 using Pos_System.API.Payload.Request.Vsriant;
+using Pos_System.API.Payload.Response.Variant;
 using Pos_System.API.Services.Interfaces;
+using Pos_System.API.Utils;
 using Pos_System.Domain.Models;
+using Pos_System.Domain.Paginate;
 using Pos_System.Repository.Interfaces;
 
 namespace Pos_System.API.Services.Implements
 {
-    public class VariantService : BaseService<VariantService>,  IVariantService
+    public class VariantService : BaseService<VariantService>, IVariantService
     {
         public VariantService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<VariantService> logger, IMapper mapper, IHttpContextAccessor httpContextAccessor) : base(unitOfWork, logger, mapper, httpContextAccessor)
         {
-        } 
+        }
+
+        public async Task<IPaginate<GetListVariantResponse>> GetListVariant(Guid brandId)
+        {
+            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandCodeMessage);
+            Brand brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
+            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+
+            ICollection<VariantOption> options = await _unitOfWork.GetRepository<VariantOption>().GetListAsync();
+
+            IPaginate<GetListVariantResponse> ListVariantResponse = await _unitOfWork.GetRepository<Variant>().GetPagingListAsync
+                (
+                    selector: x => new GetListVariantResponse(x.Id, x.Name, x.Status, options),
+                    predicate: x => x.Status.Equals(EnumUtil.GetDescriptionFromEnum(VariantStatus.Active)));
+            
+
+            return ListVariantResponse;
+        }
+
+        public async Task<CreateNewVariantResponse> CreateNewVariant(Guid brandId, CreateNewVariantRequest createNewVariantRequest)
+        {
+            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandCodeMessage);
+            Brand brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
+            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+            Variant newVariant = new Variant()
+            {
+                Id = Guid.NewGuid(),
+                Name = createNewVariantRequest.VariantName,
+                Status = EnumUtil.GetDescriptionFromEnum(VariantStatus.Active),
+            };
+            await _unitOfWork.GetRepository<Variant>().InsertAsync(newVariant);
+            _unitOfWork.Commit();
+            return new CreateNewVariantResponse(newVariant.Id);
+        }
 
         public async Task<bool> UpdateVariant(Guid brandId, Guid variandId, UpdateVariantRequest updateVariantRequest)
         {
@@ -45,7 +82,7 @@ namespace Pos_System.API.Services.Implements
             if (variant == null) throw new BadHttpRequestException(MessageConstant.Variant.VariantNotFoundMessage);
 
             //Update data
-            variant.Status = VariantStatus.Deactive.ToString();
+            variant.Status = EnumUtil.GetDescriptionFromEnum(VariantStatus.Deactive);
             _unitOfWork.GetRepository<Variant>().UpdateAsync(variant);
 
             bool isSuccess = await _unitOfWork.CommitAsync() > 0;

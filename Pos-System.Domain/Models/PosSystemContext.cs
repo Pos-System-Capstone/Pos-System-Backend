@@ -743,9 +743,9 @@ namespace Pos_System.Domain.Models
 
             modelBuilder.Entity<Variant>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToTable("Variant");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
 
                 entity.Property(e => e.Name).HasMaxLength(50);
 
@@ -754,18 +754,18 @@ namespace Pos_System.Domain.Models
 
             modelBuilder.Entity<VariantOption>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToTable("VariantOption");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
 
                 entity.Property(e => e.Percentage).HasMaxLength(50);
             });
 
             modelBuilder.Entity<VariantProductMapping>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToTable("VariantProductMapping");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
             });
 
             OnModelCreatingPartial(modelBuilder);
