@@ -368,7 +368,12 @@ public class StoreService : BaseService<StoreService>, IStoreService
             .SingleOrDefaultAsync(predicate: x => x.BrandCode.Equals(brandCode));
         if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
 
-        IPaginate<GetStoreResponse> storesInBrandResponse = await _unitOfWork.GetRepository<Store>().GetPagingListAsync(
+        Store store = await _unitOfWork.GetRepository<Store>().SingleOrDefaultAsync(predicate: x => x.Code.Equals(storeCode));
+
+        IPaginate<GetStoreResponse> storesInBrandResponse = null;
+
+        if (store == null) { 
+            storesInBrandResponse = await _unitOfWork.GetRepository<Store>().GetPagingListAsync(
             selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Code, x.Email, x.Address,
                 x.Status,
                 x.WifiName, x.WifiPassword, x.Lat, x.Long),
@@ -381,8 +386,8 @@ public class StoreService : BaseService<StoreService>, IStoreService
         else
         {
             storesInBrandResponse = await _unitOfWork.GetRepository<Store>().GetPagingListAsync(
-            selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Email, x.Address, x.Status,
-                x.WifiName, x.WifiPassword),
+            selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Code, x.Email, x.Address, x.Status,
+                x.WifiName, x.WifiPassword, x.Lat, x.Long),
             predicate: x => x.BrandId.Equals(brand.Id) && x.Id.Equals(store.Id),
             orderBy: x => x.OrderBy(x => x.ShortName),
             page: page,
