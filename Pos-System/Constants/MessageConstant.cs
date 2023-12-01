@@ -21,6 +21,15 @@ public static class MessageConstant
         public const string UpdateBrandFailedMessage = "Cập nhật thông tin brand thất bại";
     }
 
+    public static class Variant
+    {
+        public const string EmptyVariantIdMessage = "Variant Id bị trống hoặc không hợp lệ";
+        public const string VariantNotFoundMessage = "Không tìm thấy Variant trong hệ thống";
+
+        public const string UpdateVariantSuccessfulMessage = "Cập nhật thông tin variant thành công";
+        public const string UpdateVariantFailedMessage = "Cập nhật thông tin variant thất bại";
+    }
+
     public static class Account
     {
         public const string CreateAccountWithWrongRoleMessage = "Please create with acceptent role";
