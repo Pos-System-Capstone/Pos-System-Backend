@@ -24,17 +24,25 @@ namespace Pos_System.API.Payload.Response.Stores
         public int TotalOrderInStore { get; set; }
         public int TotalOrderTakeAway { get; set; }
         public int TotalOrderDeli { get; set; }
+        
+        public int TotalOrderTopUp { get; set; }
         public double InStoreAmount { get; set; }
         public double DeliAmount { get; set; }
         public double TakeAwayAmount { get; set; }
+        
+        public double TopUpAmount { get; set; }
         public int TotalCash { get; set; }
         public int TotalBanking { get; set; }
         public int TotalMomo { get; set; }
         public int TotalVisa { get; set; }
+        
+        public int TotalPointify { get; set; }
         public double CashAmount { get; set; }
         public double MomoAmount { get; set; }
         public double BankingAmount { get; set; }
         public double VisaAmount { get; set; }
+        
+        public double PointifyAmount { get; set; }
         public int TotalSizeS { get; set; }
         public int TotalSizeM { get; set; }
         public int TotalSizeL { get; set; }

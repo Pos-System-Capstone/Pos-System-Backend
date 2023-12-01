@@ -28,21 +28,26 @@ namespace Pos_System.API.Services.Implements
             _orderService = orderService;
         }
 
-        public async Task<GetStoreEndDayReport> GetStoreEndDayReport(string? storeCode, string? brandCode, DateTime? startDate,
+        public async Task<GetStoreEndDayReport> GetStoreEndDayReport(string? storeCode, string? brandCode,
+            DateTime? startDate,
             DateTime? endDate)
         {
             //RoleEnum userRole = EnumUtil.ParseEnum<RoleEnum>(GetRoleFromJwt());
 
             //Check Brand Code is existed.
-            if(brandCode == null) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandCodeMessage);
-            Brand brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(predicate: x => x.BrandCode.Equals(brandCode));
-            if(brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandCodeNotFoundMessage);
+            if (brandCode == null) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandCodeMessage);
+            Brand brand = await _unitOfWork.GetRepository<Brand>()
+                .SingleOrDefaultAsync(predicate: x => x.BrandCode.Equals(brandCode));
+            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandCodeNotFoundMessage);
 
             //Check StoreCode is existed
-            Store store = await _unitOfWork.GetRepository<Store>().SingleOrDefaultAsync(predicate: x => x.BrandId.Equals(brand.Id));
-            if (storeCode == null || store == null) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreCodeMessage);
+            Store store = await _unitOfWork.GetRepository<Store>()
+                .SingleOrDefaultAsync(predicate: x => x.BrandId.Equals(brand.Id));
+            if (storeCode == null || store == null)
+                throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreCodeMessage);
 
             #region ~~~~~~~~OldCode~~~~~~~~
+
             //if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
             //Guid currentUserStoreId = Guid.Parse(GetStoreIdFromJwt());
             //if (currentUserStoreId != storeId)
@@ -50,6 +55,7 @@ namespace Pos_System.API.Services.Implements
 
             //Guid userBrandId = await _unitOfWork.GetRepository<Store>()
             //   .SingleOrDefaultAsync(selector: x => x.BrandId, predicate: x => x.Id.Equals(currentUserStoreId));
+
             #endregion
 
             GetStoreEndDayReport report = new GetStoreEndDayReport();
@@ -330,13 +336,13 @@ namespace Pos_System.API.Services.Implements
 
             GetStoreEndDayReport report = new GetStoreEndDayReport();
 
-            List<Category> categories = (List<Category>)await _unitOfWork.GetRepository<Category>().GetListAsync(
+            List<Category> categories = (List<Category>) await _unitOfWork.GetRepository<Category>().GetListAsync(
                 predicate: x => x.BrandId.Equals(userBrandId)
             );
-            List<Promotion> promotions = (List<Promotion>)await _unitOfWork.GetRepository<Promotion>().GetListAsync(
+            List<Promotion> promotions = (List<Promotion>) await _unitOfWork.GetRepository<Promotion>().GetListAsync(
                 predicate: x => x.BrandId.Equals(userBrandId)
             );
-            List<Order> orders = (List<Order>)await _unitOfWork.GetRepository<Order>().GetListAsync(
+            List<Order> orders = (List<Order>) await _unitOfWork.GetRepository<Order>().GetListAsync(
                 include: x =>
                     x.Include(order => order.OrderDetails).ThenInclude(x => x.MenuProduct).ThenInclude(x => x.Product)
                         .Include(x => x.PromotionOrderMappings).Include(order => order.Session),
@@ -408,6 +414,11 @@ namespace Pos_System.API.Services.Implements
                     report.TakeAwayAmount += item.FinalAmount;
                     report.TotalOrderTakeAway++;
                 }
+                else if (item.OrderType == OrderType.TOP_UP.GetDescriptionFromEnum())
+                {
+                    report.TopUpAmount += item.FinalAmount;
+                    report.TotalOrderTopUp++;
+                }
                 else
                 {
                     report.DeliAmount += item.FinalAmount;
@@ -419,6 +430,11 @@ namespace Pos_System.API.Services.Implements
                 {
                     report.VisaAmount += item.FinalAmount;
                     report.TotalVisa++;
+                }
+                else if (item.PaymentType == PaymentTypeEnum.POINTIFY.GetDescriptionFromEnum())
+                {
+                    report.PointifyAmount += item.FinalAmount;
+                    report.TotalPointify++;
                 }
                 else if (item.PaymentType == PaymentTypeEnum.MOMO.GetDescriptionFromEnum())
                 {

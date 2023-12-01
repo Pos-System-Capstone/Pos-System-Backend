@@ -477,9 +477,10 @@ namespace Pos_System.API.Services.Implements
                     if (voucherList == null) continue;
                     foreach (var voucher in voucherList)
                     {
-                        if (voucher.PromotionId.Equals(promotion.PromotionId))
+                        if (voucher.PromotionId.Equals(promotion.PromotionId)&&voucher is {IsRedemped: true, IsUsed: false})
                         {
-                            promotion.ListVoucher?.Add(voucher);
+                          
+                                promotion.ListVoucher?.Add(voucher);
                         }
                     }
 

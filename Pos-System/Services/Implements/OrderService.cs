@@ -838,20 +838,32 @@ namespace Pos_System.API.Services.Implements
                 {
                     orderReq.PromotionList?.Add(promotionInOrder);
                 }
-
-                foreach (var cartItem in responseContent.Order.CustomerOrderInfo.CartItems)
+                
+                for (var i = 0; i < orderReq.ProductList.Count; i++)
                 {
-                    if (cartItem.PromotionCodeApply == null) continue;
-                    foreach (var t in orderReq.ProductList)
-                    {
-                        if (t.Code.Equals(cartItem.ProductCode))
-                        {
-                            t.Discount = (double) cartItem.Discount;
-                            t.FinalAmount = (double) cartItem.Total;
-                            t.PromotionCodeApplied = cartItem.PromotionCodeApply;
-                        }
-                    }
+
+                    orderReq.ProductList[i].Discount =
+                        (double) responseContent.Order.CustomerOrderInfo.CartItems[i].Discount;
+                    orderReq.ProductList[i].FinalAmount =
+                        (double) responseContent.Order.CustomerOrderInfo.CartItems[i].Total;
+                    orderReq.ProductList[i].PromotionCodeApplied =
+                         responseContent.Order.CustomerOrderInfo.CartItems[i].PromotionCodeApply;
                 }
+                
+
+                // foreach (var cartItem in responseContent.Order.CustomerOrderInfo.CartItems)
+                // {
+                //     if (cartItem.PromotionCodeApply == null) continue;
+                //     foreach (var t in orderReq.ProductList)
+                //     {
+                //         if (t.Code.Equals(cartItem.ProductCode))
+                //         {
+                //             t.Discount = (double) cartItem.Discount;
+                //             t.FinalAmount = (double) cartItem.Total;
+                //             t.PromotionCodeApplied = cartItem.PromotionCodeApply;
+                //         }
+                //     }
+                // }
 
                 orderReq.Message = responseContent.Message;
             }

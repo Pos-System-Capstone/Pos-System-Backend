@@ -8,8 +8,8 @@ public class VoucherResponse
     public Guid? StoreId { get; set; }
     public Guid? VoucherGroupId { get; set; }
     public Guid? MembershipId { get; set; }
-    public bool? IsUsed { get; set; }
-    public bool? IsRedemped { get; set; }
+    public bool IsUsed { get; set; }
+    public bool IsRedemped { get; set; }
     public DateTime? UsedDate { get; set; }
     public DateTime? RedempedDate { get; set; }
     public DateTime? InsDate { get; set; }
