@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Pos_System.API.Constants;
+using Pos_System.API.Enums;
 using Pos_System.API.Payload.Request.Vsriant;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.Domain.Models;
@@ -26,6 +27,25 @@ namespace Pos_System.API.Services.Implements
 
             //Update data
             variant.Name = string.IsNullOrEmpty(updateVariantRequest.Name) ? variant.Name : updateVariantRequest.Name;
+            _unitOfWork.GetRepository<Variant>().UpdateAsync(variant);
+
+            bool isSuccess = await _unitOfWork.CommitAsync() > 0;
+            return isSuccess;
+        }
+
+        public async Task<bool> RemoveVariant(Guid brandId, Guid variandId)
+        {
+            //Check validation of inputed IDs
+            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandCodeMessage);
+            Brand brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
+            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+
+            if (variandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Variant.EmptyVariantIdMessage);
+            Variant variant = await _unitOfWork.GetRepository<Variant>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(variandId));
+            if (variant == null) throw new BadHttpRequestException(MessageConstant.Variant.VariantNotFoundMessage);
+
+            //Update data
+            variant.Status = VariantStatus.Deactive.ToString();
             _unitOfWork.GetRepository<Variant>().UpdateAsync(variant);
 
             bool isSuccess = await _unitOfWork.CommitAsync() > 0;

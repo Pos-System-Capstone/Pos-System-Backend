@@ -28,6 +28,8 @@ public static class MessageConstant
 
         public const string UpdateVariantSuccessfulMessage = "Cập nhật thông tin variant thành công";
         public const string UpdateVariantFailedMessage = "Cập nhật thông tin variant thất bại";
+        public const string RemoveVariantSuccessfulMessage = "Cập nhật thông tin variant thành công";
+        public const string RemoveVariantFailedMessage = "Cập nhật thông tin variant thất bại";
     }
 
     public static class Account

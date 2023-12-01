@@ -41,9 +41,19 @@ namespace Pos_System.API.Controllers
             return Ok(MessageConstant.Variant.UpdateVariantFailedMessage);
         }
 
-        //public async Task<IActionResult> RemoveVariant(Guid id, Guid brandId)
-        //{
-        //    return Ok();
-        //}
+        [HttpPatch(ApiEndPointConstant.Variant.RemoveVariantEndpoint)]
+        public async Task<IActionResult> RemoveVariant(Guid id, Guid brandId)
+        {
+            bool isSuccessful = await _variantService.RemoveVariant(brandId, id);
+
+            if (isSuccessful)
+            {
+                _logger.LogInformation($"Remove Variant {id} information successfully");
+                return Ok(MessageConstant.Variant.RemoveVariantSuccessfulMessage);
+            }
+
+            _logger.LogInformation($"Remove Variant {id} information failed");
+            return Ok(MessageConstant.Variant.RemoveVariantFailedMessage);
+        }
     }
 }

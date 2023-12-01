@@ -5,5 +5,7 @@ namespace Pos_System.API.Services.Interfaces
     public interface IVariantService
     {
         Task<bool> UpdateVariant(Guid brandId, Guid variandId, UpdateVariantRequest updateVariantRequest);
+
+        Task<bool> RemoveVariant(Guid brandId, Guid variandId)
     }
 }
