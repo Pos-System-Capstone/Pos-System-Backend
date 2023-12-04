@@ -729,6 +729,8 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<PrepareOrderRequest> PrepareOrder(PrepareOrderRequest orderReq)
         {
+            if (orderReq.CustomerId == null && orderReq.PromotionCode == null && orderReq.VoucherCode == null)
+                return orderReq;
             //tìm store từ req
             Store store = await _unitOfWork.GetRepository<Store>()
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderReq.StoreId)
@@ -738,16 +740,16 @@ namespace Pos_System.API.Services.Implements
                 x.Id.Equals(store.BrandId)
                 && x.Status.Equals(BrandStatus.Active.GetDescriptionFromEnum()));
             //khởi tạo cái orderInfo
-            CustomerOrderInfo customerOrderInfo = new CustomerOrderInfo()
+            CustomerOrderInfo customerOrderInfo = new CustomerOrderInfo
             {
                 CartItems = new List<Item>(),
                 Vouchers = new List<CouponCode>(),
+                ApiKey = brand.Id.ToString(),
+                Id = store.Code,
+                BookingDate = DateTime.Now,
+                Amount = (decimal) orderReq.TotalAmount,
+                ShippingFee = (decimal) orderReq.ShippingFee
             };
-            //tìm thấy store và brand
-            customerOrderInfo.ApiKey = brand.Id.ToString();
-            customerOrderInfo.Id = store.Code;
-            customerOrderInfo.BookingDate = DateTime.Now;
-
             foreach (var menuPro in orderReq.ProductList)
             {
                 //tìm menuProduct từ req
@@ -809,8 +811,6 @@ namespace Pos_System.API.Services.Implements
                 customerOrderInfo.Users = null;
             }
 
-            customerOrderInfo.Amount = (decimal) orderReq.TotalAmount;
-            customerOrderInfo.ShippingFee = (decimal) orderReq.ShippingFee;
             //call api check promotion
             //sửa lại localhost thành domain của api
             string url = "https://api-pointify.reso.vn/api/promotions/check-promotion";
@@ -819,55 +819,42 @@ namespace Pos_System.API.Services.Implements
             {
                 //lấy value dc response từ api
                 //CheckoutOrderResponse responseContent = (CheckoutOrderResponse)await CallApiUtils.GenerateObjectFromResponse(response);
-                CheckoutOrderResponse responseContent = new CheckoutOrderResponse();
+                CheckoutOrderResponse? responseContent = new CheckoutOrderResponse();
                 responseContent =
-                    JsonConvert.DeserializeObject<CheckoutOrderResponse>(response.Content.ReadAsStringAsync().Result);
-                orderReq.FinalAmount = (double) (responseContent.Order.FinalAmount ?? 0);
-                orderReq.DiscountAmount = (double) ((responseContent.Order.Discount ?? 0) +
-                                                    (responseContent.Order.DiscountOrderDetail ?? 0));
-                orderReq.BonusPoint = (double) (responseContent.Order.BonusPoint ?? 0);
-                orderReq.PromotionList = new List<PromotionPrepare>();
-                foreach (var promotionInOrder in responseContent.Order.Effects.Select(effect => new PromotionPrepare()
-                         {
-                             PromotionId = effect.PromotionId,
-                             Name = effect.PromotionName,
-                             Code = effect.Prop.Code ?? "",
-                             DiscountAmount = (double) (effect.Prop.Value),
-                             EffectType = effect.EffectType
-                         }))
+                    JsonConvert.DeserializeObject<CheckoutOrderResponse>(
+                        response.Content.ReadAsStringAsync().Result);
+                if (responseContent != null)
                 {
-                    orderReq.PromotionList?.Add(promotionInOrder);
+                    orderReq.FinalAmount = (double) (responseContent.Order.FinalAmount ?? 0);
+                    orderReq.DiscountAmount = (double) ((responseContent.Order.Discount ?? 0) +
+                                                        (responseContent.Order.DiscountOrderDetail ?? 0));
+                    orderReq.BonusPoint = (double) (responseContent.Order.BonusPoint ?? 0);
+                    orderReq.PromotionList = new List<PromotionPrepare>();
+                    foreach (var promotionInOrder in responseContent.Order.Effects.Select(effect =>
+                                 new PromotionPrepare()
+                                 {
+                                     PromotionId = effect.PromotionId,
+                                     Name = effect.PromotionName,
+                                     Code = effect.Prop.Code ?? "",
+                                     DiscountAmount = (double) (effect.Prop.Value),
+                                     EffectType = effect.EffectType
+                                 }))
+                    {
+                        orderReq.PromotionList?.Add(promotionInOrder);
+                    }
+
+                    for (var i = 0; i < orderReq.ProductList.Count; i++)
+                    {
+                        orderReq.ProductList[i].Discount =
+                            (double) responseContent.Order.CustomerOrderInfo.CartItems[i].Discount;
+                        orderReq.ProductList[i].FinalAmount =
+                            (double) responseContent.Order.CustomerOrderInfo.CartItems[i].Total;
+                        orderReq.ProductList[i].PromotionCodeApplied =
+                            responseContent.Order.CustomerOrderInfo.CartItems[i].PromotionCodeApply;
+                    }
+                    orderReq.Message = responseContent.Message;
                 }
-                
-                for (var i = 0; i < orderReq.ProductList.Count; i++)
-                {
-
-                    orderReq.ProductList[i].Discount =
-                        (double) responseContent.Order.CustomerOrderInfo.CartItems[i].Discount;
-                    orderReq.ProductList[i].FinalAmount =
-                        (double) responseContent.Order.CustomerOrderInfo.CartItems[i].Total;
-                    orderReq.ProductList[i].PromotionCodeApplied =
-                         responseContent.Order.CustomerOrderInfo.CartItems[i].PromotionCodeApply;
-                }
-                
-
-                // foreach (var cartItem in responseContent.Order.CustomerOrderInfo.CartItems)
-                // {
-                //     if (cartItem.PromotionCodeApply == null) continue;
-                //     foreach (var t in orderReq.ProductList)
-                //     {
-                //         if (t.Code.Equals(cartItem.ProductCode))
-                //         {
-                //             t.Discount = (double) cartItem.Discount;
-                //             t.FinalAmount = (double) cartItem.Total;
-                //             t.PromotionCodeApplied = cartItem.PromotionCodeApply;
-                //         }
-                //     }
-                // }
-
-                orderReq.Message = responseContent.Message;
             }
-
             return orderReq;
         }
 
@@ -997,6 +984,7 @@ namespace Pos_System.API.Services.Implements
                     }
                 });
             }
+
             if (promotionMappingList.Any())
             {
                 await _unitOfWork.GetRepository<PromotionOrderMapping>().InsertRangeAsync(promotionMappingList);
