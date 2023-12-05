@@ -17,6 +17,7 @@ namespace Pos_System.API.Controllers
             _variantService = variantService;
         }
 
+        [HttpPost(ApiEndPointConstant.Variant.VariantsEndpoint)]
         public async Task<IActionResult> CreateNewVariant(Guid brandId, CreateNewVariantRequest createNewVariantRequest)
         {
             var response = await _variantService.CreateNewVariant(brandId, createNewVariantRequest);
