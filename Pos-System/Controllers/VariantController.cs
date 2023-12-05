@@ -64,5 +64,20 @@ namespace Pos_System.API.Controllers
             _logger.LogInformation($"Remove Variant {id} information failed");
             return Ok(MessageConstant.Variant.RemoveVariantFailedMessage);
         }
+
+        [HttpPost(ApiEndPointConstant.Variant.MapProductEndpoint)]
+        public async Task<IActionResult> CreateProductMapping(Guid id, Guid productId, Guid brandId)
+        {
+            bool isSuccessful = await _variantService.CreateProductMap(id, productId, brandId);
+
+            if (isSuccessful)
+            {
+                _logger.LogInformation($"Create product mapping of product {id} successfully");
+                return Ok(MessageConstant.Variant.CreateProductMappingSuccessfulMessage);
+            }
+
+            _logger.LogInformation($"Create product mapping of product {id} failed");
+            return Ok(MessageConstant.Variant.CreateProductMappingFailedMessage);
+        }
     }
 }

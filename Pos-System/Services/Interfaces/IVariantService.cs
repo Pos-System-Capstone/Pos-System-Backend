@@ -14,5 +14,7 @@ namespace Pos_System.API.Services.Interfaces
         Task<bool> UpdateVariant(Guid brandId, Guid variandId, UpdateVariantRequest updateVariantRequest);
 
         Task<bool> RemoveVariant(Guid brandId, Guid variandId);
+
+        Task<bool> CreateProductMap(Guid variantId, Guid productId, Guid brandId);
     }
 }

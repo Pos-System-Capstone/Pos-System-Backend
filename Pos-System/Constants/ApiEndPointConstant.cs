@@ -146,5 +146,6 @@ public static class ApiEndPointConstant
         public const string VariantsEndpoint = ApiEndpoint + "/variants";
         public const string VariantEndpoint = VariantsEndpoint + "/{id}";
         public const string RemoveVariantEndpoint = VariantEndpoint + "/status";
+        public const string MapProductEndpoint = VariantEndpoint + "/product-map";
     }
 }

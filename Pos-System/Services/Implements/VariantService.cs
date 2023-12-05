@@ -51,15 +51,15 @@ namespace Pos_System.API.Services.Implements
             return new CreateNewVariantResponse(newVariant.Id);
         }
 
-        public async Task<bool> UpdateVariant(Guid brandId, Guid variandId, UpdateVariantRequest updateVariantRequest)
+        public async Task<bool> UpdateVariant(Guid brandId, Guid variantId, UpdateVariantRequest updateVariantRequest)
         {
             //Check validation of inputed IDs
             if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandCodeMessage);
             Brand brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
             if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
 
-            if (variandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Variant.EmptyVariantIdMessage);
-            Variant variant = await _unitOfWork.GetRepository<Variant>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(variandId));
+            if (variantId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Variant.EmptyVariantIdMessage);
+            Variant variant = await _unitOfWork.GetRepository<Variant>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(variantId));
             if (variant == null) throw new BadHttpRequestException(MessageConstant.Variant.VariantNotFoundMessage);
 
             //Update data
@@ -87,6 +87,32 @@ namespace Pos_System.API.Services.Implements
 
             bool isSuccess = await _unitOfWork.CommitAsync() > 0;
             return isSuccess;
+        }
+
+        public async Task<bool> CreateProductMap(Guid variantId, Guid productId, Guid brandId)
+        {
+            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandCodeMessage);
+            Brand brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
+            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+
+            if (variantId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Variant.EmptyVariantIdMessage);
+            Variant variant = await _unitOfWork.GetRepository<Variant>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(variantId));
+            if (variant == null) throw new BadHttpRequestException(MessageConstant.Variant.VariantNotFoundMessage);
+
+            if (productId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Variant.EmptyVariantIdMessage);
+            Product product = await _unitOfWork.GetRepository<Product>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(productId));
+            if (product == null) throw new BadHttpRequestException(MessageConstant.Product.ProductNotFoundMessage);
+
+            VariantProductMapping map = new VariantProductMapping() 
+            {
+                Id = Guid.NewGuid(),
+                GroupVariantId = variantId,
+                ProductId = productId,
+            };
+
+            await _unitOfWork.GetRepository<VariantProductMapping>().InsertAsync(map);
+            bool result = _unitOfWork.Commit() > 0;
+            return result;
         }
     }
 }

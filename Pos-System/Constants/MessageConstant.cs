@@ -34,6 +34,9 @@ public static class MessageConstant
 
         public const string RemoveVariantSuccessfulMessage = "Xóa thông tin variant thành công";
         public const string RemoveVariantFailedMessage = "Xóa thông tin variant thất bại";
+
+        public const string CreateProductMappingSuccessfulMessage = "Tạo kết nối giữa product và variant thành công";
+        public const string CreateProductMappingFailedMessage = "Tạo kết nối giữa product và variant thất bại";
     }
 
     public static class Account
