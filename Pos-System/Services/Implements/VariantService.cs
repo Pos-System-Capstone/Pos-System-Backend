@@ -45,6 +45,7 @@ namespace Pos_System.API.Services.Implements
                 Id = Guid.NewGuid(),
                 Name = createNewVariantRequest.VariantName,
                 Status = EnumUtil.GetDescriptionFromEnum(VariantStatus.Active),
+                BrandId = brandId,
             };
             await _unitOfWork.GetRepository<Variant>().InsertAsync(newVariant);
             _unitOfWork.Commit();
