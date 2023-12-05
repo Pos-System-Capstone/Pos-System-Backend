@@ -23,6 +23,8 @@ public static class MessageConstant
 
     public static class Variant
     {
+        public const string WrongBrandIdForVariantMessage = "Brand id không trùng với brand id của variant";
+
         public const string EmptyVariantIdMessage = "Variant Id bị trống hoặc không hợp lệ";
         public const string VariantNotFoundMessage = "Không tìm thấy Variant trong hệ thống";
 

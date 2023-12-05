@@ -63,6 +63,8 @@ namespace Pos_System.API.Services.Implements
             Variant variant = await _unitOfWork.GetRepository<Variant>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(variantId));
             if (variant == null) throw new BadHttpRequestException(MessageConstant.Variant.VariantNotFoundMessage);
 
+            if (!variant.BrandId.Equals(brandId)) throw new BadHttpRequestException(MessageConstant.Variant.WrongBrandIdForVariantMessage);
+
             //Update data
             variant.Name = string.IsNullOrEmpty(updateVariantRequest.Name) ? variant.Name : updateVariantRequest.Name;
             _unitOfWork.GetRepository<Variant>().UpdateAsync(variant);
@@ -81,6 +83,8 @@ namespace Pos_System.API.Services.Implements
             if (variandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Variant.EmptyVariantIdMessage);
             Variant variant = await _unitOfWork.GetRepository<Variant>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(variandId));
             if (variant == null) throw new BadHttpRequestException(MessageConstant.Variant.VariantNotFoundMessage);
+
+            if (!variant.BrandId.Equals(brandId)) throw new BadHttpRequestException(MessageConstant.Variant.WrongBrandIdForVariantMessage);
 
             //Update data
             variant.Status = EnumUtil.GetDescriptionFromEnum(VariantStatus.Deactive);
