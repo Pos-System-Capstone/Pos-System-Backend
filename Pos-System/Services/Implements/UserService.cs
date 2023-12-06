@@ -435,21 +435,6 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<GetUserInfo> ScanUser(string code)
         {
-            Guid currentUserStoreId = Guid.Parse(GetStoreIdFromJwt());
-            Guid userBrandId = await _unitOfWork.GetRepository<Store>()
-                .SingleOrDefaultAsync(selector: x => x.BrandId, predicate: x => x.Id.Equals(currentUserStoreId));
-            string modifiedPhoneNumber = Regex.Replace(phone, @"^0", "+84");
-            GetUserInfo user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
-                selector: x => new GetUserInfo(x.Id, x.BrandId, x.PhoneNumber, x.FullName, x.Gender, x.Email),
-                predicate: x =>
-                    x.PhoneNumber.Equals(modifiedPhoneNumber)
-                    && x.Status.Equals("Active") && x.BrandId.Equals(userBrandId));
-            if (user == null)
-            {
-                throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
-            }
-
-            return user;
             var response = EnCodeBase64.DecodeBase64Response(code);
             //kiểm tra thời gian có quá 2 phút không
             var currentTime = TimeUtils.GetCurrentSEATime();
@@ -458,6 +443,7 @@ namespace Pos_System.API.Services.Implements
             {
                 throw new BadHttpRequestException("Mã QRCode đã hết hạn! Vui lòng tạo mã QR khác");
             }
+
             GetUserInfo user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
                 selector: x => new GetUserInfo(x.Id, x.BrandId, x.PhoneNumber, x.FullName, x.Gender, x.Email),
                 predicate: x =>
@@ -484,7 +470,7 @@ namespace Pos_System.API.Services.Implements
             {
                 foreach (var promotion in promotionPointifyResponses)
                 {
-                    if (promotion.PromotionType.Equals((int)PromotionPointifyType.Automatic))
+                    if (promotion.PromotionType.Equals((int) PromotionPointifyType.Automatic))
                     {
                         listPromotionToRemove.Add(promotion);
                         continue;
@@ -493,9 +479,9 @@ namespace Pos_System.API.Services.Implements
                     if (voucherList == null) continue;
                     foreach (var voucher in voucherList)
                     {
-                        if (voucher.PromotionId.Equals(promotion.PromotionId) && voucher is { IsRedemped: true, IsUsed: false })
+                        if (voucher.PromotionId.Equals(promotion.PromotionId) &&
+                            voucher is {IsRedemped: true, IsUsed: false})
                         {
-
                             promotion.ListVoucher?.Add(voucher);
                         }
                     }
@@ -644,7 +630,7 @@ namespace Pos_System.API.Services.Implements
                     BrandId = user.BrandId,
                     TransactionJson = response.Content
                         .ReadAsStringAsync().Result,
-                    Amount = (decimal)req.Amount,
+                    Amount = (decimal) req.Amount,
                     CreatedDate = TimeUtils.GetCurrentSEATime(),
                     UserId = user.Id,
                     OrderId = newOrder.Id,
@@ -674,7 +660,8 @@ namespace Pos_System.API.Services.Implements
         {
             //kiểm tra user
             var user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
-                               predicate: x => x.Id.Equals(userId)) ?? throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
+                           predicate: x => x.Id.Equals(userId)) ??
+                       throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
             // mã hoá QRCode bằng userId và ngày hiện tại
             var base64 = EnCodeBase64.EncodeBase64User(userId);
             return base64;
