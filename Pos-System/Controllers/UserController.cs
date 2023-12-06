@@ -150,7 +150,7 @@ namespace Pos_System.API.Controllers
             var response = await _userService.TopUpUserWallet(request);
             return Ok(response);
         }
-        [HttpPost("users/{id}/GenerateQRCode")]
+        [HttpPost("users/{id}/generate-qr")]
         //[CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public async Task<IActionResult> GenerateQRCode(Guid id)
