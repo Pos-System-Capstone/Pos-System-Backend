@@ -436,12 +436,15 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<GetUserInfo> ScanUser(string phone)
         {
+            Guid currentUserStoreId = Guid.Parse(GetStoreIdFromJwt());
+            Guid userBrandId = await _unitOfWork.GetRepository<Store>()
+                .SingleOrDefaultAsync(selector: x => x.BrandId, predicate: x => x.Id.Equals(currentUserStoreId));
             string modifiedPhoneNumber = Regex.Replace(phone, @"^0", "+84");
             GetUserInfo user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
                 selector: x => new GetUserInfo(x.Id, x.BrandId, x.PhoneNumber, x.FullName, x.Gender, x.Email),
                 predicate: x =>
                     x.PhoneNumber.Equals(modifiedPhoneNumber)
-                    && x.Status.Equals("Active"));
+                    && x.Status.Equals("Active")&& x.BrandId.Equals(userBrandId));
             if (user == null)
             {
                 throw new BadHttpRequestException(MessageConstant.User.UserNotFound);

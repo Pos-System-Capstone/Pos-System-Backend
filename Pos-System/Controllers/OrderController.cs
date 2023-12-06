@@ -59,6 +59,7 @@ namespace Pos_System.API.Controllers
         }
 
         [HttpPost("orders/{id}/payment")]
+        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager, RoleEnum.User)]
         [ProducesResponseType(typeof(PaymentOrderResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdatePaymentOrder(Guid id, [FromBody] PaymentOrderRequest req)
 

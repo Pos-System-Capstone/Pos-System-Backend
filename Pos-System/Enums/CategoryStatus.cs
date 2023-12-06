@@ -2,5 +2,6 @@
 
 public enum CategoryStatus
 {
-	Active
+	Active,
+	Deactive
 }

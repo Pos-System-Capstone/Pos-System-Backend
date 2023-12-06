@@ -3,6 +3,6 @@
     public enum BlogPostStatus
     {
         Active,
-        Inactive
+        Deactive
     }
 }
