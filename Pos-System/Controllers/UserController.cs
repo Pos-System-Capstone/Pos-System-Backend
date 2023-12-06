@@ -119,9 +119,9 @@ namespace Pos_System.API.Controllers
         [HttpGet("users/scan")]
         [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
         [ProducesResponseType(typeof(GetUserInfo), StatusCodes.Status200OK)]
-        public async Task<IActionResult> ScanUser([FromQuery] string phone)
+        public async Task<IActionResult> ScanUser([FromQuery] string code)
         {
-            var userResponse = await _userService.ScanUser(phone);
+            var userResponse = await _userService.ScanUser(code);
             return Ok(userResponse);
         }
 
@@ -148,6 +148,14 @@ namespace Pos_System.API.Controllers
             [FromBody] TopUpUserWalletRequest request)
         {
             var response = await _userService.TopUpUserWallet(request);
+            return Ok(response);
+        }
+        [HttpPost("users/{id}/GenerateQRCode")]
+        //[CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GenerateQRCode(Guid id)
+        {
+            var response = await _userService.CreateQRCode(id);
             return Ok(response);
         }
     }
