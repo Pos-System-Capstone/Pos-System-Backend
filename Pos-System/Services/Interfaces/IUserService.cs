@@ -14,7 +14,7 @@ namespace Pos_System.API.Services.Interfaces
         Task<UserResponse> GetUserById(Guid userId);
         Task<SignInResponse> LoginUser(LoginFirebase req);
         Task<Guid> CreateNewUserOrder(PrepareOrderRequest createNewOrderRequest);
-        Task<GetUserInfo> ScanUser(string phone);
+        Task<GetUserInfo> ScanUser(string code);
 
         Task<List<PromotionPointifyResponse>?> GetPromotionsAsync(string brandCode, Guid id);
 
@@ -22,5 +22,6 @@ namespace Pos_System.API.Services.Interfaces
         Task<IPaginate<Transaction>> GetListTransactionOfUser(Guid userId, int page, int size);
 
         Task<TopUpUserWalletResponse> TopUpUserWallet(TopUpUserWalletRequest req);
+        Task<string> CreateQRCode(Guid userId);
     }
 }
