@@ -435,20 +435,28 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<GetUserInfo> ScanUser(string code)
         {
-            var response = EnCodeBase64.DecodeBase64Response(code);
-            //kiểm tra thời gian có quá 2 phút không
-            var currentTime = TimeUtils.GetCurrentSEATime();
-            var timeSpan = currentTime - response.CurrentTime;
-            if (timeSpan.TotalMinutes > 2)
+            try
             {
-                throw new BadHttpRequestException("Mã QRCode đã hết hạn! Vui lòng tạo mã QR khác");
-            }
-            GetUserInfo user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
-                selector: x => new GetUserInfo(x.Id, x.BrandId, x.PhoneNumber, x.FullName, x.Gender, x.Email),
-                predicate: x =>
-                    x.Id.Equals(response.UserId)
-                    && x.Status.Equals("Active"));
-            return user ?? throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
+                //kiểm tra mã QRCode có hợp lệ không
+                var response = EnCodeBase64.DecodeBase64Response(code);
+                if (response == null) throw new BadHttpRequestException("Mã QRCode không hợp lệ!");
+                //kiểm tra thời gian có quá 2 phút không
+                var currentTime = TimeUtils.GetCurrentSEATime();
+                var timeSpan = currentTime - response.CurrentTime;
+                if (timeSpan.TotalMinutes > 2)
+                {
+                    throw new BadHttpRequestException("Mã QRCode đã hết hạn! Vui lòng tạo mã QR khác");
+                }
+                GetUserInfo user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
+                    selector: x => new GetUserInfo(x.Id, x.BrandId, x.PhoneNumber, x.FullName, x.Gender, x.Email),
+                    predicate: x =>
+                        x.Id.Equals(response.UserId)
+                        && x.Status.Equals("Active"));
+                return user ?? throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
+            }catch (Exception e)
+            {
+                throw new BadHttpRequestException("Mã QRCode không hợp lệ!");
+            }   
         }
 
         public async Task<List<PromotionPointifyResponse>?> GetPromotionsAsync(string brandCode, Guid userId

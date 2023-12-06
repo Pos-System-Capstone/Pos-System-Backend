@@ -30,6 +30,6 @@ namespace Pos_System.API.Utils
                 CurrentTime = currentTime
             };
             return response;
-        }
+        }  
     }
 }
