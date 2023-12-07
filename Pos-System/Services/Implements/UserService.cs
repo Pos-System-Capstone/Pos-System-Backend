@@ -456,7 +456,7 @@ namespace Pos_System.API.Services.Implements
             }
             catch (Exception e)
             {
-                throw new BadHttpRequestException("Mã QRCode không hợp lệ!");
+                throw new BadHttpRequestException("Mã QRCode không hợp lệ hoặc đã hết hạn!");
             }
         }
 

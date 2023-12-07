@@ -276,7 +276,7 @@ public class StoreService : BaseService<StoreService>, IStoreService
                 x.DisplayOrder,
                 x.Description,
                 x.PicUrl
-            ), predicate: x => x.BrandId.Equals(userBrandId));
+            ), predicate: x => x.BrandId.Equals(userBrandId)&&x.Status.Equals(CategoryStatus.Active.GetDescriptionFromEnum()));
 
         //Use to filter which productInGroups is added to menu
         List<Guid> productIdsInMenu = menuOfStore.ProductsInMenu.Select(x => x.Id).ToList();
