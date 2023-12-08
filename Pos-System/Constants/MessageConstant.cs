@@ -21,6 +21,26 @@ public static class MessageConstant
         public const string UpdateBrandFailedMessage = "Cập nhật thông tin brand thất bại";
     }
 
+    public static class Variant
+    {
+        public const string WrongBrandIdForVariantMessage = "Brand id không trùng với brand id của variant";
+
+        public const string EmptyVariantIdMessage = "Variant Id bị trống hoặc không hợp lệ";
+        public const string VariantNotFoundMessage = "Không tìm thấy Variant trong hệ thống";
+
+        public const string CreateVariantSuccessfulMessage = "Tạo thông tin variant thành công";
+        public const string CreateVariantFailedMessage = "Tạo thông tin variant thất bại";
+
+        public const string UpdateVariantSuccessfulMessage = "Cập nhật thông tin variant thành công";
+        public const string UpdateVariantFailedMessage = "Cập nhật thông tin variant thất bại";
+
+        public const string RemoveVariantSuccessfulMessage = "Xóa thông tin variant thành công";
+        public const string RemoveVariantFailedMessage = "Xóa thông tin variant thất bại";
+
+        public const string CreateProductMappingSuccessfulMessage = "Tạo kết nối giữa product và variant thành công";
+        public const string CreateProductMappingFailedMessage = "Tạo kết nối giữa product và variant thất bại";
+    }
+
     public static class Account
     {
         public const string CreateAccountWithWrongRoleMessage = "Please create with acceptent role";

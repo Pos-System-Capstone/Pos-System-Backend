@@ -43,6 +43,9 @@ namespace Pos_System.Domain.Models
         public virtual DbSet<StoreAccount> StoreAccounts { get; set; } = null!;
         public virtual DbSet<Transaction> Transactions { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
+        public virtual DbSet<Variant> Variants { get; set; } = null!;
+        public virtual DbSet<VariantOption> VariantOptions { get; set; } = null!;
+        public virtual DbSet<VariantProductMapping> VariantProductMappings { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -90,6 +93,10 @@ namespace Pos_System.Domain.Models
                     .IsUnicode(false);
 
                 entity.Property(e => e.Title).HasMaxLength(150);
+
+                entity.Property(e => e.Type)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<Brand>(entity =>
@@ -736,6 +743,37 @@ namespace Pos_System.Domain.Models
                     .HasForeignKey(d => d.BrandId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("User_Brand_Id_fk");
+            });
+
+            modelBuilder.Entity<Variant>(entity =>
+            {
+                entity.ToTable("Variant");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.Name).HasMaxLength(50);
+
+                entity.Property(e => e.Status).HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<VariantOption>(entity =>
+            {
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.OptionName).HasMaxLength(200);
+
+                entity.HasOne(d => d.Variant)
+                    .WithMany(p => p.VariantOptions)
+                    .HasForeignKey(d => d.VariantId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("VariantOptions___fk_variant");
+            });
+
+            modelBuilder.Entity<VariantProductMapping>(entity =>
+            {
+                entity.ToTable("VariantProductMapping");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
             });
 
             OnModelCreatingPartial(modelBuilder);

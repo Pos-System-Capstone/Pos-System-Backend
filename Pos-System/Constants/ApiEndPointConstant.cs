@@ -140,4 +140,12 @@ public static class ApiEndPointConstant
         public const string GetBlogPostByBrandCodeEndpoint = BlogPostsEndpoint + "/blogpost";
         public const string StatusBlogPostEndpoint = BlogPostEndpoint + "/status";
     }
+
+    public static class Variant
+    {
+        public const string VariantsEndpoint = ApiEndpoint + "/variants";
+        public const string VariantEndpoint = VariantsEndpoint + "/{id}";
+        public const string RemoveVariantEndpoint = VariantEndpoint + "/status";
+        public const string MapProductEndpoint = VariantEndpoint + "/product-map";
+    }
 }

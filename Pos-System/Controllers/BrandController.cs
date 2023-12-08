@@ -139,28 +139,39 @@ namespace Pos_System.API.Controllers
             return Ok(storesInBrandResponse);
         }
 
+        // [HttpGet(ApiEndPointConstant.Brand.ExportStoreEndDateReport)]
+        // [ProducesResponseType(typeof(GetStoreEndDayReport), StatusCodes.Status200OK)]
+        // public async Task<IActionResult> ExportStoreEndDayReport(string? storeCode, string? brandCode, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        // {
+        //     var response = await _reportService.(storeCode, brandCode, startDate, endDate);
+        //     return Ok(response);
+        //
+        // }
+
+        [CustomAuthorize(RoleEnum.BrandAdmin, RoleEnum.BrandManager)]
         [HttpGet(ApiEndPointConstant.Brand.ExportStoreEndDateReport)]
         [ProducesResponseType(typeof(GetStoreEndDayReport), StatusCodes.Status200OK)]
-        public async Task<IActionResult> ExportStoreEndDayReport(string? storeCode, string? brandCode, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        public async Task<IActionResult> GetBrandReport(Guid id, [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate)
         {
-            var response = await _reportService.GetStoreEndDayReport(storeCode, brandCode, startDate, endDate);
+            var response = await _reportService.GetBrandReportService(id, startDate, endDate);
             return Ok(response);
-
         }
 
 
         [HttpGet(ApiEndPointConstant.Brand.BrandMenuEndpoint)]
-        public async Task<IActionResult> GetMenusOfBrand([FromQuery]string? brandCode)
+        public async Task<IActionResult> GetMenusOfBrand([FromQuery] string? brandCode)
         {
             var response = await _brandService.GetMenus(brandCode);
             return Ok(response);
         }
 
         [HttpGet(ApiEndPointConstant.Brand.StoresInBrandCodeEndpoint)]
-        public async Task<IActionResult> GetStoresInBrand([FromQuery] string? brandCode, [FromQuery] int page,
+        public async Task<IActionResult> GetStoresInBrand([FromQuery] string? brandCode, [FromQuery] string? storeCode,
+            [FromQuery] int page,
             [FromQuery] int size)
         {
-            var response = await _storeService.GetStoresInBrandByBrandCode(brandCode, page, size);
+            var response = await _storeService.GetStoresInBrandByBrandCode(brandCode, storeCode, page, size);
             return Ok(response);
         }
     }
