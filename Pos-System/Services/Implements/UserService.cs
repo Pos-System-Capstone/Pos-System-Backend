@@ -198,10 +198,8 @@ namespace Pos_System.API.Services.Implements
                 new Claim(JwtRegisteredClaimNames.Sub, userLogin.FullName),
                 new Claim(ClaimTypes.Role, "User"),
             };
-            if (guidClaim != null) claims.Add(new Claim(guidClaim.Item1, guidClaim.Item2.ToString()));
-            expires = "User".Equals(RoleEnum.User.GetDescriptionFromEnum())
-                ? DateTime.Now.AddDays(1)
-                : DateTime.Now.AddMinutes(configuration.GetValue<long>(JwtConstant.TokenExpireInMinutes));
+            claims.Add(new Claim(guidClaim.Item1, guidClaim.Item2.ToString()));
+            expires = DateTime.Now.AddDays(60);
             token = new JwtSecurityToken(issuer, null, claims, notBefore: DateTime.Now, expires, credentials);
             accesstken = jwtHandler.WriteToken(token);
             _unitOfWork.GetRepository<User>().UpdateAsync(userLogin);
@@ -447,6 +445,7 @@ namespace Pos_System.API.Services.Implements
                 {
                     throw new BadHttpRequestException("Mã QRCode đã hết hạn! Vui lòng tạo mã QR khác");
                 }
+
                 GetUserInfo user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
                     selector: x => new GetUserInfo(x.Id, x.BrandId, x.PhoneNumber, x.FullName, x.Gender, x.Email),
                     predicate: x =>
@@ -478,7 +477,7 @@ namespace Pos_System.API.Services.Implements
             {
                 foreach (var promotion in promotionPointifyResponses)
                 {
-                    if (promotion.PromotionType.Equals((int)PromotionPointifyType.Automatic))
+                    if (promotion.PromotionType.Equals((int) PromotionPointifyType.Automatic))
                     {
                         listPromotionToRemove.Add(promotion);
                         continue;
@@ -488,7 +487,7 @@ namespace Pos_System.API.Services.Implements
                     foreach (var voucher in voucherList)
                     {
                         if (voucher.PromotionId.Equals(promotion.PromotionId) &&
-                            voucher is { IsRedemped: true, IsUsed: false })
+                            voucher is {IsRedemped: true, IsUsed: false})
                         {
                             promotion.ListVoucher?.Add(voucher);
                         }
@@ -638,7 +637,7 @@ namespace Pos_System.API.Services.Implements
                     BrandId = user.BrandId,
                     TransactionJson = response.Content
                         .ReadAsStringAsync().Result,
-                    Amount = (decimal)req.Amount,
+                    Amount = (decimal) req.Amount,
                     CreatedDate = TimeUtils.GetCurrentSEATime(),
                     UserId = user.Id,
                     OrderId = newOrder.Id,

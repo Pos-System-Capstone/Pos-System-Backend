@@ -1,10 +1,14 @@
-﻿namespace Pos_System.API.Payload.Request.Categories;
+﻿using Pos_System.API.Enums;
+
+namespace Pos_System.API.Payload.Request.Categories;
 
 public class UpdateCategoryRequest
 {
 	public string? Name { get; set; }
 	public int? DisplayOrder { get; set; }
 	public string? Description { get; set; }
+	
+	public string? Status { get; set; }
 
 	public void TrimString()
 	{

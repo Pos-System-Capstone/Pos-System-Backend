@@ -13,7 +13,8 @@ namespace Pos_System.API.Services.Implements;
 
 public class CategoryService : BaseService<CategoryService>, ICategoryService
 {
-    public CategoryService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<CategoryService> logger, IMapper mapper, IHttpContextAccessor httpContextAccessor) : base(unitOfWork, logger, mapper, httpContextAccessor)
+    public CategoryService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<CategoryService> logger, IMapper mapper,
+        IHttpContextAccessor httpContextAccessor) : base(unitOfWork, logger, mapper, httpContextAccessor)
     {
     }
 
@@ -43,7 +44,8 @@ public class CategoryService : BaseService<CategoryService>, ICategoryService
         return isSuccessful;
     }
 
-    public async Task<IPaginate<GetCategoryResponse>> GetCategories(string? name, CategoryType? type, int page, int size)
+    public async Task<IPaginate<GetCategoryResponse>> GetCategories(string? name, CategoryType? type, int page,
+        int size)
     {
         Guid brandId = Guid.Parse(GetBrandIdFromJwt());
         _logger.LogInformation($"Get Categories from Brand: {brandId}");
@@ -56,14 +58,15 @@ public class CategoryService : BaseService<CategoryService>, ICategoryService
                 string.IsNullOrEmpty(name) && (type == null)
                     ? x => x.BrandId.Equals(brandId)
                     : ((type == null)
-                    ? x => x.BrandId.Equals(brandId) && x.Name.Contains(name)
-                    : (string.IsNullOrEmpty(name)
-                    ? x => x.BrandId.Equals(brandId) && x.Type.Equals(type.GetDescriptionFromEnum())
-                    : x => x.BrandId.Equals(brandId) && x.Name.Contains(name) && x.Type.Equals(type.GetDescriptionFromEnum()))),
+                        ? x => x.BrandId.Equals(brandId) && x.Name.Contains(name)
+                        : (string.IsNullOrEmpty(name)
+                            ? x => x.BrandId.Equals(brandId) && x.Type.Equals(type.GetDescriptionFromEnum())
+                            : x => x.BrandId.Equals(brandId) && x.Name.Contains(name) &&
+                                   x.Type.Equals(type.GetDescriptionFromEnum()))),
                 orderBy: x => x.OrderByDescending(x => x.DisplayOrder),
                 page: page,
                 size: size
-                );
+            );
         return categoryResponse;
     }
 
@@ -72,8 +75,9 @@ public class CategoryService : BaseService<CategoryService>, ICategoryService
         if (id == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Category.EmptyCategoryIdMessage);
         Guid brandId = Guid.Parse(GetBrandIdFromJwt());
         GetCategoryResponse categoryResponse = await _unitOfWork.GetRepository<Category>().SingleOrDefaultAsync(
-        selector: x => new GetCategoryResponse(x.Id, x.Code, x.Name, x.Type, x.DisplayOrder, x.Description, x.Status, x.BrandId.Value, x.PicUrl),
-        predicate: x => x.Id.Equals(id) && x.BrandId.Equals(brandId)
+            selector: x => new GetCategoryResponse(x.Id, x.Code, x.Name, x.Type, x.DisplayOrder, x.Description,
+                x.Status, x.BrandId.Value, x.PicUrl),
+            predicate: x => x.Id.Equals(id) && x.BrandId.Equals(brandId)
         );
         return categoryResponse;
     }
@@ -83,13 +87,14 @@ public class CategoryService : BaseService<CategoryService>, ICategoryService
         if (id == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Category.EmptyCategoryIdMessage);
         Category category = await _unitOfWork.GetRepository<Category>().SingleOrDefaultAsync(
             predicate: x => x.Id.Equals(id)
-            );
+        );
         if (category == null) throw new BadHttpRequestException(MessageConstant.Category.CategoryNotFoundMessage);
         _logger.LogInformation($"Start to update category {category.Id}");
         request.TrimString();
         category.Name = string.IsNullOrEmpty(request.Name) ? category.Name : request.Name;
         category.Description = string.IsNullOrEmpty(request.Description) ? category.Description : request.Description;
-        category.DisplayOrder = (int)(request.DisplayOrder.HasValue ? request.DisplayOrder : category.DisplayOrder);
+        category.DisplayOrder = (request.DisplayOrder ?? category.DisplayOrder);
+        category.Status = string.IsNullOrEmpty(request.Status) ? category.Status : request.Status;
         _unitOfWork.GetRepository<Category>().UpdateAsync(category);
         bool isSuccessful = await _unitOfWork.CommitAsync() > 0;
         return isSuccessful;
@@ -104,12 +109,14 @@ public class CategoryService : BaseService<CategoryService>, ICategoryService
             predicate: x => x.Id.Equals(brandId));
         if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
 
-        List<Guid> currentExtraCategoriesId = (List<Guid>)await _unitOfWork.GetRepository<ExtraCategory>().GetListAsync(
-            selector: x => x.ExtraCategoryId,
-            predicate: x => x.ProductCategoryId.Equals(categoryId)
+        List<Guid> currentExtraCategoriesId = (List<Guid>) await _unitOfWork.GetRepository<ExtraCategory>()
+            .GetListAsync(
+                selector: x => x.ExtraCategoryId,
+                predicate: x => x.ProductCategoryId.Equals(categoryId)
             );
 
-        (List<Guid> idsToRemove, List<Guid> idsToAdd, List<Guid> idsToKeep) splittedExtraCategoriesIds = CustomListUtil.splitIdsToAddAndRemove(currentExtraCategoriesId, request);
+        (List<Guid> idsToRemove, List<Guid> idsToAdd, List<Guid> idsToKeep) splittedExtraCategoriesIds =
+            CustomListUtil.splitIdsToAddAndRemove(currentExtraCategoriesId, request);
         //Handle add and remove to database
         if (splittedExtraCategoriesIds.idsToAdd.Count > 0)
         {
@@ -127,24 +134,30 @@ public class CategoryService : BaseService<CategoryService>, ICategoryService
         if (splittedExtraCategoriesIds.idsToRemove.Count > 0)
         {
             List<ExtraCategory> extraCategoriesToDelete = new List<ExtraCategory>();
-            extraCategoriesToDelete = (List<ExtraCategory>)await _unitOfWork.GetRepository<ExtraCategory>()
-                .GetListAsync(predicate: x => x.ProductCategoryId.Equals(categoryId) && splittedExtraCategoriesIds.idsToRemove.Contains(x.ExtraCategoryId));
+            extraCategoriesToDelete = (List<ExtraCategory>) await _unitOfWork.GetRepository<ExtraCategory>()
+                .GetListAsync(predicate: x =>
+                    x.ProductCategoryId.Equals(categoryId) &&
+                    splittedExtraCategoriesIds.idsToRemove.Contains(x.ExtraCategoryId));
 
             _unitOfWork.GetRepository<ExtraCategory>().DeleteRangeAsync(extraCategoriesToDelete);
         }
+
         bool isSuccesful = await _unitOfWork.CommitAsync() > 0;
         return isSuccesful;
     }
 
-    public async Task<IPaginate<GetCategoryResponse>> GetExtraCategoriesByCategoryId(Guid categoryId, int page, int size)
+    public async Task<IPaginate<GetCategoryResponse>> GetExtraCategoriesByCategoryId(Guid categoryId, int page,
+        int size)
     {
         Guid brandId = Guid.Parse(GetBrandIdFromJwt());
         _logger.LogInformation($"Get ExtraCategories from CategoryId: {categoryId}");
 
-        List<Guid> extraCategoryIds = (List<Guid>)await _unitOfWork.GetRepository<ExtraCategory>().GetListAsync(
-             selector: x => x.ExtraCategoryId,
-             predicate: x => x.ProductCategoryId.Equals(categoryId) && x.Status.Equals(CollectionStatus.Active.GetDescriptionFromEnum())
-             );
+        List<Guid> extraCategoryIds = (List<Guid>) await _unitOfWork.GetRepository<ExtraCategory>().GetListAsync(
+            selector: x => x.ExtraCategoryId,
+            predicate: x =>
+                x.ProductCategoryId.Equals(categoryId) &&
+                x.Status.Equals(CollectionStatus.Active.GetDescriptionFromEnum())
+        );
 
         IPaginate<GetCategoryResponse> categoryResponse =
             await _unitOfWork.GetRepository<Category>().GetPagingListAsync(
@@ -155,7 +168,7 @@ public class CategoryService : BaseService<CategoryService>, ICategoryService
                 orderBy: x => x.OrderByDescending(x => x.DisplayOrder),
                 page: page,
                 size: size
-                );
+            );
         return categoryResponse;
     }
 

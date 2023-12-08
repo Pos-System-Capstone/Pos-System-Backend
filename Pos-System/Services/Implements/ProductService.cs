@@ -41,14 +41,14 @@ namespace Pos_System.API.Services.Implements
                 BrandId = brandId,
                 Description = createNewProductRequest?.Description,
                 PicUrl = createNewProductRequest?.PicUrl,
-                Status = EnumUtil.GetDescriptionFromEnum(ProductStatus.Active),
+                Status = ProductStatus.Active.GetDescriptionFromEnum(),
                 CategoryId = Guid.Parse(createNewProductRequest.CategoryId),
                 Size = createNewProductRequest.Size != null ? createNewProductRequest.Size.GetDescriptionFromEnum() : null,
                 HistoricalPrice = createNewProductRequest.HistoricalPrice,
                 SellingPrice = createNewProductRequest.SellingPrice,
                 DiscountPrice = (double)(createNewProductRequest.DiscountPrice == null ? 0 : createNewProductRequest.DiscountPrice),
                 DisplayOrder = createNewProductRequest.DisplayOrder,
-                Type = EnumUtil.GetDescriptionFromEnum(createNewProductRequest.Type),
+                Type = createNewProductRequest.Type.GetDescriptionFromEnum(),
                 ParentProductId = createNewProductRequest.ParentProductId != null ? Guid.Parse(createNewProductRequest?.ParentProductId) : null
 
             };
@@ -116,6 +116,7 @@ namespace Pos_System.API.Services.Implements
             updateProduct.DisplayOrder = updateProductRequest.DisplayOrder;
             updateProduct.Type = updateProductRequest.Type.GetDescriptionFromEnum();
             updateProduct.ParentProductId = updateProductRequest.ParentProductId;
+            updateProduct.Status = string.IsNullOrEmpty(updateProductRequest.Status) ? updateProduct.Status : updateProductRequest.Status;
 
             _unitOfWork.GetRepository<Product>().UpdateAsync(updateProduct);
             await _unitOfWork.CommitAsync();

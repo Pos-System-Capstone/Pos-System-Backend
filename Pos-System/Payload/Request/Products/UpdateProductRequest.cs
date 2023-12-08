@@ -24,5 +24,7 @@ namespace Pos_System.API.Payload.Request.Products
         [Required]
         public ProductType Type { get; set; }
         public Guid? ParentProductId { get; set; }
+        
+        public string? Status { get; set; }
     }
 }
