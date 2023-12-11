@@ -15,6 +15,8 @@ namespace Pos_System.API.Payload.Response.Orders
         public OrderType OrderType { get; set; }
         public PaymentTypeEnum PaymentType { get; set; }
         public DateTime CheckInDate { get; set; }
+        
+        public int? CustomerNumber { get; set; }
 
         public List<OrderPromotionResponse> PromotionList { get; set; } = new List<OrderPromotionResponse>();
 

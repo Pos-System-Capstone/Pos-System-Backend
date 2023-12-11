@@ -174,6 +174,7 @@ namespace Pos_System.API.Services.Implements
             orderDetailResponse.Vat = order.Vat;
             orderDetailResponse.VatAmount = order.Vatamount;
             orderDetailResponse.Discount = order.Discount;
+            orderDetailResponse.CustomerNumber = order.NumberOfGuest;
             orderDetailResponse.OrderStatus = EnumUtil.ParseEnum<OrderStatus>(order.Status);
             orderDetailResponse.OrderType = EnumUtil.ParseEnum<OrderType>(order.OrderType);
             orderDetailResponse.PaymentType = string.IsNullOrEmpty(order.PaymentType)
@@ -895,10 +896,12 @@ namespace Pos_System.API.Services.Implements
                 Vat = VAT_PERCENT,
                 Vatamount = vatAmount,
                 OrderType = createNewOrderRequest.OrderType.GetDescriptionFromEnum(),
-                NumberOfGuest = defaultGuest,
+                NumberOfGuest = createNewOrderRequest.CustomerNumber,
                 Status = OrderStatus.PENDING.GetDescriptionFromEnum(),
                 SessionId = currentUserSession.Id,
-                PaymentType = createNewOrderRequest.PaymentType.GetDescriptionFromEnum()
+                PaymentType = createNewOrderRequest.PaymentType.GetDescriptionFromEnum(),
+                
+                
             };
 
 
