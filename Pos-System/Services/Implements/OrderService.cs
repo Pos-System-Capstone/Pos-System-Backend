@@ -380,7 +380,7 @@ namespace Pos_System.API.Services.Implements
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
             order.PaymentType = updateOrderRequest.PaymentType.GetDescriptionFromEnum();
             order.Status = updateOrderRequest.Status.GetDescriptionFromEnum();
-          
+
             if (order.PromotionOrderMappings.Any() && updateOrderRequest.Status.Equals(OrderStatus.PAID))
             {
                 List<Transaction> transactions = new List<Transaction>();
@@ -395,9 +395,9 @@ namespace Pos_System.API.Services.Implements
                 {
                     OrderUser orderUser = await _unitOfWork.GetRepository<OrderUser>()
                         .SingleOrDefaultAsync(predicate: x => x.Id.Equals(order.OrderSourceId));
-                    if (orderUser is {UserId: not null, UserType: "USER"})
+                    if (orderUser.UserId != null && orderUser.UserType == "USER")
                     {
-                        checkOutPointify.UserId = (Guid) orderUser.UserId;
+                        checkOutPointify.UserId = orderUser.UserId;
                     }
                 }
 
@@ -407,7 +407,7 @@ namespace Pos_System.API.Services.Implements
                     {
                         PromotionId = promotionOrder.PromotionId,
                         EffectType = promotionOrder.EffectType,
-                        Amount = promotionOrder.DiscountAmount??0
+                        Amount = promotionOrder.DiscountAmount ?? 0
                     });
                     if (promotionOrder.EffectType is "GET_POINT")
                     {
@@ -441,8 +441,10 @@ namespace Pos_System.API.Services.Implements
                 {
                     throw new BadHttpRequestException("Cập nhật khuyến mãi đơn hàng thất bại");
                 }
+
                 await _unitOfWork.GetRepository<Transaction>().InsertRangeAsync(transactions);
             }
+
             order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
             _unitOfWork.GetRepository<Order>().UpdateAsync(order);
@@ -855,9 +857,11 @@ namespace Pos_System.API.Services.Implements
                         orderReq.ProductList[i].PromotionCodeApplied =
                             responseContent.Order.CustomerOrderInfo.CartItems[i].PromotionCodeApply;
                     }
+
                     orderReq.Message = responseContent.Message;
                 }
             }
+
             return orderReq;
         }
 
@@ -902,8 +906,6 @@ namespace Pos_System.API.Services.Implements
                 Status = OrderStatus.PENDING.GetDescriptionFromEnum(),
                 SessionId = currentUserSession.Id,
                 PaymentType = createNewOrderRequest.PaymentType.GetDescriptionFromEnum(),
-                
-                
             };
 
 

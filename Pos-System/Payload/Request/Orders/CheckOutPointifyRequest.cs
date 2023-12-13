@@ -7,7 +7,7 @@ public class CheckOutPointifyRequest
 {
     public string StoreCode { get; set; }
 
-    public Guid UserId { get; set; }
+    public Guid? UserId { get; set; }
 
     public List<ListEffect> ListEffect { get; set; } = new List<ListEffect>();
 
