@@ -8,4 +8,6 @@ public class MemberActionResponse
     public string Description { get; set; }
     public Guid MemberWalletId { get; set; }
     public Guid MemberActionTypeId { get; set; }
+    
+    public Guid? TransactionId { get; set; }
 }

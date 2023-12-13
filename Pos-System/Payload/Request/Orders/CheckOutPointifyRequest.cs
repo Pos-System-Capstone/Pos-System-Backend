@@ -14,6 +14,8 @@ public class CheckOutPointifyRequest
     public string VoucherCode { get; set; }
 
     public double FinalAmount { get; set; }
+    
+    public double Discount { get; set; }
 
     public double BonusPoint { get; set; }
     public string InvoiceId { get; set; }
@@ -23,5 +25,7 @@ public  class ListEffect
 {
     public Guid PromotionId { get; set; }
 
-    public string EffectType { get; set; }
+    public string? EffectType { get; set; }
+    
+    public double Amount { get; set; }
 }

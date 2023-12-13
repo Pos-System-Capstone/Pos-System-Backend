@@ -380,13 +380,15 @@ namespace Pos_System.API.Services.Implements
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
             order.PaymentType = updateOrderRequest.PaymentType.GetDescriptionFromEnum();
             order.Status = updateOrderRequest.Status.GetDescriptionFromEnum();
-            List<Transaction> transactions = new List<Transaction>();
+          
             if (order.PromotionOrderMappings.Any() && updateOrderRequest.Status.Equals(OrderStatus.PAID))
             {
+                List<Transaction> transactions = new List<Transaction>();
                 CheckOutPointifyRequest checkOutPointify = new CheckOutPointifyRequest()
                 {
                     StoreCode = store.Code,
                     ListEffect = new List<ListEffect>(),
+                    Discount = order.Discount,
                     FinalAmount = order.FinalAmount
                 };
                 if (order.OrderSourceId != null)
@@ -405,8 +407,9 @@ namespace Pos_System.API.Services.Implements
                     {
                         PromotionId = promotionOrder.PromotionId,
                         EffectType = promotionOrder.EffectType,
+                        Amount = promotionOrder.DiscountAmount??0
                     });
-                    if (promotionOrder.EffectType != null && promotionOrder.EffectType.Equals("GET_POINT"))
+                    if (promotionOrder.EffectType is "GET_POINT")
                     {
                         Transaction newTransaction = new Transaction()
                         {
@@ -438,11 +441,10 @@ namespace Pos_System.API.Services.Implements
                 {
                     throw new BadHttpRequestException("Cập nhật khuyến mãi đơn hàng thất bại");
                 }
+                await _unitOfWork.GetRepository<Transaction>().InsertRangeAsync(transactions);
             }
-
             order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
-            await _unitOfWork.GetRepository<Transaction>().InsertRangeAsync(transactions);
             _unitOfWork.GetRepository<Order>().UpdateAsync(order);
             await _unitOfWork.CommitAsync();
             return order.Id;
