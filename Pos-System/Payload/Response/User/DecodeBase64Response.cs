@@ -2,7 +2,9 @@
 {
     public class DecodeBase64Response
     {
-        public Guid UserId { get; set; }
+        public string BrandCode { get; set; }
+        
+        public string Phone { get; set; }
         public DateTime CurrentTime { get; set; }
     }
 }

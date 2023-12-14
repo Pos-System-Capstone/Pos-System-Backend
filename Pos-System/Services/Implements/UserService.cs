@@ -13,6 +13,7 @@ using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Pos_System.API.Payload.Pointify;
 using Pos_System.API.Payload.Request.Orders;
@@ -446,11 +447,16 @@ namespace Pos_System.API.Services.Implements
                     throw new BadHttpRequestException("Mã QRCode đã hết hạn! Vui lòng tạo mã QR khác");
                 }
 
+                string modifiedPhoneNumber = Regex.Replace(response.Phone, @"^0", "+84");
+                var brandId = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
+                    selector: brand => brand.Id,
+                    predicate: brand => brand.BrandCode != null && brand.BrandCode.Equals(response.BrandCode)
+                );
                 GetUserInfo user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
                     selector: x => new GetUserInfo(x.Id, x.BrandId, x.PhoneNumber, x.FullName, x.Gender, x.Email),
                     predicate: x =>
-                        x.Id.Equals(response.UserId)
-                        && x.Status.Equals("Active"));
+                        x.PhoneNumber.Equals(modifiedPhoneNumber)
+                        && x.Status.Equals("Active") && x.BrandId.Equals(brandId));
                 return user ?? throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
             }
             catch (Exception e)
@@ -667,11 +673,31 @@ namespace Pos_System.API.Services.Implements
         {
             //kiểm tra user
             var user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
-                           predicate: x => x.Id.Equals(userId)) ??
+                           predicate: x => x.Id.Equals(userId),
+                           include: b => b.Include(brand => brand.Brand)) ??
                        throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
             // mã hoá QRCode bằng userId và ngày hiện tại
-            var base64 = EnCodeBase64.EncodeBase64User(userId);
+            if (user.Brand.BrandCode == null)
+            {
+                throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
+            }
+
+            var base64 = EnCodeBase64.EncodeBase64User(user.PhoneNumber, user.Brand.BrandCode);
             return base64;
+        }
+
+        public async Task<GetUserInfo> ScanUserPhoneNumber(string phone, Guid storeId)
+        {
+            Store store = await _unitOfWork.GetRepository<Store>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(storeId));
+            if (store == null) throw new BadHttpRequestException(MessageConstant.Store.StoreNotFoundMessage);
+            string modifiedPhoneNumber = Regex.Replace(phone, @"^0", "+84");
+            GetUserInfo user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
+                selector: x => new GetUserInfo(x.Id, x.BrandId, x.PhoneNumber, x.FullName, x.Gender, x.Email),
+                predicate: x =>
+                    x.PhoneNumber.Contains(modifiedPhoneNumber)
+                    && x.Status.Equals("Active") && x.BrandId.Equals(store.BrandId));
+            return user ?? throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
         }
     }
 }

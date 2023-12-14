@@ -117,7 +117,7 @@ namespace Pos_System.API.Controllers
         }
 
         [HttpGet("users/scan")]
-        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
+        // [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
         [ProducesResponseType(typeof(GetUserInfo), StatusCodes.Status200OK)]
         public async Task<IActionResult> ScanUser([FromQuery] string code)
         {

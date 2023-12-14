@@ -13,6 +13,7 @@ using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.Promotion;
 using Pos_System.API.Payload.Response.Sessions;
 using Pos_System.API.Payload.Response.Stores;
+using Pos_System.API.Payload.Response.User;
 using Pos_System.API.Services.Implements;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.API.Utils;
@@ -29,17 +30,22 @@ namespace Pos_System.API.Controllers
         private readonly IOrderService _orderService;
         private readonly ISessionService _sessionService;
         private readonly IReportService _reportService;
+        private readonly IUserService _userService;
 
-        public StoreController(ILogger<StoreController> logger, IStoreService storeService, IAccountService accountService, IOrderService orderService, ISessionService sessionService, IReportService reportService) : base(logger)
+        public StoreController(ILogger<StoreController> logger, IStoreService storeService,
+            IAccountService accountService, IOrderService orderService, ISessionService sessionService,
+            IReportService reportService, IUserService userService) : base(logger)
         {
             _storeService = storeService;
             _accountService = accountService;
             _orderService = orderService;
             _sessionService = sessionService;
             _reportService = reportService;
+            _userService = userService;
         }
 
-        [CustomAuthorize(RoleEnum.SysAdmin, RoleEnum.BrandAdmin, RoleEnum.BrandManager, RoleEnum.StoreManager, RoleEnum.Staff, RoleEnum.User)]
+        [CustomAuthorize(RoleEnum.SysAdmin, RoleEnum.BrandAdmin, RoleEnum.BrandManager, RoleEnum.StoreManager,
+            RoleEnum.Staff, RoleEnum.User)]
         [HttpGet(ApiEndPointConstant.Store.StoreEndpoint)]
         [ProducesResponseType(typeof(GetStoreDetailResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetStoreById(Guid id)
@@ -48,7 +54,7 @@ namespace Pos_System.API.Controllers
             return Ok(storeResponse);
         }
 
-        [CustomAuthorize(RoleEnum.BrandManager ,RoleEnum.BrandAdmin)]
+        [CustomAuthorize(RoleEnum.BrandManager, RoleEnum.BrandAdmin)]
         [HttpPost(ApiEndPointConstant.Store.StoresEndpoint)]
         [ProducesResponseType(typeof(CreateNewStoreResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
@@ -60,6 +66,7 @@ namespace Pos_System.API.Controllers
                 _logger.LogError($"Create new store failed with {createNewStoreRequest.Name}");
                 return Problem($"{MessageConstant.Store.CreateStoreFailMessage}: {createNewStoreRequest.Name}");
             }
+
             _logger.LogInformation($"Create new brand successful with {createNewStoreRequest.Name}");
             return CreatedAtAction(nameof(CreateNewStore), response);
         }
@@ -67,7 +74,8 @@ namespace Pos_System.API.Controllers
         [CustomAuthorize(RoleEnum.SysAdmin, RoleEnum.BrandAdmin, RoleEnum.BrandManager, RoleEnum.StoreManager)]
         [HttpGet(ApiEndPointConstant.Store.StoreAccountEndpoint)]
         [ProducesResponseType(typeof(IPaginate<GetStoreEmployeesResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetStoreEmployees(Guid storeId, [FromQuery] string? username, [FromQuery] int page, [FromQuery] int size)
+        public async Task<IActionResult> GetStoreEmployees(Guid storeId, [FromQuery] string? username,
+            [FromQuery] int page, [FromQuery] int size)
         {
             var storeResponse = await _storeService.GetStoreEmployees(storeId, username, page, size);
             return Ok(storeResponse);
@@ -77,19 +85,24 @@ namespace Pos_System.API.Controllers
         [HttpPost(ApiEndPointConstant.Store.StoreAccountEndpoint)]
         [ProducesResponseType(typeof(CreateNewStoreAccountResponse), StatusCodes.Status200OK)]
         [ProducesErrorResponseType(typeof(ProblemDetails))]
-        public async Task<IActionResult> CreateNewStoreAccount(Guid storeId, CreateNewStoreAccountRequest newStoreAccountRequest)
+        public async Task<IActionResult> CreateNewStoreAccount(Guid storeId,
+            CreateNewStoreAccountRequest newStoreAccountRequest)
         {
-            CreateNewStoreAccountResponse response = await _accountService.CreateNewStoreAccount(storeId, newStoreAccountRequest);
+            CreateNewStoreAccountResponse response =
+                await _accountService.CreateNewStoreAccount(storeId, newStoreAccountRequest);
             if (response == null)
             {
-                _logger.LogError($"Create new store account failed: store {storeId} with account {newStoreAccountRequest.Username}");
+                _logger.LogError(
+                    $"Create new store account failed: store {storeId} with account {newStoreAccountRequest.Username}");
                 return Problem(MessageConstant.Account.CreateStaffAccountFailMessage);
             }
-            _logger.LogInformation($"Create staff account successfully with store: {storeId}, account: {newStoreAccountRequest.Username}, role {response.Role.GetDescriptionFromEnum()}");
+
+            _logger.LogInformation(
+                $"Create staff account successfully with store: {storeId}, account: {newStoreAccountRequest.Username}, role {response.Role.GetDescriptionFromEnum()}");
             return CreatedAtAction(nameof(CreateNewStoreAccount), response);
         }
 
-        [CustomAuthorize(RoleEnum.BrandManager , RoleEnum.BrandAdmin)]
+        [CustomAuthorize(RoleEnum.BrandManager, RoleEnum.BrandAdmin)]
         [HttpPut(ApiEndPointConstant.Store.StoreEndpoint)]
         public async Task<IActionResult> UpdateStoreInformation(Guid id, UpdateStoreRequest updateStoreRequest)
         {
@@ -99,7 +112,8 @@ namespace Pos_System.API.Controllers
 
         [CustomAuthorize(RoleEnum.StoreManager, RoleEnum.BrandManager, RoleEnum.BrandAdmin)]
         [HttpPut(ApiEndPointConstant.Store.StoreUpdateEmployeeEndpoint)]
-        public async Task<IActionResult> UpdateAccountInformation(Guid storeId, Guid id, UpdateStoreAccountInformationRequest staffAccountInformationRequest)
+        public async Task<IActionResult> UpdateAccountInformation(Guid storeId, Guid id,
+            UpdateStoreAccountInformationRequest staffAccountInformationRequest)
         {
             await _accountService.UpdateStoreAccountInformation(id, staffAccountInformationRequest);
             return Ok(MessageConstant.Store.UpdateStaffInformationSuccessfulMessage);
@@ -117,7 +131,9 @@ namespace Pos_System.API.Controllers
         [CustomAuthorize(RoleEnum.StoreManager, RoleEnum.Staff)]
         [HttpGet(ApiEndPointConstant.Store.StoreOrdersEndpoint)]
         [ProducesResponseType(typeof(IPaginate<ViewOrdersResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetOrdersOfStore(Guid id, [FromQuery] int page, [FromQuery] int size, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] OrderType? orderType, [FromQuery] OrderStatus? status)
+        public async Task<IActionResult> GetOrdersOfStore(Guid id, [FromQuery] int page, [FromQuery] int size,
+            [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] OrderType? orderType,
+            [FromQuery] OrderStatus? status)
         {
             var response = await _orderService.GetOrdersInStore(id, page, size, startDate, endDate, orderType, status);
             return Ok(response);
@@ -126,7 +142,8 @@ namespace Pos_System.API.Controllers
         [CustomAuthorize(RoleEnum.StoreManager)]
         [HttpPost(ApiEndPointConstant.Store.StoreSessionsEndpoint)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> CreateNewStoreSessions(Guid id, CreateStoreSessionsRequest createStoreSessionsRequest)
+        public async Task<IActionResult> CreateNewStoreSessions(Guid id,
+            CreateStoreSessionsRequest createStoreSessionsRequest)
         {
             await _sessionService.CreateStoreSessions(id, createStoreSessionsRequest);
             return Ok(MessageConstant.Store.CreateStoreSessionsSuccessfully);
@@ -135,7 +152,8 @@ namespace Pos_System.API.Controllers
         [CustomAuthorize(RoleEnum.StoreManager, RoleEnum.Staff)]
         [HttpGet(ApiEndPointConstant.Store.StoreSessionsEndpoint)]
         [ProducesResponseType(typeof(IPaginate<GetStoreSessionListResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetStoreSessions(Guid id, [FromQuery] int page, [FromQuery] int size, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        public async Task<IActionResult> GetStoreSessions(Guid id, [FromQuery] int page, [FromQuery] int size,
+            [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
             var response = await _sessionService.GetStoreSessions(id, page, size, startDate, endDate);
             return Ok(response);
@@ -153,7 +171,8 @@ namespace Pos_System.API.Controllers
         [CustomAuthorize(RoleEnum.StoreManager)]
         [HttpPut(ApiEndPointConstant.Store.StoreSessionEndpoint)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
-        public async Task<IActionResult> UpdateStoreSession(Guid storeId, Guid id, UpdateStoreSessionRequest updateStoreSessionRequest)
+        public async Task<IActionResult> UpdateStoreSession(Guid storeId, Guid id,
+            UpdateStoreSessionRequest updateStoreSessionRequest)
         {
             var response = await _sessionService.UpdateStoreSession(storeId, id, updateStoreSessionRequest);
             return Ok(response);
@@ -162,7 +181,8 @@ namespace Pos_System.API.Controllers
         [CustomAuthorize(RoleEnum.StoreManager, RoleEnum.Staff)]
         [HttpGet(ApiEndPointConstant.Store.StoreEndDayReportEndpoint)]
         [ProducesResponseType(typeof(GetStoreEndDayReport), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetStoreEndDayReport(Guid id, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        public async Task<IActionResult> GetStoreEndDayReport(Guid id, [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate)
         {
             var response = await _reportService.GetStoreEndDayReport(id, startDate, endDate);
             return Ok(response);
@@ -176,12 +196,20 @@ namespace Pos_System.API.Controllers
             var response = await _orderService.GetPromotion(id);
             return Ok(response);
         }
-        
+
         [HttpGet(ApiEndPointConstant.Store.GetListPromotion)]
         [ProducesResponseType(typeof(IEnumerable<PromotionPointifyResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPromotionInStore(Guid id)
         {
             var userResponse = await _storeService.GetPromotionInStore(id);
+            return Ok(userResponse);
+        }
+        
+        [HttpGet(ApiEndPointConstant.Store.ScanUserFromStore)]
+        [ProducesResponseType(typeof(GetUserInfo), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ScanUserInStore(Guid id, [FromQuery] string phone)
+        {
+            var userResponse = await _userService.ScanUserPhoneNumber(phone, id);
             return Ok(userResponse);
         }
     }
