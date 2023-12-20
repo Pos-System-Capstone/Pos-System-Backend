@@ -22,8 +22,10 @@ namespace Pos_System.API.Services.Interfaces
         Task<IPaginate<Transaction>> GetListTransactionOfUser(Guid userId, int page, int size);
 
         Task<TopUpUserWalletResponse> TopUpUserWallet(TopUpUserWalletRequest req);
-        Task<string> CreateQRCode(Guid userId);
+        Task<string> CreateQrCode(Guid userId);
 
         Task<GetUserInfo> ScanUserPhoneNumber(string phone, Guid storeId);
+
+        Task<Guid> UpdateOrder(Guid orderId, UpdateOrderRequest updateOrderRequest);
     }
 }

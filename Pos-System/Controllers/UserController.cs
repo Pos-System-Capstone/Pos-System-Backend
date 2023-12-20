@@ -155,7 +155,17 @@ namespace Pos_System.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public async Task<IActionResult> GenerateQRCode(Guid id)
         {
-            var response = await _userService.CreateQRCode(id);
+            var response = await _userService.CreateQrCode(id);
+            return Ok(response);
+        }
+        
+        
+        [HttpPatch(ApiEndPointConstant.User.OrderDetailsEndpoint)]
+        [CustomAuthorize( RoleEnum.User)]
+        [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateUserOrder(Guid id, [FromBody] UpdateOrderRequest updateOrderRequest)
+        {
+            var response = await _userService.UpdateOrder(id, updateOrderRequest);
             return Ok(response);
         }
     }

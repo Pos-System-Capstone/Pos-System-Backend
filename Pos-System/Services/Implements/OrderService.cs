@@ -357,8 +357,23 @@ namespace Pos_System.API.Services.Implements
 
             order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
-            order.PaymentType = updateOrderRequest.PaymentType.GetDescriptionFromEnum();
-            order.Status = updateOrderRequest.Status.GetDescriptionFromEnum();
+            order.PaymentType = updateOrderRequest.PaymentType != null
+                ? updateOrderRequest.PaymentType.GetDescriptionFromEnum()
+                : order.PaymentType;
+            order.Status = updateOrderRequest.Status != null
+                ? updateOrderRequest.Status.GetDescriptionFromEnum()
+                : order.Status;
+            if (updateOrderRequest.DeliStatus != null)
+            {
+                if (order.OrderSourceId != null)
+                {
+                    OrderUser orderUser = await _unitOfWork.GetRepository<OrderUser>()
+                        .SingleOrDefaultAsync(predicate: x => x.Id.Equals(order.OrderSourceId)
+                        );
+                    orderUser.Status = updateOrderRequest.DeliStatus.GetDescriptionFromEnum();
+                    _unitOfWork.GetRepository<OrderUser>().UpdateAsync(orderUser);
+                }
+            }
             _unitOfWork.GetRepository<Order>().UpdateAsync(order);
             await _unitOfWork.CommitAsync();
             return order.Id;
@@ -528,55 +543,58 @@ namespace Pos_System.API.Services.Implements
             {
                 case PaymentTypeEnum.POINTIFY:
                 {
-                    var user = await _userService.ScanUser(req.Code);
-                    MemberActionRequest request = new MemberActionRequest()
+                    if (req.Code != null)
                     {
-                        ApiKey = user.BrandId,
-                        StoreCode = order.Session.Store.Code,
-                        Amount = order.FinalAmount,
-                        Description = order.InvoiceId,
-                        MembershipId = user.Id,
-                        MemberActionType = MemberActionType.PAYMENT.GetDescriptionFromEnum()
-                    };
-                    var url = "https://api-pointify.reso.vn/api/member-action";
-                    var response = await CallApiUtils.CallApiEndpoint(url, request);
-                    if (!response.StatusCode.Equals(HttpStatusCode.OK))
-                    {
-                        paymentOrderResponse.Message = "Thanh toán thất bại";
-                        return paymentOrderResponse;
-                    }
-
-                    var actionResponse =
-                        JsonConvert.DeserializeObject<MemberActionResponse>(response.Content
-                            .ReadAsStringAsync().Result);
-                    if (actionResponse != null &&
-                        actionResponse.Status.Equals(MemberActionStatus.SUCCESS.GetDescriptionFromEnum()))
-                    {
-                        Transaction transaction = new Transaction()
+                        var user = await _userService.ScanUser(req.Code);
+                        MemberActionRequest request = new MemberActionRequest()
                         {
-                            Id = Guid.NewGuid(),
-                            BrandId = user.BrandId,
-                            TransactionJson = response.Content
-                                .ReadAsStringAsync().Result,
-                            Amount = (decimal) order.FinalAmount,
-                            CreatedDate = TimeUtils.GetCurrentSEATime(),
-                            UserId = user.Id,
-                            OrderId = order.Id,
-                            IsIncrease = false,
-                            Type = TransactionTypeEnum.PAYMENT.GetDescriptionFromEnum(),
-                            Currency = "đ",
-                            Status = TransactionStatusEnum.SUCCESS.GetDescriptionFromEnum(),
+                            ApiKey = user.BrandId,
+                            StoreCode = order.Session.Store.Code,
+                            Amount = order.FinalAmount,
+                            Description = order.InvoiceId,
+                            MembershipId = user.Id,
+                            MemberActionType = MemberActionType.PAYMENT.GetDescriptionFromEnum()
                         };
-                        await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
-                        order.PaymentType = req.PaymentType.GetDescriptionFromEnum();
-                        _unitOfWork.GetRepository<Order>().UpdateAsync(order);
-                        paymentOrderResponse.Message = "Thanh toán đơn hàng" + actionResponse.Description;
-                        paymentOrderResponse.Status = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
-                        await _unitOfWork.CommitAsync();
-                    }
-                    else
-                    {
-                        paymentOrderResponse.Message = actionResponse?.Description;
+                        var url = "https://api-pointify.reso.vn/api/member-action";
+                        var response = await CallApiUtils.CallApiEndpoint(url, request);
+                        if (!response.StatusCode.Equals(HttpStatusCode.OK))
+                        {
+                            paymentOrderResponse.Message = "Thanh toán thất bại";
+                            return paymentOrderResponse;
+                        }
+
+                        var actionResponse =
+                            JsonConvert.DeserializeObject<MemberActionResponse>(response.Content
+                                .ReadAsStringAsync().Result);
+                        if (actionResponse != null &&
+                            actionResponse.Status.Equals(MemberActionStatus.SUCCESS.GetDescriptionFromEnum()))
+                        {
+                            Transaction transaction = new Transaction()
+                            {
+                                Id = Guid.NewGuid(),
+                                BrandId = user.BrandId,
+                                TransactionJson = response.Content
+                                    .ReadAsStringAsync().Result,
+                                Amount = (decimal) order.FinalAmount,
+                                CreatedDate = TimeUtils.GetCurrentSEATime(),
+                                UserId = user.Id,
+                                OrderId = order.Id,
+                                IsIncrease = false,
+                                Type = TransactionTypeEnum.PAYMENT.GetDescriptionFromEnum(),
+                                Currency = "đ",
+                                Status = TransactionStatusEnum.SUCCESS.GetDescriptionFromEnum(),
+                            };
+                            await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
+                            order.PaymentType = req.PaymentType.GetDescriptionFromEnum();
+                            _unitOfWork.GetRepository<Order>().UpdateAsync(order);
+                            paymentOrderResponse.Message = "Thanh toán đơn hàng" + actionResponse.Description;
+                            paymentOrderResponse.Status = PaymentStatusEnum.PAID.GetDescriptionFromEnum();
+                            await _unitOfWork.CommitAsync();
+                        }
+                        else
+                        {
+                            paymentOrderResponse.Message = actionResponse?.Description;
+                        }
                     }
 
                     break;

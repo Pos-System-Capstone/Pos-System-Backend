@@ -422,6 +422,7 @@ namespace Pos_System.API.Services.Implements
                 Phone = createNewOrderRequest.CustomerPhone,
                 CreatedAt = currentTime,
                 Status = OrderSourceStatus.PENDING.GetDescriptionFromEnum(),
+                PaymentStatus = PaymentStatusEnum.PENDING.GetDescriptionFromEnum(),
                 CompletedAt = currentTime
             };
             newOrder.OrderSourceId = orderSource.Id;
@@ -540,23 +541,6 @@ namespace Pos_System.API.Services.Implements
             return listTrans;
         }
 
-        public async Task<GetUserInfo> UserPayment(string phone)
-        {
-            string modifiedPhoneNumber = Regex.Replace(phone, @"^0", "+84");
-            GetUserInfo user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
-                selector: x => new GetUserInfo(x.Id, x.BrandId, x.PhoneNumber, x.FullName, x.Gender, x.Email),
-                predicate: x =>
-                    x.PhoneNumber.Equals(modifiedPhoneNumber)
-                    && x.Status.Equals("Active")
-            );
-            if (user == null)
-            {
-                throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
-            }
-
-            return user;
-        }
-
         public async Task<TopUpUserWalletResponse> TopUpUserWallet(TopUpUserWalletRequest req)
         {
             if (req.StoreId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
@@ -657,7 +641,7 @@ namespace Pos_System.API.Services.Implements
                 await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
                 topUpUserWalletResponse.Message =
                     "Nạp tiền thành công cho người dùng " + user.FullName + ":" + actionResponse.Description;
-                topUpUserWalletResponse.Status = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
+                topUpUserWalletResponse.Status = PaymentStatusEnum.PAID.GetDescriptionFromEnum();
 
                 await _unitOfWork.CommitAsync();
             }
@@ -669,7 +653,7 @@ namespace Pos_System.API.Services.Implements
             return topUpUserWalletResponse;
         }
 
-        public async Task<string> CreateQRCode(Guid userId)
+        public async Task<string> CreateQrCode(Guid userId)
         {
             //kiểm tra user
             var user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
@@ -698,6 +682,35 @@ namespace Pos_System.API.Services.Implements
                     x.PhoneNumber.Contains(modifiedPhoneNumber)
                     && x.Status.Equals("Active") && x.BrandId.Equals(store.BrandId));
             return user ?? throw new BadHttpRequestException(MessageConstant.User.UserNotFound);
+        }
+
+        public async Task<Guid> UpdateOrder(Guid orderId, UpdateOrderRequest updateOrderRequest)
+        {
+            Order order = await _unitOfWork.GetRepository<Order>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId)
+                );
+            if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
+            order.PaymentType = updateOrderRequest.PaymentType != null
+                ? updateOrderRequest.PaymentType.GetDescriptionFromEnum()
+                : order.PaymentType;
+            order.Status = updateOrderRequest.Status != null
+                ? updateOrderRequest.Status.GetDescriptionFromEnum()
+                : order.Status;
+            if (updateOrderRequest.DeliStatus != null)
+            {
+                if (order.OrderSourceId != null)
+                {
+                    OrderUser orderUser = await _unitOfWork.GetRepository<OrderUser>()
+                        .SingleOrDefaultAsync(predicate: x => x.Id.Equals(order.OrderSourceId)
+                        );
+                    orderUser.Status = updateOrderRequest.DeliStatus.GetDescriptionFromEnum();
+                    _unitOfWork.GetRepository<OrderUser>().UpdateAsync(orderUser);
+                }
+            }
+
+            _unitOfWork.GetRepository<Order>().UpdateAsync(order);
+            await _unitOfWork.CommitAsync();
+            return order.Id;
         }
     }
 }
