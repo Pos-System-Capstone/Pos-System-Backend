@@ -100,10 +100,13 @@ namespace Pos_System.API.Services.Implements
             //if (email.Split("@").Last() != "fpt.edu.vn" && email != "johnnymc2001@gmail.com")
             //    throw new BadRequestException("The system currently only accepted @fpt.edu.vn email!", ErrorNameValues.InvalidCredential);
 
-
+            Guid brandId = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
+                    selector: brand => brand.Id,
+                    predicate: brand => brand.BrandCode.Equals(req.BrandCode)
+                );
             User userLogin = await _unitOfWork.GetRepository<User>()
                 .SingleOrDefaultAsync(predicate: x => x.PhoneNumber.Equals(phone)
-                                                      && x.Status.Equals("Active"));
+                                                      && x.Status.Equals("Active") && x.BrandId.Equals(brandId));
             DateTime expires;
             IConfiguration configuration;
             JwtSecurityTokenHandler jwtHandler;
@@ -115,7 +118,7 @@ namespace Pos_System.API.Services.Implements
             JwtSecurityToken? token;
             string accesstken;
             string? brandCode;
-            Guid brandId;
+            
             if (userLogin == null)
             {
                 CreateNewUserRequest newUserRequest = new CreateNewUserRequest()
@@ -131,10 +134,7 @@ namespace Pos_System.API.Services.Implements
                 User user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(predicate: x =>
                     x.Id.Equals(newUser.Id)
                     && x.Status.Equals("Active"));
-                brandId = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
-                    selector: brand => brand.Id,
-                    predicate: brand => brand.BrandCode.Equals(req.BrandCode)
-                );
+                
                 guidClaim = new Tuple<string, Guid>("brandId", brandId);
                 //string? brandPicUrl = await _unitOfWork.GetRepository<Store>().SingleOrDefaultAsync(
                 //    selector: store => store.Brand.PicUrl,
