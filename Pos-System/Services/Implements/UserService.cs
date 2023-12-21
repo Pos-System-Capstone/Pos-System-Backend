@@ -102,8 +102,8 @@ namespace Pos_System.API.Services.Implements
 
             Guid brandId = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
                     selector: brand => brand.Id,
-                    predicate: brand => brand.BrandCode.Equals(req.BrandCode)
-                );
+                    predicate: brand => brand.BrandCode.Equals(req.BrandCode));
+            if(brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
             User userLogin = await _unitOfWork.GetRepository<User>()
                 .SingleOrDefaultAsync(predicate: x => x.PhoneNumber.Equals(phone)
                                                       && x.Status.Equals("Active") && x.BrandId.Equals(brandId));
