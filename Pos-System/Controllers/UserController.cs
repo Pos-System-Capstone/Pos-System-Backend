@@ -5,6 +5,7 @@ using Pos_System.API.Payload.Pointify;
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Request.User;
 using Pos_System.API.Payload.Response.BlogPost;
+using Pos_System.API.Payload.Response.Menus;
 using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.User;
 using Pos_System.API.Services.Interfaces;
@@ -166,6 +167,14 @@ namespace Pos_System.API.Controllers
         public async Task<IActionResult> UpdateUserOrder(Guid id, [FromBody] UpdateOrderRequest updateOrderRequest)
         {
             var response = await _userService.UpdateOrder(id, updateOrderRequest);
+            return Ok(response);
+        }
+        [HttpGet("users/{id}/menu")]
+        //[CustomAuthorize( RoleEnum.User)]
+        [ProducesResponseType(typeof(GetMenuDetailForStaffResponse), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMenuDetailFromStore(Guid id)
+        {
+            var response = await _userService.GetMenuDetailFromStore(id);
             return Ok(response);
         }
     }

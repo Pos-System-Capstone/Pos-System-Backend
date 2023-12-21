@@ -11,7 +11,7 @@ namespace Pos_System.Domain.Models
             Sessions = new HashSet<Session>();
             StoreAccounts = new HashSet<StoreAccount>();
         }
-
+    
         public Guid Id { get; set; }
         public string Name { get; set; } = null!;
         public string ShortName { get; set; } = null!;

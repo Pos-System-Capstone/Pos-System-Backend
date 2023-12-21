@@ -1,6 +1,7 @@
 ﻿using Pos_System.API.Payload.Pointify;
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Request.User;
+using Pos_System.API.Payload.Response.Menus;
 using Pos_System.API.Payload.Response.User;
 using Pos_System.Domain.Models;
 using Pos_System.Domain.Paginate;
@@ -27,5 +28,6 @@ namespace Pos_System.API.Services.Interfaces
         Task<GetUserInfo> ScanUserPhoneNumber(string phone, Guid storeId);
 
         Task<Guid> UpdateOrder(Guid orderId, UpdateOrderRequest updateOrderRequest);
+        Task<GetMenuDetailForStaffResponse> GetMenuDetailFromStore(Guid storeId);
     }
 }
