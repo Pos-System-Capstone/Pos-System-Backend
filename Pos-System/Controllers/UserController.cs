@@ -169,7 +169,7 @@ namespace Pos_System.API.Controllers
             var response = await _userService.UpdateOrder(id, updateOrderRequest);
             return Ok(response);
         }
-        [HttpGet("users/{id}/menu")]
+        [HttpGet("users/stores/{id}/menu")]
         //[CustomAuthorize( RoleEnum.User)]
         [ProducesResponseType(typeof(GetMenuDetailForStaffResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMenuDetailFromStore(Guid id)

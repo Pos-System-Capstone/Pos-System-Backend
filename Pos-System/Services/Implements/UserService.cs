@@ -40,13 +40,9 @@ namespace Pos_System.API.Services.Implements
         }
 
 
-        public async Task<CreateNewUserResponse> CreateNewUser(CreateNewUserRequest newUserRequest, string? brandCode)
+        public async Task<CreateNewUserResponse> CreateNewUser(CreateNewUserRequest newUserRequest, Guid brandId)
         {
-            if (brandCode == null) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandCodeMessage);
-
-            Brand brand = await _unitOfWork.GetRepository<Brand>()
-                .SingleOrDefaultAsync(predicate: x => x.BrandCode.Equals(brandCode));
-            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+          
             _logger.LogInformation($"Create new brand with {newUserRequest.FullName}");
             User newUser = new User()
             {
@@ -54,7 +50,7 @@ namespace Pos_System.API.Services.Implements
                 PhoneNumber = newUserRequest.PhoneNunmer,
                 Status = UserStatus.Active.GetDescriptionFromEnum(),
                 FullName = newUserRequest.FullName,
-                BrandId = brand.Id,
+                BrandId = brandId,
                 Gender = newUserRequest.Gender,
                 Fcmtoken = newUserRequest.FcmToken,
                 FireBaseUid = newUserRequest.FireBaseUid,
@@ -66,7 +62,7 @@ namespace Pos_System.API.Services.Implements
             bool isSuccessful = await _unitOfWork.CommitAsync() > 0;
 
             //tạo membership bên pointify
-            string createMemberPromoUrl = $"https://api-pointify.reso.vn/api/memberships?apiKey={brand.Id}";
+            string createMemberPromoUrl = $"https://api-pointify.reso.vn/api/memberships?apiKey={brandId}";
             var data = new
             {
                 membershipId = newUser.Id,
@@ -116,8 +112,7 @@ namespace Pos_System.API.Services.Implements
             List<Claim> claims;
             Tuple<string, Guid> guidClaim;
             JwtSecurityToken? token;
-            string accesstken;
-            string? brandCode;
+            string accesstoken;
             
             if (userLogin == null)
             {
@@ -129,7 +124,7 @@ namespace Pos_System.API.Services.Implements
                     FireBaseUid = uid,
                     FcmToken = req.FcmToken
                 };
-                var newUser = await CreateNewUser(newUserRequest, req.BrandCode);
+                var newUser = await CreateNewUser(newUserRequest, brandId);
 
                 User user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(predicate: x =>
                     x.Id.Equals(newUser.Id)
@@ -160,17 +155,17 @@ namespace Pos_System.API.Services.Implements
                     ? DateTime.Now.AddDays(1)
                     : DateTime.Now.AddMinutes(configuration.GetValue<long>(JwtConstant.TokenExpireInMinutes));
                 token = new JwtSecurityToken(issuer, null, claims, notBefore: DateTime.Now, expires, credentials);
-                accesstken = jwtHandler.WriteToken(token);
+                accesstoken = jwtHandler.WriteToken(token);
                 return new SignInResponse
                 {
                     message = "Sign Up success",
-                    AccessToken = accesstken,
+                    AccessToken = accesstoken,
                     UserInfo = new UserResponse()
                     {
                         Id = user.Id,
                         FullName = user.FullName,
                         PhoneNumber = user.PhoneNumber,
-                        BrandId = brandId,
+                        BrandId = user.BrandId,
                         Email = user.Email,
                         FireBaseUid = user.FireBaseUid,
                         CreatedAt = user.CreatedAt,
@@ -182,11 +177,7 @@ namespace Pos_System.API.Services.Implements
                     }
                 };
             }
-
-            brandId = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
-                selector: brand => brand.Id,
-                predicate: brand => brand.BrandCode.Equals(req.BrandCode)
-            );
+            
             userLogin.Fcmtoken = req.FcmToken;
             guidClaim = new Tuple<string, Guid>("brandId", brandId);
             configuration = new ConfigurationBuilder()
@@ -205,12 +196,12 @@ namespace Pos_System.API.Services.Implements
             claims.Add(new Claim(guidClaim.Item1, guidClaim.Item2.ToString()));
             expires = DateTime.Now.AddDays(60);
             token = new JwtSecurityToken(issuer, null, claims, notBefore: DateTime.Now, expires, credentials);
-            accesstken = jwtHandler.WriteToken(token);
+            accesstoken = jwtHandler.WriteToken(token);
             _unitOfWork.GetRepository<User>().UpdateAsync(userLogin);
             return new SignInResponse
             {
                 message = "Login success",
-                AccessToken = accesstken,
+                AccessToken = accesstoken,
                 UserInfo = new UserResponse()
                 {
                     Id = userLogin.Id,
