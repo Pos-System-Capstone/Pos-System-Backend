@@ -81,7 +81,6 @@ namespace Pos_System.API.Controllers
             return Ok(userResponse);
         }
         [HttpPost("users/order")]
-        [CustomAuthorize( RoleEnum.User)]
         public async Task<IActionResult> CreateUserOrder([FromBody] PrepareOrderRequest req)
         {
             var userResponse = await _userService.CreateNewUserOrder(req);
