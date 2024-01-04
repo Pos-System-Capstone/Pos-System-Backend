@@ -414,6 +414,9 @@ namespace Pos_System.API.Services.Implements
                     {
                         checkOutPointify.UserId = orderUser.UserId;
                     }
+
+                    orderUser.Status = OrderSourceStatus.DELIVERING.GetDescriptionFromEnum();
+                    _unitOfWork.GetRepository<OrderUser>().UpdateAsync(orderUser);
                 }
 
                 foreach (var promotionOrder in order.PromotionOrderMappings)
@@ -452,16 +455,17 @@ namespace Pos_System.API.Services.Implements
 
                 string url = "https://api-pointify.reso.vn/api/promotions/check-out-promotion";
                 var response = await CallApiUtils.CallApiEndpoint(url, checkOutPointify);
-                if (!response.StatusCode.Equals(HttpStatusCode.OK))
-                {
-                    throw new BadHttpRequestException("Cập nhật khuyến mãi đơn hàng thất bại");
-                }
+                // if (!response.StatusCode.Equals(HttpStatusCode.OK))
+                // {
+                //     throw new BadHttpRequestException("Cập nhật khuyến mãi đơn hàng thất bại");
+                // }
 
                 await _unitOfWork.GetRepository<Transaction>().InsertRangeAsync(transactions);
             }
 
             order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
+            
             _unitOfWork.GetRepository<Order>().UpdateAsync(order);
             await _unitOfWork.CommitAsync();
             return order.Id;
