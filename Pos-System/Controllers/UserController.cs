@@ -53,9 +53,19 @@ namespace Pos_System.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> LoginUser([FromBody] LoginFirebase req)
         {
-            SignInResponse response = await _userService.LoginUser(req);
+            var response = await _userService.LoginUser(req);
             return Ok(response);
         }
+        [HttpPost(ApiEndPointConstant.User.UserSignInMiniApp)]
+        [ProducesResponseType(typeof(SignInResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> LoginMiniApp([FromBody] LoginMiniApp req)
+        {
+            var response = await _userService.LoginUserMiniApp(req);
+            return Ok(response);
+        }
+
+        
         
         [HttpPatch(ApiEndPointConstant.User.UserEndpoint)]
         [CustomAuthorize( RoleEnum.User)]

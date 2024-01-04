@@ -29,5 +29,7 @@ namespace Pos_System.API.Services.Interfaces
 
         Task<Guid> UpdateOrder(Guid orderId, UpdateOrderRequest updateOrderRequest);
         Task<GetMenuDetailForStaffResponse> GetMenuDetailFromStore(Guid storeId);
+
+        Task<SignInResponse> LoginUserMiniApp(LoginMiniApp req);
     }
 }

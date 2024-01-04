@@ -42,7 +42,6 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<CreateNewUserResponse> CreateNewUser(CreateNewUserRequest newUserRequest, Guid brandId)
         {
-          
             _logger.LogInformation($"Create new brand with {newUserRequest.FullName}");
             User newUser = new User()
             {
@@ -97,9 +96,9 @@ namespace Pos_System.API.Services.Implements
             //    throw new BadRequestException("The system currently only accepted @fpt.edu.vn email!", ErrorNameValues.InvalidCredential);
 
             Guid brandId = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
-                    selector: brand => brand.Id,
-                    predicate: brand => brand.BrandCode.Equals(req.BrandCode));
-            if(brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+                selector: brand => brand.Id,
+                predicate: brand => brand.BrandCode.Equals(req.BrandCode));
+            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
             User userLogin = await _unitOfWork.GetRepository<User>()
                 .SingleOrDefaultAsync(predicate: x => x.PhoneNumber.Equals(phone)
                                                       && x.Status.Equals("Active") && x.BrandId.Equals(brandId));
@@ -113,7 +112,7 @@ namespace Pos_System.API.Services.Implements
             Tuple<string, Guid> guidClaim;
             JwtSecurityToken? token;
             string accesstoken;
-            
+
             if (userLogin == null)
             {
                 CreateNewUserRequest newUserRequest = new CreateNewUserRequest()
@@ -129,7 +128,7 @@ namespace Pos_System.API.Services.Implements
                 User user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(predicate: x =>
                     x.Id.Equals(newUser.Id)
                     && x.Status.Equals("Active"));
-                
+
                 guidClaim = new Tuple<string, Guid>("brandId", brandId);
                 //string? brandPicUrl = await _unitOfWork.GetRepository<Store>().SingleOrDefaultAsync(
                 //    selector: store => store.Brand.PicUrl,
@@ -177,7 +176,7 @@ namespace Pos_System.API.Services.Implements
                     }
                 };
             }
-            
+
             userLogin.Fcmtoken = req.FcmToken;
             guidClaim = new Tuple<string, Guid>("brandId", brandId);
             configuration = new ConfigurationBuilder()
@@ -185,6 +184,127 @@ namespace Pos_System.API.Services.Implements
             jwtHandler = new JwtSecurityTokenHandler();
             secrectKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(configuration.GetValue<string>(JwtConstant.SecretKey)));
+            credentials = new SigningCredentials(secrectKey, SecurityAlgorithms.HmacSha256Signature);
+            issuer = configuration.GetValue<string>(JwtConstant.Issuer);
+            claims = new List<Claim>()
+            {
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, userLogin.FullName),
+                new Claim(ClaimTypes.Role, "User"),
+            };
+            claims.Add(new Claim(guidClaim.Item1, guidClaim.Item2.ToString()));
+            expires = DateTime.Now.AddDays(60);
+            token = new JwtSecurityToken(issuer, null, claims, notBefore: DateTime.Now, expires, credentials);
+            accesstoken = jwtHandler.WriteToken(token);
+            _unitOfWork.GetRepository<User>().UpdateAsync(userLogin);
+            return new SignInResponse
+            {
+                message = "Login success",
+                AccessToken = accesstoken,
+                UserInfo = new UserResponse()
+                {
+                    Id = userLogin.Id,
+                    FullName = userLogin.FullName,
+                    PhoneNumber = userLogin.PhoneNumber,
+                    BrandId = userLogin.BrandId,
+                    Email = userLogin.Email,
+                    FireBaseUid = userLogin.FireBaseUid,
+                    CreatedAt = userLogin.CreatedAt,
+                    Fcmtoken = userLogin.Fcmtoken,
+                    Gender = userLogin.Gender,
+                    Status = userLogin.Status,
+                    UpdatedAt = userLogin.UpdatedAt,
+                    UrlImg = userLogin.UrlImg
+                }
+            };
+        }
+
+        public async Task<SignInResponse> LoginUserMiniApp(LoginMiniApp req)
+        {
+            string modifiedPhoneNumber = Regex.Replace(req.Phone, @"^0", "+84");
+            Guid brandId = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
+                selector: brand => brand.Id,
+                predicate: brand => brand.BrandCode.Equals(req.BrandCode));
+            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+
+            var userLogin = await _unitOfWork.GetRepository<User>()
+                .SingleOrDefaultAsync(predicate: x => x.PhoneNumber.Equals(modifiedPhoneNumber)
+                                                      && x.Status.Equals("Active") && x.BrandId.Equals(brandId));
+            DateTime expires;
+            IConfiguration configuration;
+            JwtSecurityTokenHandler jwtHandler;
+            SymmetricSecurityKey secrectKey;
+            SigningCredentials? credentials;
+            string issuer;
+            List<Claim> claims;
+            Tuple<string, Guid> guidClaim;
+            JwtSecurityToken? token;
+
+            string accesstoken;
+            if (userLogin == null)
+            {
+                CreateNewUserRequest newUserRequest = new CreateNewUserRequest()
+                {
+                    PhoneNunmer = modifiedPhoneNumber,
+                    FullName = req.FullName,
+                    Gender = "ORTHER",
+                    FireBaseUid = "ZaloMiniApp"
+                };
+                var newUser = await CreateNewUser(newUserRequest, brandId);
+                User user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(predicate: x =>
+                    x.Id.Equals(newUser.Id)
+                    && x.Status.Equals("Active"));
+
+                guidClaim = new Tuple<string, Guid>("brandId", brandId);
+                configuration = new ConfigurationBuilder()
+                    .AddEnvironmentVariables(EnvironmentVariableConstant.Prefix).Build();
+                jwtHandler = new JwtSecurityTokenHandler();
+                secrectKey =
+                    new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(configuration.GetValue<string>(JwtConstant.SecretKey)));
+                credentials = new SigningCredentials(secrectKey, SecurityAlgorithms.HmacSha256Signature);
+                issuer = configuration.GetValue<string>(JwtConstant.Issuer);
+                claims = new List<Claim>()
+                {
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    new Claim(JwtRegisteredClaimNames.Sub, newUser.FullName),
+                    new Claim(ClaimTypes.Role, "User"),
+                };
+                if (guidClaim != null) claims.Add(new Claim(guidClaim.Item1, guidClaim.Item2.ToString()));
+                expires = "User".Equals(RoleEnum.User.GetDescriptionFromEnum())
+                    ? DateTime.Now.AddDays(1)
+                    : DateTime.Now.AddMinutes(configuration.GetValue<long>(JwtConstant.TokenExpireInMinutes));
+                token = new JwtSecurityToken(issuer, null, claims, notBefore: DateTime.Now, expires, credentials);
+                accesstoken = jwtHandler.WriteToken(token);
+                return new SignInResponse
+                {
+                    message = "Sign Up success",
+                    AccessToken = accesstoken,
+                    UserInfo = new UserResponse()
+                    {
+                        Id = user.Id,
+                        FullName = user.FullName,
+                        PhoneNumber = user.PhoneNumber,
+                        BrandId = user.BrandId,
+                        Email = user.Email,
+                        FireBaseUid = user.FireBaseUid,
+                        CreatedAt = user.CreatedAt,
+                        Fcmtoken = user.Fcmtoken,
+                        Gender = user.Gender,
+                        Status = user.Status,
+                        UpdatedAt = user.UpdatedAt,
+                        UrlImg = user.UrlImg
+                    }
+                };
+            }
+
+            guidClaim = new Tuple<string, Guid>("brandId", brandId);
+            configuration = new ConfigurationBuilder()
+                .AddEnvironmentVariables(EnvironmentVariableConstant.Prefix).Build();
+            jwtHandler = new JwtSecurityTokenHandler();
+            secrectKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(configuration.GetValue<string>(JwtConstant.SecretKey)));
+
             credentials = new SigningCredentials(secrectKey, SecurityAlgorithms.HmacSha256Signature);
             issuer = configuration.GetValue<string>(JwtConstant.Issuer);
             claims = new List<Claim>()
@@ -305,10 +425,10 @@ namespace Pos_System.API.Services.Implements
             if (!createNewOrderRequest.ProductList.Any())
                 throw new BadHttpRequestException(MessageConstant.Order.NoProductsInOrderMessage);
 
-            string newInvoiceId = store.Code + currentTimeStamp;
-            int defaultGuest = 1;
+            var newInvoiceId = store.Code + currentTimeStamp;
+            const int defaultGuest = 1;
 
-            double vatAmount = (createNewOrderRequest.FinalAmount / VAT_STANDARD) * VAT_PERCENT;
+            var vatAmount = (createNewOrderRequest.FinalAmount / VAT_STANDARD) * VAT_PERCENT;
 
             Order newOrder = new Order()
             {
@@ -710,10 +830,11 @@ namespace Pos_System.API.Services.Implements
         public async Task<GetMenuDetailForStaffResponse> GetMenuDetailFromStore(Guid storeId)
         {
             //Filter Menu, make sure it return correct menu in specific time
-            List<MenuStore> allMenuAvailable = (List<MenuStore>)await _unitOfWork.GetRepository<MenuStore>()
+            List<MenuStore> allMenuAvailable = (List<MenuStore>) await _unitOfWork.GetRepository<MenuStore>()
                 .GetListAsync(predicate: x => x.StoreId.Equals(storeId)
                                               && x.Menu.Status.Equals(MenuStatus.Active.GetDescriptionFromEnum())
-                                              && x.Store.Brand.Status.Equals(BrandStatus.Active.GetDescriptionFromEnum()),
+                                              && x.Store.Brand.Status.Equals(
+                                                  BrandStatus.Active.GetDescriptionFromEnum()),
                     include: x => x
                         .Include(x => x.Menu)
                         .Include(x => x.Store).ThenInclude(x => x.Brand)
@@ -731,7 +852,8 @@ namespace Pos_System.API.Services.Implements
                 List<DateFilter> menuAvailableDays = DateTimeHelper.GetDatesFromDateFilter(menu.Menu.DateFilter);
                 TimeOnly menuStartTime = DateTimeHelper.ConvertIntToTimeOnly(menu.Menu.StartTime);
                 TimeOnly menuEndTime = DateTimeHelper.ConvertIntToTimeOnly(menu.Menu.EndTime);
-                if (menuAvailableDays.Contains(currentDay) && currentTime <= menuEndTime && currentTime >= menuStartTime)
+                if (menuAvailableDays.Contains(currentDay) && currentTime <= menuEndTime &&
+                    currentTime >= menuStartTime)
                     menusAvailableInDay.Add(menu);
             }
 
@@ -755,9 +877,10 @@ namespace Pos_System.API.Services.Implements
                     x.DateFilter,
                     x.StartTime,
                     x.EndTime),
-                predicate: x => x.Id.Equals(menuOfStoreId) && x.Status.Equals(MenuStatus.Active.GetDescriptionFromEnum()));
+                predicate: x =>
+                    x.Id.Equals(menuOfStoreId) && x.Status.Equals(MenuStatus.Active.GetDescriptionFromEnum()));
 
-            menuOfStore.ProductsInMenu = (List<ProductDataForStaff>)await _unitOfWork.GetRepository<MenuProduct>()
+            menuOfStore.ProductsInMenu = (List<ProductDataForStaff>) await _unitOfWork.GetRepository<MenuProduct>()
                 .GetListAsync(
                     selector: x => new ProductDataForStaff
                     (
@@ -776,8 +899,8 @@ namespace Pos_System.API.Services.Implements
                         x.Product.ParentProductId,
                         x.Product.BrandId,
                         x.Product.CategoryId,
-                        (List<Guid>)x.Product.CollectionProducts.Select(x => x.CollectionId),
-                        (List<Guid>)x.Product.Category.ExtraCategoryProductCategories.Select(x => x.ExtraCategoryId),
+                        (List<Guid>) x.Product.CollectionProducts.Select(x => x.CollectionId),
+                        (List<Guid>) x.Product.Category.ExtraCategoryProductCategories.Select(x => x.ExtraCategoryId),
                         x.Id //This is the menuProductId in response body
                     ),
                     predicate: x =>
@@ -791,7 +914,7 @@ namespace Pos_System.API.Services.Implements
                         .ThenInclude(category => category.ExtraCategoryProductCategories)
                 );
 
-            menuOfStore.CollectionsOfBrand = (List<CollectionOfBrand>)await _unitOfWork.GetRepository<Collection>()
+            menuOfStore.CollectionsOfBrand = (List<CollectionOfBrand>) await _unitOfWork.GetRepository<Collection>()
                 .GetListAsync(selector: x => new CollectionOfBrand(
                         x.Id,
                         x.Name,
@@ -802,26 +925,29 @@ namespace Pos_System.API.Services.Implements
                     predicate: x =>
                         x.BrandId.Equals(userBrandId) && x.Status == CollectionStatus.Active.GetDescriptionFromEnum());
 
-            menuOfStore.CategoriesOfBrand = (List<CategoryOfBrand>)await _unitOfWork.GetRepository<Category>()
+            menuOfStore.CategoriesOfBrand = (List<CategoryOfBrand>) await _unitOfWork.GetRepository<Category>()
                 .GetListAsync(selector: x => new CategoryOfBrand(
-                    x.Id,
-                    x.Code,
-                    x.Name,
-                    EnumUtil.ParseEnum<CategoryType>(x.Type),
-                    x.DisplayOrder,
-                    x.Description,
-                    x.PicUrl
-                ), predicate: x => x.BrandId.Equals(userBrandId) && x.Status.Equals(CategoryStatus.Active.GetDescriptionFromEnum()));
+                        x.Id,
+                        x.Code,
+                        x.Name,
+                        EnumUtil.ParseEnum<CategoryType>(x.Type),
+                        x.DisplayOrder,
+                        x.Description,
+                        x.PicUrl
+                    ),
+                    predicate: x =>
+                        x.BrandId.Equals(userBrandId) &&
+                        x.Status.Equals(CategoryStatus.Active.GetDescriptionFromEnum()));
 
             //Use to filter which productInGroups is added to menu
             List<Guid> productIdsInMenu = menuOfStore.ProductsInMenu.Select(x => x.Id).ToList();
 
-            menuOfStore.groupProductInMenus = (List<GroupProductInMenu>)await _unitOfWork.GetRepository<GroupProduct>()
+            menuOfStore.groupProductInMenus = (List<GroupProductInMenu>) await _unitOfWork.GetRepository<GroupProduct>()
                 .GetListAsync(
                     x => new GroupProductInMenu
                     {
                         Id = x.Id,
-                        ComboProductId = (Guid)x.ComboProductId,
+                        ComboProductId = (Guid) x.ComboProductId,
                         Name = x.Name,
                         CombinationMode = EnumUtil.ParseEnum<GroupCombinationMode>(x.CombinationMode),
                         Priority = x.Priority,
@@ -834,7 +960,7 @@ namespace Pos_System.API.Services.Implements
                     include: x => x.Include(x => x.ComboProduct)
                 );
 
-            menuOfStore.productInGroupList = (List<ProductsInGroupResponse>)await _unitOfWork
+            menuOfStore.productInGroupList = (List<ProductsInGroupResponse>) await _unitOfWork
                 .GetRepository<ProductInGroup>().GetListAsync(
                     selector: x => new ProductsInGroupResponse
                     {
@@ -857,7 +983,7 @@ namespace Pos_System.API.Services.Implements
 
             foreach (GroupProductInMenu groupProduct in menuOfStore.groupProductInMenus)
             {
-                groupProduct.ProductsInGroupIds = (List<Guid>)menuOfStore.productInGroupList
+                groupProduct.ProductsInGroupIds = (List<Guid>) menuOfStore.productInGroupList
                     .Where(x => x.GroupProductId.Equals(groupProduct.Id))
                     .Select(x => x.Id).ToList();
             }
