@@ -24,5 +24,6 @@ namespace Pos_System.API.Services.Interfaces
         Task<PrepareOrderRequest> PrepareOrder(PrepareOrderRequest orderReq);
         Task<Guid> PlaceStoreOrder(PrepareOrderRequest createNewOrderRequest);
         Task<Guid> CheckoutOrder(Guid storeId, Guid orderId, UpdateOrderRequest updateOrderRequest);
+        public Task<NewUserOrderResponse> GetNewUserOrderInStore(Guid storeId);
     }
 }

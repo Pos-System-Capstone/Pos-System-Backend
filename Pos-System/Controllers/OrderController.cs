@@ -95,5 +95,13 @@ namespace Pos_System.API.Controllers
             var response = await _orderService.CheckoutOrder(storeId, id, updateOrderRequest);
             return Ok(response);
         }
+        
+        [HttpGet(ApiEndPointConstant.Order.NewUserOrderEndPoint)]
+        [ProducesResponseType(typeof(NewUserOrderResponse), StatusCodes.Status200OK)]
+        public async Task<IActionResult> FindNewUserOrder(Guid storeId)
+        {
+            var response = await _orderService.GetNewUserOrderInStore(storeId);
+            return Ok(response);
+        }
     }
 }

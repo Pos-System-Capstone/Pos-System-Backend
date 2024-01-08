@@ -374,6 +374,7 @@ namespace Pos_System.API.Services.Implements
                     _unitOfWork.GetRepository<OrderUser>().UpdateAsync(orderUser);
                 }
             }
+
             _unitOfWork.GetRepository<Order>().UpdateAsync(order);
             await _unitOfWork.CommitAsync();
             return order.Id;
@@ -465,7 +466,7 @@ namespace Pos_System.API.Services.Implements
 
             order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
-            
+
             _unitOfWork.GetRepository<Order>().UpdateAsync(order);
             await _unitOfWork.CommitAsync();
             return order.Id;
@@ -1058,6 +1059,30 @@ namespace Pos_System.API.Services.Implements
             await _unitOfWork.GetRepository<OrderDetail>().InsertRangeAsync(orderDetails);
             await _unitOfWork.CommitAsync();
             return newOrder.Id;
+        }
+
+        public async Task<NewUserOrderResponse> GetNewUserOrderInStore(Guid storeId
+        )
+        {
+            if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
+            DateTime currentTime = TimeUtils.GetCurrentSEATime();
+            var orders = (List<Order>) await _unitOfWork.GetRepository<Order>().GetListAsync(
+                predicate: x =>
+                    x.Status.Equals(OrderStatus.PENDING.GetDescriptionFromEnum()) && x.OrderSourceId.HasValue &&
+                    x.CheckInDate.Date.Equals(currentTime.Date) &&
+                    x.Session.StoreId.Equals(storeId),
+                include:
+                x => x.Include(order => order.Session).Include(order => order.CheckInPersonNavigation)
+            );
+            NewUserOrderResponse response = new NewUserOrderResponse()
+            {
+                TotalOrder = orders.Count,
+                TotalOrderPickUp = orders
+                    .Count(o => o.OrderType != null && o.OrderType.Equals(OrderType.EAT_IN.GetDescriptionFromEnum())),
+                TotalOrderDeli = orders
+                    .Count(o => o.OrderType != null && o.OrderType.Equals(OrderType.DELIVERY.GetDescriptionFromEnum()))
+            };
+            return response;
         }
     }
 }
