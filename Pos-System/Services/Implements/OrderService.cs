@@ -858,17 +858,20 @@ namespace Pos_System.API.Services.Implements
                                                         (responseContent.Order.DiscountOrderDetail ?? 0));
                     orderReq.BonusPoint = (double) (responseContent.Order.BonusPoint ?? 0);
                     orderReq.PromotionList = new List<PromotionPrepare>();
-                    foreach (var promotionInOrder in responseContent.Order.Effects.Select(effect =>
-                                 new PromotionPrepare()
-                                 {
-                                     PromotionId = effect.PromotionId,
-                                     Name = effect.PromotionName,
-                                     Code = effect.Prop.Code ?? "",
-                                     DiscountAmount = (double) (effect.Prop.Value),
-                                     EffectType = effect.EffectType
-                                 }))
+                    if (responseContent.Order.Effects != null)
                     {
-                        orderReq.PromotionList?.Add(promotionInOrder);
+                        foreach (var promotionInOrder in responseContent.Order.Effects.Select(effect =>
+                                     new PromotionPrepare()
+                                     {
+                                         PromotionId = effect.PromotionId,
+                                         Name = effect.PromotionName,
+                                         Code = effect.Prop.Code ?? "",
+                                         DiscountAmount = (double) (effect.Prop.Value),
+                                         EffectType = effect.EffectType
+                                     }))
+                        {
+                            orderReq.PromotionList?.Add(promotionInOrder);
+                        }
                     }
 
                     for (var i = 0; i < orderReq.ProductList.Count; i++)
