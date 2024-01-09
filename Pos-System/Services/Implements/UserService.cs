@@ -40,7 +40,8 @@ namespace Pos_System.API.Services.Implements
         }
 
 
-        public async Task<CreateNewUserResponse> CreateNewUser(CreateNewUserRequest newUserRequest, Guid brandId)
+        public async Task<CreateNewUserResponse> CreateNewUser(CreateNewUserRequest newUserRequest, Guid brandId,
+            string brandCode)
         {
             _logger.LogInformation($"Create new brand with {newUserRequest.FullName}");
             User newUser = new User()
@@ -69,7 +70,9 @@ namespace Pos_System.API.Services.Implements
                 email = newUser.Email,
                 gender = newUserRequest.Gender.Equals("MALE") ? 1 : (newUserRequest.Gender.Equals("FEMALE") ? 2 : 3),
                 phoneNumber = newUser.PhoneNumber,
-                memberProgramId = "52b1f27d-885f-4b1c-9773-91ed894b4eac"
+                memberProgramId = brandCode == "DEERCOFFEE"
+                    ? "52b1f27d-885f-4b1c-9773-91ed894b4eac"
+                    : "CBA71E56-066E-4F58-B0FA-2871B538CF14"
             };
             var json = JsonSerializer.Serialize(data);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -123,7 +126,7 @@ namespace Pos_System.API.Services.Implements
                     FireBaseUid = uid,
                     FcmToken = req.FcmToken
                 };
-                var newUser = await CreateNewUser(newUserRequest, brandId);
+                var newUser = await CreateNewUser(newUserRequest, brandId, req.BrandCode);
 
                 User user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(predicate: x =>
                     x.Id.Equals(newUser.Id)
@@ -250,10 +253,7 @@ namespace Pos_System.API.Services.Implements
                     Gender = "ORTHER",
                     FireBaseUid = "ZaloMiniApp"
                 };
-                var newUser = await CreateNewUser(newUserRequest, brandId);
-                User user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(predicate: x =>
-                    x.Id.Equals(newUser.Id)
-                    && x.Status.Equals("Active"));
+                var newUser = await CreateNewUser(newUserRequest, brandId, req.BrandCode);
 
                 guidClaim = new Tuple<string, Guid>("brandId", brandId);
                 configuration = new ConfigurationBuilder()
@@ -276,25 +276,12 @@ namespace Pos_System.API.Services.Implements
                     : DateTime.Now.AddMinutes(configuration.GetValue<long>(JwtConstant.TokenExpireInMinutes));
                 token = new JwtSecurityToken(issuer, null, claims, notBefore: DateTime.Now, expires, credentials);
                 accesstoken = jwtHandler.WriteToken(token);
+                var userById = await GetUserById(newUser.Id);
                 return new SignInResponse
                 {
                     message = "Sign Up success",
                     AccessToken = accesstoken,
-                    UserInfo = new UserResponse()
-                    {
-                        Id = user.Id,
-                        FullName = user.FullName,
-                        PhoneNumber = user.PhoneNumber,
-                        BrandId = user.BrandId,
-                        Email = user.Email,
-                        FireBaseUid = user.FireBaseUid,
-                        CreatedAt = user.CreatedAt,
-                        Fcmtoken = user.Fcmtoken,
-                        Gender = user.Gender,
-                        Status = user.Status,
-                        UpdatedAt = user.UpdatedAt,
-                        UrlImg = user.UrlImg
-                    }
+                    UserInfo = userById
                 };
             }
 
@@ -318,25 +305,12 @@ namespace Pos_System.API.Services.Implements
             token = new JwtSecurityToken(issuer, null, claims, notBefore: DateTime.Now, expires, credentials);
             accesstoken = jwtHandler.WriteToken(token);
             _unitOfWork.GetRepository<User>().UpdateAsync(userLogin);
+            var userResponse = await GetUserById(userLogin.Id);
             return new SignInResponse
             {
                 message = "Login success",
                 AccessToken = accesstoken,
-                UserInfo = new UserResponse()
-                {
-                    Id = userLogin.Id,
-                    FullName = userLogin.FullName,
-                    PhoneNumber = userLogin.PhoneNumber,
-                    BrandId = userLogin.BrandId,
-                    Email = userLogin.Email,
-                    FireBaseUid = userLogin.FireBaseUid,
-                    CreatedAt = userLogin.CreatedAt,
-                    Fcmtoken = userLogin.Fcmtoken,
-                    Gender = userLogin.Gender,
-                    Status = userLogin.Status,
-                    UpdatedAt = userLogin.UpdatedAt,
-                    UrlImg = userLogin.UrlImg
-                }
+                UserInfo = userResponse
             };
         }
 

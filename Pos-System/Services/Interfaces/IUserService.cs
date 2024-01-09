@@ -10,7 +10,7 @@ namespace Pos_System.API.Services.Interfaces
 {
     public interface IUserService
     {
-        Task<CreateNewUserResponse> CreateNewUser(CreateNewUserRequest newUserRequest, Guid brandId);
+        Task<CreateNewUserResponse> CreateNewUser(CreateNewUserRequest newUserRequest, Guid brandId, string brandCode);
         Task<bool> UpdateUserInformation(Guid userId, UpdateUserRequest updateUserRequest);
         Task<UserResponse> GetUserById(Guid userId);
         Task<SignInResponse> LoginUser(LoginFirebase req);
