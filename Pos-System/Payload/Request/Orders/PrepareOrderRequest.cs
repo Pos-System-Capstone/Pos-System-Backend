@@ -26,8 +26,11 @@ public class PrepareOrderRequest
 
     public string? DeliveryAddress { get; set; }
     public string? Message { get; set; }
-    
+
     public int? CustomerNumber { get; set; }
+
+    public string? CustomerNote { get; set; }
+    public string? Notes { get; set; }
 }
 
 public class ProductList

@@ -420,9 +420,9 @@ namespace Pos_System.API.Services.Implements
                 NumberOfGuest = defaultGuest,
                 Status = OrderStatus.PENDING.GetDescriptionFromEnum(),
                 SessionId = currentUserSession.Id,
-                PaymentType = createNewOrderRequest.PaymentType.GetDescriptionFromEnum()
+                PaymentType = createNewOrderRequest.PaymentType.GetDescriptionFromEnum(),
+                Note = createNewOrderRequest.Notes
             };
-
 
             List<OrderDetail> orderDetails = new List<OrderDetail>();
             List<PromotionOrderMapping> promotionMappingList = new List<PromotionOrderMapping>();
@@ -508,6 +508,7 @@ namespace Pos_System.API.Services.Implements
                 Address = createNewOrderRequest.DeliveryAddress,
                 Name = createNewOrderRequest.CustomerName,
                 Phone = createNewOrderRequest.CustomerPhone,
+                Note = createNewOrderRequest.CustomerNote,
                 CreatedAt = currentTime,
                 Status = OrderSourceStatus.PENDING.GetDescriptionFromEnum(),
                 PaymentStatus = PaymentStatusEnum.PENDING.GetDescriptionFromEnum(),

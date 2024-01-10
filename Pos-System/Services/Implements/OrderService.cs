@@ -630,7 +630,7 @@ namespace Pos_System.API.Services.Implements
                     Address = x.OrderSource != null ? x.OrderSource.Address : null
                 },
                 predicate: x =>
-                    x.OrderSource.UserId.Equals(userId) && x.Status.Equals(status.GetDescriptionFromEnum()),
+                    x.OrderSource.UserId.Equals(userId),
                 orderBy: x => x.OrderByDescending(x => x.CheckInDate),
                 page: page,
                 size: size
