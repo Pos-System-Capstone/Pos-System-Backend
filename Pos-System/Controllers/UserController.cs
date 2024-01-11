@@ -29,33 +29,23 @@ namespace Pos_System.API.Controllers
             _blogPostService = blogPostService;
             _orderService = orderService;
         }
-
-
-        // [HttpPost(ApiEndPointConstant.User.UsersEndpoint)]
-        // [ProducesResponseType(typeof(CreateNewUserResponse), StatusCodes.Status200OK)]
-        // [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        // public async Task<IActionResult> CreateNewUser([FromBody] CreateNewUserRequest newUserRequest,
-        //     [FromQuery] string? brandCode)
-        // {
-        //     CreateNewUserResponse response = await _userService.CreateNewUser(newUserRequest, brandCode);
-        //     if (response == null)
-        //     {
-        //         _logger.LogError($"Create new user failed with {newUserRequest.FullName}");
-        //         return Problem($"{MessageConstant.User.CreateNewUserFailedMessage}: {newUserRequest.FullName}");
-        //     }
-        //
-        //     _logger.LogInformation($"Create new user successful with {newUserRequest.FullName}");
-        //     return CreatedAtAction(nameof(CreateNewUser), response);
-        // }
+        
+        [HttpGet(ApiEndPointConstant.User.CheckUserEnpoint)]
+        [ProducesResponseType(typeof(CheckMemberResponse), StatusCodes.Status200OK)]
+        public async Task<IActionResult> CheckMember([FromQuery] string brandCode, [FromQuery] string phone)
+        {
+            var response = await _userService.CheckMember(phone, brandCode);
+            return Ok(response);
+        }
 
         [HttpPost(ApiEndPointConstant.User.UsersSignIn)]
         [ProducesResponseType(typeof(SignInResponse), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> LoginUser([FromBody] LoginFirebase req)
+        public async Task<IActionResult> LoginUser([FromBody] MemberLoginRequest req)
         {
             var response = await _userService.LoginUser(req);
             return Ok(response);
         }
+
         [HttpPost(ApiEndPointConstant.User.UserSignInMiniApp)]
         [ProducesResponseType(typeof(SignInResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
@@ -65,10 +55,9 @@ namespace Pos_System.API.Controllers
             return Ok(response);
         }
 
-        
-        
+
         [HttpPatch(ApiEndPointConstant.User.UserEndpoint)]
-        [CustomAuthorize( RoleEnum.User)]
+        [CustomAuthorize(RoleEnum.User)]
         public async Task<IActionResult> UpdateUserInformation(Guid id, [FromBody] UpdateUserRequest updateUserRequest)
         {
             bool isSuccessful = await _userService.UpdateUserInformation(id, updateUserRequest);
@@ -83,13 +72,14 @@ namespace Pos_System.API.Controllers
         }
 
         [HttpGet(ApiEndPointConstant.User.UserEndpoint)]
-        [CustomAuthorize( RoleEnum.User)]
+        [CustomAuthorize(RoleEnum.User)]
         [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUserById(Guid id)
         {
             var userResponse = await _userService.GetUserById(id);
             return Ok(userResponse);
         }
+
         [HttpPost("users/order")]
         public async Task<IActionResult> CreateUserOrder([FromBody] PrepareOrderRequest req)
         {
@@ -107,7 +97,7 @@ namespace Pos_System.API.Controllers
         }
 
         [HttpGet(ApiEndPointConstant.User.UserOrderEndpoint)]
-        [CustomAuthorize( RoleEnum.User)]
+        [CustomAuthorize(RoleEnum.User)]
         [ProducesResponseType(typeof(IPaginate<ViewOrdersResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetListOrderByUserId(Guid id, [FromQuery] OrderStatus status,
             [FromQuery] int page,
@@ -118,7 +108,7 @@ namespace Pos_System.API.Controllers
         }
 
         [HttpGet(ApiEndPointConstant.User.OrderDetailsEndpoint)]
-        [CustomAuthorize( RoleEnum.User)]
+        [CustomAuthorize(RoleEnum.User)]
         [ProducesResponseType(typeof(GetOrderDetailResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetOrderDetail(Guid id)
         {
@@ -142,8 +132,9 @@ namespace Pos_System.API.Controllers
             var userResponse = await _userService.GetPromotionsAsync(brandCode, id);
             return Ok(userResponse);
         }
+
         [HttpGet("users/{id}/transactions")]
-        [CustomAuthorize( RoleEnum.User)]
+        [CustomAuthorize(RoleEnum.User)]
         [ProducesResponseType(typeof(IPaginate<Transaction>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUserTransactions(Guid id, [FromQuery] int page, [FromQuery] int size)
         {
@@ -160,6 +151,7 @@ namespace Pos_System.API.Controllers
             var response = await _userService.TopUpUserWallet(request);
             return Ok(response);
         }
+
         [HttpPost("users/{id}/generate-qr")]
         //[CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager)]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
@@ -168,16 +160,17 @@ namespace Pos_System.API.Controllers
             var response = await _userService.CreateQrCode(id);
             return Ok(response);
         }
-        
-        
+
+
         [HttpPatch(ApiEndPointConstant.User.OrderDetailsEndpoint)]
-        [CustomAuthorize( RoleEnum.User)]
+        [CustomAuthorize(RoleEnum.User)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateUserOrder(Guid id, [FromBody] UpdateOrderRequest updateOrderRequest)
         {
             var response = await _userService.UpdateOrder(id, updateOrderRequest);
             return Ok(response);
         }
+
         [HttpGet("users/stores/{id}/menu")]
         //[CustomAuthorize( RoleEnum.User)]
         [ProducesResponseType(typeof(GetMenuDetailForStaffResponse), StatusCodes.Status200OK)]

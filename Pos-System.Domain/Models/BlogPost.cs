@@ -14,5 +14,6 @@ namespace Pos_System.Domain.Models
         public string? MetaData { get; set; }
         public string Status { get; set; } = null!;
         public short Priority { get; set; }
+        public string? Type { get; set; }
     }
 }

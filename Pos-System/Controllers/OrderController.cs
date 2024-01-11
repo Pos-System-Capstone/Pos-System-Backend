@@ -49,7 +49,7 @@ namespace Pos_System.API.Controllers
         }
 
         [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager, RoleEnum.User)]
-        [HttpPut(ApiEndPointConstant.Order.OrderEndPoint)]
+        [HttpPatch(ApiEndPointConstant.Order.OrderEndPoint)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateOrderPayment(Guid storeId, Guid id,
             UpdateOrderRequest updateOrderRequest)

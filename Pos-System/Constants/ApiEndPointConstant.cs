@@ -127,6 +127,7 @@ public static class ApiEndPointConstant
     public static class User
     {
         public const string UsersEndpoint = ApiEndpoint + "/users";
+        public const string CheckUserEnpoint = UsersEndpoint + "/check-login";
         public const string UsersSignIn = UsersEndpoint + "/sign-in";
         public const string UserSignInMiniApp = UsersSignIn + "/zalo";
         public const string UserEndpoint = UsersEndpoint + "/{id}";

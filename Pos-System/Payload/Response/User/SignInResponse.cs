@@ -6,7 +6,7 @@ namespace Pos_System.API.Payload.Response.User
     {
         public string message { get; set; }
         public string AccessToken { get; set; }
-        public UserResponse UserInfo { get; set; }
+        public Guid UserId { get; set; }
     }
 
     public class UserResponse
