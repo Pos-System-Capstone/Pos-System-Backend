@@ -163,6 +163,7 @@ namespace Pos_System.API.Services.Implements
                 predicate: x => x.Id.Equals(orderId),
                 include: x =>
                     x.Include(p => p.PromotionOrderMappings).ThenInclude(a => a.Promotion).Include(o => o.OrderSource)
+                        .Include(o => o.Session).ThenInclude(s => s.Store)
             );
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
 
@@ -171,6 +172,7 @@ namespace Pos_System.API.Services.Implements
             orderDetailResponse.InvoiceId = order.InvoiceId;
             orderDetailResponse.TotalAmount = order.TotalAmount;
             orderDetailResponse.FinalAmount = order.FinalAmount;
+            orderDetailResponse.StoreName = order.Session.Store.Name;
             orderDetailResponse.Vat = order.Vat;
             orderDetailResponse.VatAmount = order.Vatamount;
             orderDetailResponse.Discount = order.Discount;
@@ -208,6 +210,8 @@ namespace Pos_System.API.Services.Implements
                         Phone = order.OrderSource.Phone,
                         Address = order.OrderSource.Address,
                         CustomerType = order.OrderSource.UserType,
+                        PaymentStatus =
+                            EnumUtil.ParseEnum<PaymentStatusEnum>(order.OrderSource.PaymentStatus ?? "PENDING"),
                         DeliStatus = EnumUtil.ParseEnum<OrderSourceStatus>(order.OrderSource.Status)
                     };
                 }
@@ -222,6 +226,8 @@ namespace Pos_System.API.Services.Implements
                                 Phone = x.PhoneNumber,
                                 Address = order.OrderSource.Address,
                                 CustomerType = order.OrderSource.UserType,
+                                PaymentStatus =
+                                    EnumUtil.ParseEnum<PaymentStatusEnum>(order.OrderSource.PaymentStatus ?? "PENDING"),
                                 DeliStatus = EnumUtil.ParseEnum<OrderSourceStatus>(order.OrderSource.Status)
                             },
                             predicate: x => x.Id.Equals(order.OrderSource.UserId)
@@ -627,7 +633,11 @@ namespace Pos_System.API.Services.Implements
                     PaymentType = string.IsNullOrEmpty(x.PaymentType)
                         ? PaymentTypeEnum.CASH
                         : EnumUtil.ParseEnum<PaymentTypeEnum>(x.PaymentType),
-                    Address = x.OrderSource != null ? x.OrderSource.Address : null
+                    Address = x.OrderSource != null ? x.OrderSource.Address : null,
+                    StoreName = x.Session.Store.Name,
+                    PaymentStatus = x.OrderSource != null && x.OrderSource.PaymentStatus != null
+                        ? EnumUtil.ParseEnum<PaymentStatusEnum>(x.OrderSource.PaymentStatus)
+                        : null,
                 },
                 predicate: x =>
                     x.OrderSource.UserId.Equals(userId),
@@ -645,7 +655,8 @@ namespace Pos_System.API.Services.Implements
             Order order = await _unitOfWork.GetRepository<Order>().SingleOrDefaultAsync(
                 predicate: x => x.Id.Equals(orderId),
                 include: x =>
-                    x.Include(p => p.PromotionOrderMappings).ThenInclude(a => a.Promotion).Include(o => o.OrderSource)
+                    x.Include(p => p.PromotionOrderMappings).ThenInclude(a => a.Promotion)
+                        .Include(o => o.OrderSource).Include(o => o.Session).ThenInclude(s => s.Store)
             );
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
 
@@ -653,6 +664,7 @@ namespace Pos_System.API.Services.Implements
             orderDetailResponse.OrderId = order.Id;
             orderDetailResponse.InvoiceId = order.InvoiceId;
             orderDetailResponse.TotalAmount = order.TotalAmount;
+            orderDetailResponse.StoreName = order.Session.Store.Name;
             orderDetailResponse.FinalAmount = order.FinalAmount;
             orderDetailResponse.Vat = order.Vat;
             orderDetailResponse.VatAmount = order.Vatamount;
@@ -690,6 +702,8 @@ namespace Pos_System.API.Services.Implements
                         Phone = order.OrderSource.Phone,
                         Address = order.OrderSource.Address,
                         CustomerType = order.OrderSource.UserType,
+                        PaymentStatus =
+                            EnumUtil.ParseEnum<PaymentStatusEnum>(order.OrderSource.PaymentStatus ?? "PENDING"),
                         DeliStatus = EnumUtil.ParseEnum<OrderSourceStatus>(order.OrderSource.Status)
                     };
                 }
