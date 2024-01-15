@@ -79,7 +79,7 @@ namespace Pos_System.API.Controllers
         }
 
         [CustomAuthorize(RoleEnum.BrandAdmin, RoleEnum.StoreManager)]
-        [HttpPut(ApiEndPointConstant.Menu.MenuEndPoint)]
+        [HttpPatch(ApiEndPointConstant.Menu.MenuEndPoint)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateMenuInformation(Guid menuId, UpdateMenuInformationRequest updateMenuInformationRequest)
         {
@@ -111,13 +111,13 @@ namespace Pos_System.API.Controllers
             return Ok(response);
         }
 
-        [CustomAuthorize(RoleEnum.BrandAdmin)]
-        [HttpPatch(ApiEndPointConstant.Menu.MenuEndPoint)]
-        [ProducesResponseType(typeof(Guid),StatusCodes.Status200OK)]
-        public async Task<IActionResult> UpdateMenuStatus(Guid menuId, UpdateMenuStatusRequest updateMenuStatusRequest)
-        {
-            var response = await _menuService.UpdateMenuStatus(menuId, updateMenuStatusRequest);
-            return Ok(response);
-        }
+        //[CustomAuthorize(RoleEnum.BrandAdmin)]
+        //[HttpPut(ApiEndPointConstant.Menu.MenuEndPoint)]
+        //[ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+        //public async Task<IActionResult> UpdateMenuStatus(Guid menuId, UpdateMenuStatusRequest updateMenuStatusRequest)
+        //{
+        //    var response = await _menuService.UpdateMenuStatus(menuId, updateMenuStatusRequest);
+        //    return Ok(response);
+        //}
     }
 }

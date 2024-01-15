@@ -50,7 +50,7 @@ namespace Pos_System.API.Controllers
         }
 
         [CustomAuthorize(RoleEnum.BrandAdmin)]
-        [HttpPut(ApiEndPointConstant.Category.CategoryEndpoint)]
+        [HttpPatch(ApiEndPointConstant.Category.CategoryEndpoint)]
         public async Task<IActionResult> UpdateCategoryInformation(Guid id, UpdateCategoryRequest updateCategoryRequest)
         {
             bool isSuccessfuly = await _categoryService.UpdateCategory(id, updateCategoryRequest);

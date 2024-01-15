@@ -103,7 +103,7 @@ namespace Pos_System.API.Controllers
         }
 
         [CustomAuthorize(RoleEnum.BrandManager, RoleEnum.BrandAdmin)]
-        [HttpPut(ApiEndPointConstant.Store.StoreEndpoint)]
+        [HttpPatch(ApiEndPointConstant.Store.StoreEndpoint)]
         public async Task<IActionResult> UpdateStoreInformation(Guid id, UpdateStoreRequest updateStoreRequest)
         {
             await _storeService.UpdateStoreInformation(id, updateStoreRequest);
@@ -111,7 +111,7 @@ namespace Pos_System.API.Controllers
         }
 
         [CustomAuthorize(RoleEnum.StoreManager, RoleEnum.BrandManager, RoleEnum.BrandAdmin)]
-        [HttpPut(ApiEndPointConstant.Store.StoreUpdateEmployeeEndpoint)]
+        [HttpPatch(ApiEndPointConstant.Store.StoreUpdateEmployeeEndpoint)]
         public async Task<IActionResult> UpdateAccountInformation(Guid storeId, Guid id,
             UpdateStoreAccountInformationRequest staffAccountInformationRequest)
         {
@@ -169,7 +169,7 @@ namespace Pos_System.API.Controllers
         }
 
         [CustomAuthorize(RoleEnum.StoreManager)]
-        [HttpPut(ApiEndPointConstant.Store.StoreSessionEndpoint)]
+        [HttpPatch(ApiEndPointConstant.Store.StoreSessionEndpoint)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateStoreSession(Guid storeId, Guid id,
             UpdateStoreSessionRequest updateStoreSessionRequest)

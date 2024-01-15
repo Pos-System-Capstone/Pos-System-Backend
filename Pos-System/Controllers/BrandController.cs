@@ -114,7 +114,7 @@ namespace Pos_System.API.Controllers
         }
 
         [CustomAuthorize(RoleEnum.SysAdmin, RoleEnum.BrandManager, RoleEnum.BrandAdmin)]
-        [HttpPut(ApiEndPointConstant.Brand.BrandEndpoint)]
+        [HttpPatch(ApiEndPointConstant.Brand.BrandEndpoint)]
         public async Task<IActionResult> UpdateBrandInformation(Guid id, UpdateBrandRequest updateBrandRequest)
         {
             bool isSuccessful = await _brandService.UpdateBrandInformation(id, updateBrandRequest);

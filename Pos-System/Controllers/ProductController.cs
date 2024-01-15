@@ -60,7 +60,7 @@ namespace Pos_System.API.Controllers
         }
 
         [CustomAuthorize(RoleEnum.BrandAdmin)]
-        [HttpPut(ApiEndPointConstant.Product.ProductEndPoint)]
+        [HttpPatch(ApiEndPointConstant.Product.ProductEndPoint)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateProductInformation(Guid id, UpdateProductRequest updateProductRequest)
         {
@@ -93,7 +93,7 @@ namespace Pos_System.API.Controllers
         }
 
         [CustomAuthorize(RoleEnum.BrandAdmin)]
-        [HttpPut(ApiEndPointConstant.Product.GroupProductInBrandEndPoint)]
+        [HttpPatch(ApiEndPointConstant.Product.GroupProductInBrandEndPoint)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateGroupProduct(Guid brandId ,Guid id, UpdateGroupProductRequest updateGroupProductRequest)
         {
@@ -111,7 +111,7 @@ namespace Pos_System.API.Controllers
         }
 
         [CustomAuthorize(RoleEnum.BrandAdmin)]
-        [HttpPut(ApiEndPointConstant.Product.ProductInGroupEndPoint)]
+        [HttpPatch(ApiEndPointConstant.Product.ProductInGroupEndPoint)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateSingleProductInGroup(Guid groupProductId, Guid id, UpdateProductInGroupRequest updateProductInGroupRequest)
         {

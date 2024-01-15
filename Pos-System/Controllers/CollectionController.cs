@@ -39,7 +39,7 @@ namespace Pos_System.API.Controllers
         }
 
         [CustomAuthorize(RoleEnum.BrandAdmin)]
-        [HttpPut(ApiEndPointConstant.Collection.CollectionEndPoint)]
+        [HttpPatch(ApiEndPointConstant.Collection.CollectionEndPoint)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateCollectionInformation(Guid id, UpdateCollectionInformationRequest collectionInformationRequest)
         {
@@ -84,13 +84,13 @@ namespace Pos_System.API.Controllers
         }
 
 
-        [CustomAuthorize(RoleEnum.BrandAdmin)]
-        [HttpPatch(ApiEndPointConstant.Collection.CollectionEndPoint)]
-        [ProducesResponseType(typeof(Guid),StatusCodes.Status200OK)]
-        public async Task<IActionResult> UpdateCollectionStatus(Guid id, UpdateCollectionStatusRequest updateCollectionStatusRequest)
-        {
-            Guid collectionIdResponse = await _collectionService.UpdateCollectionStatus(id, updateCollectionStatusRequest);
-            return Ok(collectionIdResponse);
-        }
+        //[CustomAuthorize(RoleEnum.BrandAdmin)]
+        //[HttpPut(ApiEndPointConstant.Collection.CollectionEndPoint)]
+        //[ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+        //public async Task<IActionResult> UpdateCollectionStatus(Guid id, UpdateCollectionStatusRequest updateCollectionStatusRequest)
+        //{
+        //    Guid collectionIdResponse = await _collectionService.UpdateCollectionStatus(id, updateCollectionStatusRequest);
+        //    return Ok(collectionIdResponse);
+        //}
     }
 }
