@@ -54,7 +54,7 @@ namespace Pos_System.API.Services.Implements
                 FireBaseUid = newUserRequest.FireBaseUid,
                 CreatedAt = TimeUtils.GetCurrentSEATime(),
                 UpdatedAt = TimeUtils.GetCurrentSEATime(),
-                PinCode = PasswordUtil.HashPassword(newUserRequest.PinCode)
+                PinCode = newUserRequest.PinCode == null? null : PasswordUtil.HashPassword(newUserRequest.PinCode),
             };
 
             await _unitOfWork.GetRepository<User>().InsertAsync(newUser);

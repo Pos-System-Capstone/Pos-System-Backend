@@ -9,6 +9,6 @@
         public string? FireBaseUid { get; set; }
 
         public string? FcmToken { get; set; }
-        public string PinCode { get; set; } = null!;
+        public string? PinCode { get; set; }
     }
 }
