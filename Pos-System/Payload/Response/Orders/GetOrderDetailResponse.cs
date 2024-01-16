@@ -6,7 +6,7 @@ namespace Pos_System.API.Payload.Response.Orders
     {
         public Guid OrderId { get; set; }
         public string InvoiceId { get; set; }
-        
+
         public string StoreName { get; set; }
         public double TotalAmount { get; set; }
         public double FinalAmount { get; set; }
@@ -72,6 +72,8 @@ namespace Pos_System.API.Payload.Response.Orders
         public string? Address { get; set; }
 
         public string? CustomerType { get; set; }
+
+        public string? DeliTime { get; set; }
 
         public PaymentStatusEnum? PaymentStatus { get; set; }
 

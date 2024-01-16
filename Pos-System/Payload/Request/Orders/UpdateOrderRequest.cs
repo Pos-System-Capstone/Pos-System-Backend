@@ -6,7 +6,8 @@ namespace Pos_System.API.Payload.Request.Orders
     {
         public OrderStatus? Status { get; set; }
         public PaymentTypeEnum? PaymentType { get; set; }
-        
+
+        public int? GuestNumber { get; set; }
         public OrderSourceStatus? DeliStatus { get; set; }
     }
 }

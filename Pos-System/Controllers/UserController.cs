@@ -29,7 +29,7 @@ namespace Pos_System.API.Controllers
             _blogPostService = blogPostService;
             _orderService = orderService;
         }
-        
+
         [HttpGet(ApiEndPointConstant.User.CheckUserEnpoint)]
         [ProducesResponseType(typeof(CheckMemberResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> CheckMember([FromQuery] string brandCode, [FromQuery] string phone)

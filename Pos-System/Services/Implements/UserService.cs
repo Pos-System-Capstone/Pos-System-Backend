@@ -21,6 +21,7 @@ using Pos_System.Domain.Paginate;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using Pos_System.API.Payload.Response.Menus;
 using Pos_System.API.Helpers;
+using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.Products;
 
 namespace Pos_System.API.Services.Implements
@@ -29,6 +30,7 @@ namespace Pos_System.API.Services.Implements
     {
         public const double VAT_PERCENT = 0.08;
         public const double VAT_STANDARD = 1.08;
+
 
         public UserService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<UserService> logger,
             IMapper mapper, IHttpContextAccessor httpContextAccessor) : base(
@@ -54,7 +56,7 @@ namespace Pos_System.API.Services.Implements
                 FireBaseUid = newUserRequest.FireBaseUid,
                 CreatedAt = TimeUtils.GetCurrentSEATime(),
                 UpdatedAt = TimeUtils.GetCurrentSEATime(),
-                PinCode = newUserRequest.PinCode == null? null : PasswordUtil.HashPassword(newUserRequest.PinCode),
+                PinCode = newUserRequest.PinCode == null ? null : PasswordUtil.HashPassword(newUserRequest.PinCode),
             };
 
             await _unitOfWork.GetRepository<User>().InsertAsync(newUser);
@@ -567,7 +569,54 @@ namespace Pos_System.API.Services.Implements
             await _unitOfWork.GetRepository<Order>().InsertAsync(newOrder);
             await _unitOfWork.GetRepository<OrderDetail>().InsertRangeAsync(orderDetails);
             await _unitOfWork.GetRepository<OrderUser>().InsertAsync(orderSource);
-            await _unitOfWork.CommitAsync();
+            var result = await _unitOfWork.CommitAsync();
+            if (result > 0 && createNewOrderRequest.CustomerId != null &&
+                newOrder.PaymentType.Equals(PaymentTypeEnum.POINTIFY.GetDescriptionFromEnum()))
+            {
+                var user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
+                    predicate: x => x.Id.Equals(createNewOrderRequest.CustomerId));
+                MemberActionRequest request = new MemberActionRequest()
+                {
+                    ApiKey = user.BrandId,
+                    StoreCode = store.Code,
+                    Amount = newOrder.FinalAmount,
+                    Description = newOrder.InvoiceId,
+                    MembershipId = user.Id,
+                    MemberActionType = MemberActionType.PAYMENT.GetDescriptionFromEnum()
+                };
+                var url = "https://api-pointify.reso.vn/api/member-action";
+                var response = await CallApiUtils.CallApiEndpoint(url, request);
+                if (response.StatusCode.Equals(HttpStatusCode.OK))
+                {
+                    orderSource.PaymentStatus = PaymentStatusEnum.PAID.GetDescriptionFromEnum();
+                }
+
+                var actionResponse =
+                    JsonConvert.DeserializeObject<MemberActionResponse>(response.Content
+                        .ReadAsStringAsync().Result);
+                if (actionResponse != null &&
+                    actionResponse.Status.Equals(MemberActionStatus.SUCCESS.GetDescriptionFromEnum()))
+                {
+                    Transaction transaction = new Transaction()
+                    {
+                        Id = Guid.NewGuid(),
+                        BrandId = user.BrandId,
+                        TransactionJson = response.Content
+                            .ReadAsStringAsync().Result,
+                        Amount = (decimal) newOrder.FinalAmount,
+                        CreatedDate = TimeUtils.GetCurrentSEATime(),
+                        UserId = user.Id,
+                        OrderId = newOrder.Id,
+                        IsIncrease = false,
+                        Type = TransactionTypeEnum.PAYMENT.GetDescriptionFromEnum(),
+                        Currency = "đ",
+                        Status = TransactionStatusEnum.SUCCESS.GetDescriptionFromEnum(),
+                    };
+                    await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
+                    await _unitOfWork.CommitAsync();
+                }
+            }
+
             return newOrder.Id;
         }
 

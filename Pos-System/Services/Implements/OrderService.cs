@@ -210,6 +210,7 @@ namespace Pos_System.API.Services.Implements
                         Phone = order.OrderSource.Phone,
                         Address = order.OrderSource.Address,
                         CustomerType = order.OrderSource.UserType,
+                        DeliTime = order.OrderSource.Note,
                         PaymentStatus =
                             EnumUtil.ParseEnum<PaymentStatusEnum>(order.OrderSource.PaymentStatus ?? "PENDING"),
                         DeliStatus = EnumUtil.ParseEnum<OrderSourceStatus>(order.OrderSource.Status)
@@ -226,6 +227,7 @@ namespace Pos_System.API.Services.Implements
                                 Phone = x.PhoneNumber,
                                 Address = order.OrderSource.Address,
                                 CustomerType = order.OrderSource.UserType,
+                                DeliTime = order.OrderSource.Note,
                                 PaymentStatus =
                                     EnumUtil.ParseEnum<PaymentStatusEnum>(order.OrderSource.PaymentStatus ?? "PENDING"),
                                 DeliStatus = EnumUtil.ParseEnum<OrderSourceStatus>(order.OrderSource.Status)
@@ -301,9 +303,16 @@ namespace Pos_System.API.Services.Implements
                     PaymentType = string.IsNullOrEmpty(x.PaymentType)
                         ? PaymentTypeEnum.CASH
                         : EnumUtil.ParseEnum<PaymentTypeEnum>(x.PaymentType),
+                    CustomerName = x.OrderSource != null ? x.OrderSource.Name : null,
+                    Phone = x.OrderSource != null ? x.OrderSource.Phone : null,
+                    Address = x.OrderSource != null ? x.OrderSource.Address : null,
+                    StoreName = x.Session.Store.Name,
+                    PaymentStatus = x.OrderSource != null && x.OrderSource.PaymentStatus != null
+                        ? EnumUtil.ParseEnum<PaymentStatusEnum>(x.OrderSource.PaymentStatus)
+                        : null,
                 },
                 predicate: BuildGetOrdersInStoreQuery(storeId, startDate, endDate, orderType, status),
-                include: x => x.Include(order => order.Session).Include(order => order.CheckInPersonNavigation),
+                include: x => x.Include(s => s.OrderSource).Include(v => v.Session).ThenInclude(p => p.Store),
                 orderBy: x =>
                     userRole == RoleEnum.Staff
                         ? x.OrderByDescending(x => x.CheckInDate)
@@ -402,6 +411,10 @@ namespace Pos_System.API.Services.Implements
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
             order.PaymentType = updateOrderRequest.PaymentType.GetDescriptionFromEnum();
             order.Status = updateOrderRequest.Status.GetDescriptionFromEnum();
+            if (updateOrderRequest.GuestNumber.HasValue)
+            {
+                order.NumberOfGuest = updateOrderRequest.GuestNumber;
+            }
 
             if (order.PromotionOrderMappings.Any() && updateOrderRequest.Status.Equals(OrderStatus.PAID))
             {
@@ -469,6 +482,7 @@ namespace Pos_System.API.Services.Implements
 
                 await _unitOfWork.GetRepository<Transaction>().InsertRangeAsync(transactions);
             }
+
 
             order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
@@ -542,6 +556,23 @@ namespace Pos_System.API.Services.Implements
             if (order.Status.Equals(OrderStatus.PAID.GetDescriptionFromEnum()))
             {
                 throw new BadHttpRequestException(MessageConstant.Order.OrderCompleteBefore);
+            }
+
+            if (order.OrderSourceId != null)
+            {
+                var orderUser = await _unitOfWork.GetRepository<OrderUser>()
+                    .SingleOrDefaultAsync(predicate: x => x.Id.Equals(order.OrderSourceId)
+                    );
+                if (orderUser.PaymentStatus.Equals(PaymentStatusEnum.PAID.GetDescriptionFromEnum()))
+                {
+                    PaymentOrderResponse response = new PaymentOrderResponse()
+                    {
+                        OrderId = order.Id,
+                        PaymentType = req.PaymentType,
+                        Status = PaymentStatusEnum.PAID.GetDescriptionFromEnum()
+                    };
+                    return response;
+                }
             }
 
             PaymentOrderResponse paymentOrderResponse = new PaymentOrderResponse()
@@ -633,17 +664,24 @@ namespace Pos_System.API.Services.Implements
                     PaymentType = string.IsNullOrEmpty(x.PaymentType)
                         ? PaymentTypeEnum.CASH
                         : EnumUtil.ParseEnum<PaymentTypeEnum>(x.PaymentType),
+                    CustomerName = x.OrderSource != null ? x.OrderSource.Name : null,
+                    Phone = x.OrderSource != null ? x.OrderSource.Phone : null,
                     Address = x.OrderSource != null ? x.OrderSource.Address : null,
                     StoreName = x.Session.Store.Name,
                     PaymentStatus = x.OrderSource != null && x.OrderSource.PaymentStatus != null
                         ? EnumUtil.ParseEnum<PaymentStatusEnum>(x.OrderSource.PaymentStatus)
                         : null,
                 },
-                predicate: x =>
+                include: x => x.Include(s => s.OrderSource).Include(v => v.Session).ThenInclude(p => p.Store),
+                predicate:
+                x =>
                     x.OrderSource.UserId.Equals(userId),
-                orderBy: x => x.OrderByDescending(x => x.CheckInDate),
-                page: page,
-                size: size
+                orderBy:
+                x => x.OrderByDescending(x => x.CheckInDate),
+                page:
+                page,
+                size:
+                size
             );
             return orders;
         }
@@ -702,6 +740,7 @@ namespace Pos_System.API.Services.Implements
                         Phone = order.OrderSource.Phone,
                         Address = order.OrderSource.Address,
                         CustomerType = order.OrderSource.UserType,
+                        DeliTime = order.OrderSource.Note,
                         PaymentStatus =
                             EnumUtil.ParseEnum<PaymentStatusEnum>(order.OrderSource.PaymentStatus ?? "PENDING"),
                         DeliStatus = EnumUtil.ParseEnum<OrderSourceStatus>(order.OrderSource.Status)
@@ -717,8 +756,11 @@ namespace Pos_System.API.Services.Implements
                                 Name = x.FullName,
                                 Phone = x.PhoneNumber,
                                 Address = order.OrderSource.Address,
+                                DeliTime = order.OrderSource.Note,
                                 CustomerType = order.OrderSource.UserType,
-                                DeliStatus = EnumUtil.ParseEnum<OrderSourceStatus>(order.OrderSource.Status)
+                                DeliStatus = EnumUtil.ParseEnum<OrderSourceStatus>(order.OrderSource.Status),
+                                PaymentStatus =
+                                    EnumUtil.ParseEnum<PaymentStatusEnum>(order.OrderSource.PaymentStatus ?? "PENDING"),
                             },
                             predicate: x => x.Id.Equals(order.OrderSource.UserId)
                         );
