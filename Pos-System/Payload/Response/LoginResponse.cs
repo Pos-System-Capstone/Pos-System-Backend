@@ -42,15 +42,18 @@ public class StoreAccountLoginResponse : LoginResponse
 {
     public Guid StoreId { get; set; }
     public string StoreCode { get; set; }
+    public Guid BrandId { get; set; }
     public string BrandCode { get; set; }
 
     public StoreAccountLoginResponse(Guid id, string username, string name, string role, string status, Guid storeId,
         string storeCode,
         string brandCode,
+        Guid brandId,
         string? brandPicUrl) : base(id, username, name, role, status, brandPicUrl)
     {
         StoreId = storeId;
         StoreCode = storeCode;
         BrandCode = brandCode;
+        BrandId = brandId;
     }
 }

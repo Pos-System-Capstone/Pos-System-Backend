@@ -63,7 +63,7 @@ namespace Pos_System.API.Services.Implements
                         include: store => store.Include(store => store.Brand)
                     );
                     loginResponse = new StoreAccountLoginResponse(account.Id, account.Username, account.Name,
-                        account.Role.Name, account.Status, store.Id, store.Code, store.Brand.BrandCode,
+                        account.Role.Name, account.Status, store.Id, store.Code, store.Brand.BrandCode, store.Brand.Id,
                         store.Brand.PicUrl);
                     break;
                 default:
