@@ -103,7 +103,7 @@ namespace Pos_System.API.Controllers
             return Ok(brandResponse);
         }
 
-        [CustomAuthorize(RoleEnum.SysAdmin, RoleEnum.BrandManager, RoleEnum.BrandAdmin)]
+        [CustomAuthorize(RoleEnum.SysAdmin, RoleEnum.BrandManager, RoleEnum.BrandAdmin, RoleEnum.StoreManager )]
         [HttpGet(ApiEndPointConstant.Brand.StoresInBrandEndpoint)]
         [ProducesResponseType(typeof(IPaginate<GetStoreResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetStoresInBrand(Guid id, [FromQuery] string? shortName, [FromQuery] int page,

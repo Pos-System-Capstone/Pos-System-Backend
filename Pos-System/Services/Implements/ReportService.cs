@@ -41,10 +41,11 @@ namespace Pos_System.API.Services.Implements
             if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandCodeNotFoundMessage);
 
             //Check StoreCode is existed
-            Store store = await _unitOfWork.GetRepository<Store>()
-                .SingleOrDefaultAsync(predicate: x => x.BrandId.Equals(brand.Id));
-            if (storeCode == null || store == null)
-                throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreCodeMessage);
+
+            // Store store = await _unitOfWork.GetRepository<Store>()
+            //     .SingleOrDefaultAsync(predicate: x => x.BrandId.Equals(brand.Id));
+            // if (storeCode == null || store == null)
+            //     throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreCodeMessage);
 
             #region ~~~~~~~~OldCode~~~~~~~~
 
@@ -69,14 +70,16 @@ namespace Pos_System.API.Services.Implements
             List<Order> orders = (List<Order>) await _unitOfWork.GetRepository<Order>().GetListAsync(
                 include: x =>
                     x.Include(order => order.OrderDetails).ThenInclude(x => x.MenuProduct).ThenInclude(x => x.Product)
-                        .Include(x => x.PromotionOrderMappings).Include(order => order.Session),
+                        .Include(x => x.PromotionOrderMappings).Include(order => order.Session)
+                        .ThenInclude(store => store.Store).ThenInclude(brand => brand.Brand),
                 predicate: p =>
-                    p.Session.StoreId.Equals(store.Id) && p.CheckInDate >= startDate &&
+                    (storeCode == null
+                        ? p.Session.Store.Brand.BrandCode.Equals(brandCode)
+                        : p.Session.Store.Code.Equals(storeCode)) && p.CheckInDate >= startDate &&
                     p.CheckInDate <= endDate.Value.AddDays(1) &&
                     p.Status.Equals(OrderStatus.PAID.GetDescriptionFromEnum()),
                 orderBy: x => x.OrderByDescending(x => x.CheckInDate)
             );
-            report.StoreId = store.Id;
             report.TotalProductDiscount = 0;
             report.TotalProduct = 0;
             report.TotalAmountSizeL = 0;
@@ -289,7 +292,7 @@ namespace Pos_System.API.Services.Implements
                 predicate: p =>
                     p.SessionId.Equals(sessionId) && p.Status.Equals(OrderStatus.PAID.GetDescriptionFromEnum())
             );
-            SessionReport report = new SessionReport(0, 0, 0, 0,0,0, 0, 0, 0, 0, 0, 0, 0, 0);
+            SessionReport report = new SessionReport(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
             foreach (var item in orders)
             {
                 report.TotalAmount += item.TotalAmount;
@@ -357,7 +360,7 @@ namespace Pos_System.API.Services.Implements
                     p.Status.Equals(OrderStatus.PAID.GetDescriptionFromEnum()),
                 orderBy: x => x.OrderByDescending(x => x.CheckInDate)
             );
-            report.StoreId = currentUserStoreId;
+
             report.TotalProductDiscount = 0;
             report.TotalProduct = 0;
             report.TotalAmountSizeL = 0;

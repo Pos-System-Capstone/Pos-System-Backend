@@ -6,7 +6,7 @@ namespace Pos_System.API.Payload.Response.Stores
 {
     public class GetStoreEndDayReport
     {
-        public Guid StoreId { get; set; }
+      
         public List<CategoryReport> CategoryReports { get; set; } = new List<CategoryReport>();
         public List<PromotionReport> PromotionReports { get; set; } = new List<PromotionReport>();
         public double TotalAmount { get; set; }
