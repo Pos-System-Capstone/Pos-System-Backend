@@ -32,11 +32,11 @@ public class CategoryService : BaseService<CategoryService>, ICategoryService
             Id = Guid.NewGuid(),
             Name = request.Name.Trim(),
             Code = request.Code.Trim(),
-            Type = EnumUtil.GetDescriptionFromEnum(request.CategoryType),
+            Type = request.CategoryType.GetDescriptionFromEnum(),
             DisplayOrder = request.DisplayOrder,
-            Status = EnumUtil.GetDescriptionFromEnum(CategoryStatus.Active),
+            Status = CategoryStatus.Active.GetDescriptionFromEnum(),
             PicUrl = request?.PicUrl,
-            Description = request.Description.Trim(),
+            Description = request?.Description.Trim(),
             BrandId = brandId
         };
         await _unitOfWork.GetRepository<Category>().InsertAsync(newCategory);

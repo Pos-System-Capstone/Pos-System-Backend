@@ -3,5 +3,6 @@
 public enum CategoryType
 {
 	Normal,
-	Extra
+	Extra,
+	Child
 }

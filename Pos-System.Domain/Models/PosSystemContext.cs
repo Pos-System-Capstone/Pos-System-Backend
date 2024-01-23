@@ -221,6 +221,10 @@ namespace Pos_System.Domain.Models
 
                 entity.Property(e => e.Status).HasMaxLength(20);
 
+                entity.Property(e => e.Type)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+
                 entity.HasOne(d => d.ExtraCategoryNavigation)
                     .WithMany(p => p.ExtraCategoryExtraCategoryNavigations)
                     .HasForeignKey(d => d.ExtraCategoryId)
