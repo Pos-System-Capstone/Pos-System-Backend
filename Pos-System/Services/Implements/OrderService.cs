@@ -668,6 +668,7 @@ namespace Pos_System.API.Services.Implements
                     Phone = x.OrderSource != null ? x.OrderSource.Phone : null,
                     Address = x.OrderSource != null ? x.OrderSource.Address : null,
                     StoreName = x.Session.Store.Name,
+                    StorePic = x.Session.Store.Brand.PicUrl,
                     PaymentStatus = x.OrderSource != null && x.OrderSource.PaymentStatus != null
                         ? EnumUtil.ParseEnum<PaymentStatusEnum>(x.OrderSource.PaymentStatus)
                         : null,
@@ -769,7 +770,8 @@ namespace Pos_System.API.Services.Implements
 
             orderDetailResponse.ProductList = (List<OrderProductDetailResponse>) await _unitOfWork
                 .GetRepository<OrderDetail>().GetListAsync(
-                    selector: x => new OrderProductDetailResponse()
+                    selector:
+                    x => new OrderProductDetailResponse()
                     {
                         ProductInMenuId = x.MenuProductId,
                         OrderDetailId = x.Id,
@@ -780,9 +782,12 @@ namespace Pos_System.API.Services.Implements
                         FinalAmount = x.FinalAmount,
                         Discount = x.Discount,
                         Note = x.Notes,
+                        PicUrl = x.MenuProduct.Product.PicUrl
                     },
-                    predicate: x => x.OrderId.Equals(orderId) && x.MasterOrderDetailId == null,
-                    include: x => x.Include(x => x.MenuProduct).ThenInclude(menuProduct => menuProduct.Product));
+                    predicate:
+                    x => x.OrderId.Equals(orderId) && x.MasterOrderDetailId == null,
+                    include:
+                    x => x.Include(x => x.MenuProduct).ThenInclude(menuProduct => menuProduct.Product));
 
             if (orderDetailResponse.ProductList.Count > 0)
             {

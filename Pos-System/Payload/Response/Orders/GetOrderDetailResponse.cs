@@ -37,6 +37,8 @@ namespace Pos_System.API.Payload.Response.Orders
         public double FinalAmount { get; set; }
         public double Discount { get; set; }
         public string Note { get; set; }
+        
+        public string? PicUrl { get; set; }
 
 
         public List<OrderProductExtraDetailResponse> Extras { get; set; } = new List<OrderProductExtraDetailResponse>();

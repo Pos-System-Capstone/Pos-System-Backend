@@ -20,5 +20,7 @@ namespace Pos_System.API.Payload.Response.Orders
         public string? Address { get; set; }
 
         public string? StoreName { get; set; }
+        
+        public string? StorePic { get; set; }
     }
 }
