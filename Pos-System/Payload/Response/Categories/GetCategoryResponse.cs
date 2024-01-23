@@ -8,7 +8,7 @@ public class GetCategoryResponse
 	public Guid Id { get; set; }
 	public string Code { get; set; }
 	public string Name { get; set; }
-	public CategoryType CategoryType { get; set; }
+	public CategoryType Type { get; set; }
 	public int DisplayOrder { get; set; }
 	public string Description { get; set; }
 	public string PicUrl { get; set; }
@@ -20,7 +20,7 @@ public class GetCategoryResponse
 		Id = id;
 		Code = code;
 		Name = name;
-		CategoryType = EnumUtil.ParseEnum<CategoryType>(type);
+		Type = EnumUtil.ParseEnum<CategoryType>(type);
 		DisplayOrder = displayOrder;
 		Description = description;
 		Status = EnumUtil.ParseEnum<CategoryStatus>(status);
