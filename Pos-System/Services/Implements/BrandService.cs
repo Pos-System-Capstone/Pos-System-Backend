@@ -17,7 +17,8 @@ namespace Pos_System.API.Services.Implements;
 
 public class BrandService : BaseService<BrandService>, IBrandService
 {
-    public BrandService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<BrandService> logger, IMapper mapper, IHttpContextAccessor httpContextAccessor) : base(unitOfWork, logger, mapper, httpContextAccessor)
+    public BrandService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<BrandService> logger, IMapper mapper,
+        IHttpContextAccessor httpContextAccessor) : base(unitOfWork, logger, mapper, httpContextAccessor)
     {
     }
 
@@ -40,39 +41,43 @@ public class BrandService : BaseService<BrandService>, IBrandService
 
     public async Task<IPaginate<GetBrandResponse>> GetBrands(string? searchBrandName, int page, int size)
     {
-	    searchBrandName = searchBrandName?.Trim().ToLower();
-	    IPaginate<GetBrandResponse> brands = await _unitOfWork.GetRepository<Brand>().GetPagingListAsync(
-		    selector: x => new GetBrandResponse(x.Id, x.Name, x.Email, x.Address, x.Phone, x.PicUrl, EnumUtil.ParseEnum<BrandStatus>(x.Status), x.Stores.Count),
-            predicate: string.IsNullOrEmpty(searchBrandName) ? x => true : x => x.Name.ToLower().Contains(searchBrandName),
+        searchBrandName = searchBrandName?.Trim().ToLower();
+        IPaginate<GetBrandResponse> brands = await _unitOfWork.GetRepository<Brand>().GetPagingListAsync(
+            selector: x => new GetBrandResponse(x.Id, x.Name, x.Email, x.Address, x.Phone, x.PicUrl,
+                EnumUtil.ParseEnum<BrandStatus>(x.Status), x.Stores.Count),
+            predicate: string.IsNullOrEmpty(searchBrandName)
+                ? x => true
+                : x => x.Name.ToLower().Contains(searchBrandName),
             include: x => x.Include(x => x.Stores),
             page: page,
             size: size);
-	    return brands;
+        return brands;
     }
 
     public async Task<GetBrandResponse> GetBrandById(Guid brandId)
     {
-	    if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
-	    GetBrandResponse brandResponse = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
-		    selector: x => new GetBrandResponse(x.Id, x.Name, x.Email, x.Address, x.Phone, x.PicUrl, EnumUtil.ParseEnum<BrandStatus>(x.Status), x.Stores.Count),
+        if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
+        GetBrandResponse brandResponse = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
+            selector: x => new GetBrandResponse(x.Id, x.Name, x.Email, x.Address, x.Phone, x.PicUrl,
+                EnumUtil.ParseEnum<BrandStatus>(x.Status), x.Stores.Count),
             predicate: x => x.Id.Equals(brandId),
             include: x => x.Include(x => x.Stores)
-		    );
+        );
         return brandResponse;
     }
 
     public async Task<bool> UpdateBrandInformation(Guid brandId, UpdateBrandRequest updateBrandRequest)
     {
-	    if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
-	    Brand brand = await _unitOfWork.GetRepository<Brand>()
-		    .SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
-	    if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+        if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
+        Brand brand = await _unitOfWork.GetRepository<Brand>()
+            .SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
+        if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
         _logger.LogInformation($"Start update brand {brandId}");
         updateBrandRequest.TrimString();
         brand.Name = string.IsNullOrEmpty(updateBrandRequest.Name) ? brand.Name : updateBrandRequest.Name;
         brand.Email = string.IsNullOrEmpty(updateBrandRequest.Email) ? brand.Email : updateBrandRequest.Email;
         brand.Address = string.IsNullOrEmpty(updateBrandRequest.Address) ? brand.Address : updateBrandRequest.Address;
-		brand.Phone = string.IsNullOrEmpty(updateBrandRequest.Phone) ? brand.Phone : updateBrandRequest.Phone;
+        brand.Phone = string.IsNullOrEmpty(updateBrandRequest.Phone) ? brand.Phone : updateBrandRequest.Phone;
         brand.PicUrl = string.IsNullOrEmpty(updateBrandRequest.PicUrl) ? brand.PicUrl : updateBrandRequest.PicUrl;
         _unitOfWork.GetRepository<Brand>().UpdateAsync(brand);
         bool isSuccessful = await _unitOfWork.CommitAsync() > 0;
@@ -86,12 +91,12 @@ public class BrandService : BaseService<BrandService>, IBrandService
             .SingleOrDefaultAsync(predicate: x => x.BrandCode.Equals(brandCode));
         if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
 
-        Menu menu = await _unitOfWork.GetRepository<Menu>().
-            SingleOrDefaultAsync(predicate: x => x.BrandId.Equals(brand.Id) && x.Priority == 0);
+        Menu menu = await _unitOfWork.GetRepository<Menu>()
+            .SingleOrDefaultAsync(predicate: x => x.BrandId.Equals(brand.Id) && x.Priority == 0);
 
 
         //Filter Menu, make sure it return correct menu in specific time
-        List<MenuStore> allMenuAvailable = (List<MenuStore>)await _unitOfWork.GetRepository<MenuStore>()
+        List<MenuStore> allMenuAvailable = (List<MenuStore>) await _unitOfWork.GetRepository<MenuStore>()
             .GetListAsync(predicate: x => x.MenuId.Equals(menu.Id),
                 include: x => x
                     .Include(x => x.Menu)
@@ -115,7 +120,7 @@ public class BrandService : BaseService<BrandService>, IBrandService
                 x.EndTime),
             predicate: x => x.Id.Equals(menu.Id) && x.Status.Equals(MenuStatus.Active.GetDescriptionFromEnum()));
 
-        menuOfStore.ProductsInMenu = (List<ProductDataForStaff>)await _unitOfWork.GetRepository<MenuProduct>()
+        menuOfStore.ProductsInMenu = (List<ProductDataForStaff>) await _unitOfWork.GetRepository<MenuProduct>()
             .GetListAsync(
                 selector: x => new ProductDataForStaff
                 (
@@ -134,8 +139,8 @@ public class BrandService : BaseService<BrandService>, IBrandService
                     x.Product.ParentProductId,
                     x.Product.BrandId,
                     x.Product.CategoryId,
-                    (List<Guid>)x.Product.CollectionProducts.Select(x => x.CollectionId),
-                    (List<Guid>)x.Product.Category.ExtraCategoryProductCategories.Select(x => x.ExtraCategoryId),
+                    (List<Guid>) x.Product.CollectionProducts.Select(x => x.CollectionId),
+                    (List<Guid>) x.Product.Category.ExtraCategoryProductCategories.Select(x => x.ExtraCategoryId),
                     x.Id //This is the menuProductId in response body
                 ),
                 predicate: x =>
@@ -149,7 +154,7 @@ public class BrandService : BaseService<BrandService>, IBrandService
                     .ThenInclude(category => category.ExtraCategoryProductCategories)
             );
 
-        menuOfStore.CollectionsOfBrand = (List<CollectionOfBrand>)await _unitOfWork.GetRepository<Collection>()
+        menuOfStore.CollectionsOfBrand = (List<CollectionOfBrand>) await _unitOfWork.GetRepository<Collection>()
             .GetListAsync(selector: x => new CollectionOfBrand(
                     x.Id,
                     x.Name,
@@ -160,26 +165,29 @@ public class BrandService : BaseService<BrandService>, IBrandService
                 predicate: x =>
                     x.BrandId.Equals(brand.Id) && x.Status == CollectionStatus.Active.GetDescriptionFromEnum());
 
-        menuOfStore.CategoriesOfBrand = (List<CategoryOfBrand>)await _unitOfWork.GetRepository<Category>()
+        menuOfStore.CategoriesOfBrand = (List<CategoryOfBrand>) await _unitOfWork.GetRepository<Category>()
             .GetListAsync(selector: x => new CategoryOfBrand(
-                x.Id,
-                x.Code,
-                x.Name,
-                EnumUtil.ParseEnum<CategoryType>(x.Type),
-                x.DisplayOrder,
-                x.Description,
-                x.PicUrl
-            ), predicate: x => x.BrandId.Equals(brand.Id) && x.Status.Equals(CategoryStatus.Active.GetDescriptionFromEnum()));
+                    x.Id,
+                    x.Code,
+                    x.Name,
+                    EnumUtil.ParseEnum<CategoryType>(x.Type),
+                    (List<Guid>) x.ExtraCategoryProductCategories.Select(e => e.ExtraCategoryId),
+                    x.DisplayOrder,
+                    x.Description,
+                    x.PicUrl
+                ),
+                predicate: x =>
+                    x.BrandId.Equals(brand.Id) && x.Status.Equals(CategoryStatus.Active.GetDescriptionFromEnum()));
 
         //Use to filter which productInGroups is added to menu
         List<Guid> productIdsInMenu = menuOfStore.ProductsInMenu.Select(x => x.Id).ToList();
 
-        menuOfStore.groupProductInMenus = (List<GroupProductInMenu>)await _unitOfWork.GetRepository<GroupProduct>()
+        menuOfStore.groupProductInMenus = (List<GroupProductInMenu>) await _unitOfWork.GetRepository<GroupProduct>()
             .GetListAsync(
                 x => new GroupProductInMenu
                 {
                     Id = x.Id,
-                    ComboProductId = (Guid)x.ComboProductId,
+                    ComboProductId = (Guid) x.ComboProductId,
                     Name = x.Name,
                     CombinationMode = EnumUtil.ParseEnum<GroupCombinationMode>(x.CombinationMode),
                     Priority = x.Priority,
@@ -192,7 +200,7 @@ public class BrandService : BaseService<BrandService>, IBrandService
                 include: x => x.Include(x => x.ComboProduct)
             );
 
-        menuOfStore.productInGroupList = (List<ProductsInGroupResponse>)await _unitOfWork
+        menuOfStore.productInGroupList = (List<ProductsInGroupResponse>) await _unitOfWork
             .GetRepository<ProductInGroup>().GetListAsync(
                 selector: x => new ProductsInGroupResponse
                 {
@@ -215,7 +223,7 @@ public class BrandService : BaseService<BrandService>, IBrandService
 
         foreach (GroupProductInMenu groupProduct in menuOfStore.groupProductInMenus)
         {
-            groupProduct.ProductsInGroupIds = (List<Guid>)menuOfStore.productInGroupList
+            groupProduct.ProductsInGroupIds = (List<Guid>) menuOfStore.productInGroupList
                 .Where(x => x.GroupProductId.Equals(groupProduct.Id))
                 .Select(x => x.Id).ToList();
         }

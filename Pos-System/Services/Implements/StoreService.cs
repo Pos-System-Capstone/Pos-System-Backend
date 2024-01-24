@@ -273,6 +273,7 @@ public class StoreService : BaseService<StoreService>, IStoreService
                 x.Code,
                 x.Name,
                 EnumUtil.ParseEnum<CategoryType>(x.Type),
+                (List<Guid>) x.ExtraCategoryProductCategories.Select(e => e.ExtraCategoryId),
                 x.DisplayOrder,
                 x.Description,
                 x.PicUrl

@@ -41,18 +41,20 @@ public class GetMenuDetailForStaffResponse
 public class CategoryOfBrand
 {
     public Guid Id { get; set; }
+    public List<Guid>? ChildCategoryIds { get; set; }
     public string Code { get; set; }
     public string Name { get; set; }
     public CategoryType Type { get; set; }
     public int DisplayOrder { get; set; }
     public string Description { get; set; }
     public string PicUrl { get; set; }
-    public CategoryOfBrand(Guid id, string code, string name, CategoryType categoryType, int displayOrder, string description, string picUrl)
+    public CategoryOfBrand(Guid id, string code, string name, CategoryType categoryType,List<Guid> childCategoryIds, int displayOrder, string description, string picUrl)
     {
         Id = id;
         Code = code;
         Name = name;
         Type = categoryType;
+        ChildCategoryIds = childCategoryIds;
         DisplayOrder = displayOrder;
         Description = description;
         PicUrl = picUrl;
