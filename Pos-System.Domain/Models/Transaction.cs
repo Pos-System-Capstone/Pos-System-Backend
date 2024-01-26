@@ -17,6 +17,7 @@ namespace Pos_System.Domain.Models
         public Guid? BrandPartnerId { get; set; }
         public bool? IsIncrease { get; set; }
         public string? Type { get; set; }
+        public string? PaymentType { get; set; }
 
         public virtual Brand Brand { get; set; } = null!;
     }

@@ -690,6 +690,10 @@ namespace Pos_System.Domain.Models
 
                 entity.Property(e => e.Currency).HasMaxLength(20);
 
+                entity.Property(e => e.PaymentType)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.Status)
                     .HasMaxLength(10)
                     .IsUnicode(false);
