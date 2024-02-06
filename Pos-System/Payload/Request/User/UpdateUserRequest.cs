@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Pos_System.API.Enums;
 
 namespace Pos_System.API.Payload.Request.User
 {
@@ -6,12 +7,16 @@ namespace Pos_System.API.Payload.Request.User
     {
         [Phone(ErrorMessage = "Phone sai format")]
         public string? PhoneNunmer { get; set; }
+
         public string? FullName { get; set; }
         public string? Gender { get; set; }
+
         [EmailAddress(ErrorMessage = "Email sai format")]
         public string? Email { get; set; }
-        
+
         public string? UrlImg { get; set; }
+        
+        public UserStatus? Status { get; set; }
 
         public void TrimString()
         {

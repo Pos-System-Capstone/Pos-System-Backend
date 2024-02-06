@@ -390,10 +390,13 @@ namespace Pos_System.API.Services.Implements
             updatedUser.UrlImg = string.IsNullOrEmpty(updatedUserRequest.UrlImg)
                 ? updatedUser.UrlImg
                 : updatedUserRequest.UrlImg;
+            updatedUser.UrlImg = string.IsNullOrEmpty(updatedUserRequest.Status.GetDescriptionFromEnum())
+                ? updatedUser.Status
+                : updatedUserRequest.Status.GetDescriptionFromEnum();
             updatedUser.UpdatedAt = currentTime;
             _unitOfWork.GetRepository<User>().UpdateAsync(updatedUser);
 
-            bool isSuccessful = await _unitOfWork.CommitAsync() > 0;
+            var isSuccessful = await _unitOfWork.CommitAsync() > 0;
             return isSuccessful;
         }
 
@@ -782,7 +785,7 @@ namespace Pos_System.API.Services.Implements
                     BrandId = user.BrandId,
                     TransactionJson = response.Content
                         .ReadAsStringAsync().Result,
-                    Amount = (decimal) req.Amount,
+                    Amount = (decimal) actionResponse.ActionValue,
                     CreatedDate = TimeUtils.GetCurrentSEATime(),
                     UserId = user.Id,
                     IsIncrease = true,

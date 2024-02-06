@@ -35,7 +35,7 @@ public class MembershipCardType
 {
     public Guid Id { get; set; }
     public string? Name { get; set; }
-    public string? CardImage { get; set; }
+    public string? CardImg { get; set; }
 }
 
 public class MemberWallet
