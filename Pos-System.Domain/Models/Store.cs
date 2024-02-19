@@ -25,6 +25,7 @@ namespace Pos_System.Domain.Models
         public string? WifiPassword { get; set; }
         public string? Lat { get; set; }
         public string? Long { get; set; }
+        public int? Index { get; set; }
 
         public virtual Brand Brand { get; set; } = null!;
         public virtual ICollection<MenuStore> MenuStores { get; set; }

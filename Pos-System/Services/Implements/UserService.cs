@@ -390,7 +390,7 @@ namespace Pos_System.API.Services.Implements
             updatedUser.UrlImg = string.IsNullOrEmpty(updatedUserRequest.UrlImg)
                 ? updatedUser.UrlImg
                 : updatedUserRequest.UrlImg;
-            updatedUser.UrlImg = string.IsNullOrEmpty(updatedUserRequest.Status.GetDescriptionFromEnum())
+            updatedUser.Status = string.IsNullOrEmpty(updatedUserRequest.Status.GetDescriptionFromEnum())
                 ? updatedUser.Status
                 : updatedUserRequest.Status.GetDescriptionFromEnum();
             updatedUser.UpdatedAt = currentTime;

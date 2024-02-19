@@ -8,6 +8,7 @@ namespace Pos_System.Domain.Models
         public Order()
         {
             OrderDetails = new HashSet<OrderDetail>();
+            OrderHistories = new HashSet<OrderHistory>();
             PromotionOrderMappings = new HashSet<PromotionOrderMapping>();
         }
 
@@ -35,6 +36,7 @@ namespace Pos_System.Domain.Models
         public virtual OrderUser? OrderSource { get; set; }
         public virtual Session Session { get; set; } = null!;
         public virtual ICollection<OrderDetail> OrderDetails { get; set; }
+        public virtual ICollection<OrderHistory> OrderHistories { get; set; }
         public virtual ICollection<PromotionOrderMapping> PromotionOrderMappings { get; set; }
     }
 }

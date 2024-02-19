@@ -30,6 +30,7 @@ namespace Pos_System.Domain.Models
         public virtual DbSet<MenuStore> MenuStores { get; set; } = null!;
         public virtual DbSet<Order> Orders { get; set; } = null!;
         public virtual DbSet<OrderDetail> OrderDetails { get; set; } = null!;
+        public virtual DbSet<OrderHistory> OrderHistories { get; set; } = null!;
         public virtual DbSet<OrderUser> OrderUsers { get; set; } = null!;
         public virtual DbSet<Payment> Payments { get; set; } = null!;
         public virtual DbSet<Product> Products { get; set; } = null!;
@@ -398,6 +399,31 @@ namespace Pos_System.Domain.Models
                     .HasForeignKey(d => d.OrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OrderDetail_Order");
+            });
+
+            modelBuilder.Entity<OrderHistory>(entity =>
+            {
+                entity.ToTable("OrderHistory");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.CreatedTime).HasColumnType("datetime");
+
+                entity.Property(e => e.FromStatus)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Note).HasMaxLength(500);
+
+                entity.Property(e => e.ToStatus)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.Order)
+                    .WithMany(p => p.OrderHistories)
+                    .HasForeignKey(d => d.OrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("OrderHistory___fk_Order");
             });
 
             modelBuilder.Entity<OrderUser>(entity =>

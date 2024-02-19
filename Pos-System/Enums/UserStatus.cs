@@ -3,6 +3,6 @@
     public enum UserStatus
     {
         Active,
-        Inactive,
+        Deactive,
     }
 }
