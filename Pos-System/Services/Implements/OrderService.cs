@@ -282,7 +282,8 @@ namespace Pos_System.API.Services.Implements
         }
 
         public async Task<IPaginate<ViewOrdersResponse>> GetOrdersInStore(Guid storeId, int page, int size,
-            DateTime? startDate, DateTime? endDate, OrderType? orderType, OrderStatus? status)
+            DateTime? startDate, DateTime? endDate, OrderType? orderType, OrderStatus? status,
+            PaymentTypeEnum? paymentType)
         {
             RoleEnum userRole = EnumUtil.ParseEnum<RoleEnum>(GetRoleFromJwt());
             if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
@@ -298,6 +299,7 @@ namespace Pos_System.API.Services.Implements
                     StartDate = x.CheckInDate,
                     EndDate = x.CheckOutDate,
                     FinalAmount = x.FinalAmount,
+                    OrderDate = x.CheckOutDate.Date,
                     OrderType = EnumUtil.ParseEnum<OrderType>(x.OrderType),
                     Status = EnumUtil.ParseEnum<OrderStatus>(x.Status),
                     PaymentType = string.IsNullOrEmpty(x.PaymentType)
@@ -311,7 +313,7 @@ namespace Pos_System.API.Services.Implements
                         ? EnumUtil.ParseEnum<PaymentStatusEnum>(x.OrderSource.PaymentStatus)
                         : null,
                 },
-                predicate: BuildGetOrdersInStoreQuery(storeId, startDate, endDate, orderType, status),
+                predicate: BuildGetOrdersInStoreQuery(storeId, startDate, endDate, orderType, status, paymentType),
                 include: x => x.Include(s => s.OrderSource).Include(v => v.Session).ThenInclude(p => p.Store),
                 orderBy: x =>
                     userRole == RoleEnum.Staff
@@ -324,7 +326,7 @@ namespace Pos_System.API.Services.Implements
         }
 
         private Expression<Func<Order, bool>> BuildGetOrdersInStoreQuery(Guid storeId, DateTime? startDate,
-            DateTime? endDate, OrderType? orderType, OrderStatus? status)
+            DateTime? endDate, OrderType? orderType, OrderStatus? status, PaymentTypeEnum? paymentType)
         {
             Expression<Func<Order, bool>> filterQuery = p => p.Session.StoreId.Equals(storeId);
             if (startDate != null && endDate == null)
@@ -337,9 +339,9 @@ namespace Pos_System.API.Services.Implements
                 filterQuery = filterQuery.AndAlso(p => p.CheckInDate >= startDate);
             }
 
-            if (endDate != null)
+            if (startDate != null)
             {
-                filterQuery = filterQuery.AndAlso(p => p.CheckInDate <= endDate);
+                filterQuery = filterQuery.AndAlso(p => p.CheckInDate <= startDate.Value.AddDays(1));
             }
 
             if (orderType != null)
@@ -350,6 +352,11 @@ namespace Pos_System.API.Services.Implements
             if (status != null)
             {
                 filterQuery = filterQuery.AndAlso(p => p.Status.Equals(status.GetDescriptionFromEnum()));
+            }
+
+            if (paymentType != null)
+            {
+                filterQuery = filterQuery.AndAlso(p => p.PaymentType.Equals(paymentType.GetDescriptionFromEnum()));
             }
 
             return filterQuery;

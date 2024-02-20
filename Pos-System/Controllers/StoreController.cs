@@ -133,9 +133,9 @@ namespace Pos_System.API.Controllers
         [ProducesResponseType(typeof(IPaginate<ViewOrdersResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetOrdersOfStore(Guid id, [FromQuery] int page, [FromQuery] int size,
             [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] OrderType? orderType,
-            [FromQuery] OrderStatus? status)
+            [FromQuery] OrderStatus? status,PaymentTypeEnum? paymentType)
         {
-            var response = await _orderService.GetOrdersInStore(id, page, size, startDate, endDate, orderType, status);
+            var response = await _orderService.GetOrdersInStore(id, page, size, startDate, endDate, orderType, status,paymentType);
             return Ok(response);
         }
 

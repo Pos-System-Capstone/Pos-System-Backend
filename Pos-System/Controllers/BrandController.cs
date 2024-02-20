@@ -7,6 +7,7 @@ using Pos_System.API.Enums;
 using Pos_System.API.Payload.Request.Brands;
 using Pos_System.API.Payload.Response;
 using Pos_System.API.Payload.Response.Brands;
+using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.Stores;
 using Pos_System.API.Services.Implements;
 using Pos_System.API.Services.Interfaces;
@@ -103,7 +104,7 @@ namespace Pos_System.API.Controllers
             return Ok(brandResponse);
         }
 
-        [CustomAuthorize(RoleEnum.SysAdmin, RoleEnum.BrandManager, RoleEnum.BrandAdmin, RoleEnum.StoreManager )]
+        [CustomAuthorize(RoleEnum.SysAdmin, RoleEnum.BrandManager, RoleEnum.BrandAdmin, RoleEnum.StoreManager)]
         [HttpGet(ApiEndPointConstant.Brand.StoresInBrandEndpoint)]
         [ProducesResponseType(typeof(IPaginate<GetStoreResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetStoresInBrand(Guid id, [FromQuery] string? shortName, [FromQuery] int page,
@@ -141,16 +142,16 @@ namespace Pos_System.API.Controllers
 
         [HttpGet(ApiEndPointConstant.Brand.ExportStoreEndDateReport)]
         [ProducesResponseType(typeof(GetStoreEndDayReport), StatusCodes.Status200OK)]
-        public async Task<IActionResult> ExportStoreEndDayReport(string? storeCode, string? brandCode, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        public async Task<IActionResult> ExportStoreEndDayReport(string? storeCode, string? brandCode,
+            [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
             var response = await _reportService.GetStoreEndDayReport(storeCode, brandCode, startDate, endDate);
             return Ok(response);
-
         }
 
 
         [HttpGet(ApiEndPointConstant.Brand.BrandMenuEndpoint)]
-        public async Task<IActionResult> GetMenusOfBrand([FromQuery]string? brandCode)
+        public async Task<IActionResult> GetMenusOfBrand([FromQuery] string? brandCode)
         {
             var response = await _brandService.GetMenus(brandCode);
             return Ok(response);
@@ -161,6 +162,19 @@ namespace Pos_System.API.Controllers
             [FromQuery] int size)
         {
             var response = await _storeService.GetStoresInBrandByBrandCode(brandCode, page, size);
+            return Ok(response);
+        }
+
+
+        [CustomAuthorize(RoleEnum.BrandAdmin, RoleEnum.BrandManager)]
+        [HttpGet(ApiEndPointConstant.Brand.BrandOrdersEndpoint)]
+        [ProducesResponseType(typeof(IPaginate<ViewOrdersResponse>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetOrderOfBrand(Guid id, [FromQuery] int page, [FromQuery] int size,
+            [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] OrderType? orderType,
+            [FromQuery] OrderStatus? status, PaymentTypeEnum? paymentType)
+        {
+            var response =
+                await _brandService.GetOrderInBrand(id, page, size, startDate, endDate, orderType, status, paymentType);
             return Ok(response);
         }
     }

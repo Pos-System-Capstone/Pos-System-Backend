@@ -305,7 +305,7 @@ namespace Pos_System.API.Services.Implements
                     Gender = "ORTHER",
                     FireBaseUid = "ZaloMiniApp"
                 };
-                var newUser = await CreateNewUser(newUserRequest, brandId, req.BrandCode);
+                var newUser = await CreateNewUser(newUserRequest, brandId, req.BrandCode.ToUpper());
 
                 guidClaim = new Tuple<string, Guid>("brandId", brandId);
                 configuration = new ConfigurationBuilder()

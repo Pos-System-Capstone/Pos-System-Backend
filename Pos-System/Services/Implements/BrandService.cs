@@ -1,11 +1,14 @@
-﻿using AutoMapper;
+﻿using System.Linq.Expressions;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
+using Pos_System.API.Extensions;
 using Pos_System.API.Helpers;
 using Pos_System.API.Payload.Request.Brands;
 using Pos_System.API.Payload.Response.Brands;
 using Pos_System.API.Payload.Response.Menus;
+using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.Products;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.API.Utils;
@@ -229,5 +232,85 @@ public class BrandService : BaseService<BrandService>, IBrandService
         }
 
         return menuOfStore;
+    }
+
+    public async Task<IPaginate<ViewOrdersResponse>> GetOrderInBrand(Guid brandId, int page, int size,
+        DateTime? startDate, DateTime? endDate, OrderType? orderType, OrderStatus? status, PaymentTypeEnum? paymentType)
+    {
+        RoleEnum userRole = EnumUtil.ParseEnum<RoleEnum>(GetRoleFromJwt());
+        if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
+        Guid currentUserBrandId = Guid.Parse(GetBrandIdFromJwt());
+        if (currentUserBrandId != brandId)
+            throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+        IPaginate<ViewOrdersResponse> ordersResponse = await _unitOfWork.GetRepository<Order>().GetPagingListAsync(
+            selector: x => new ViewOrdersResponse
+            {
+                Id = x.Id,
+                InvoiceId = x.InvoiceId,
+                StaffName = x.CheckInPersonNavigation.Name,
+                StartDate = x.CheckInDate,
+                EndDate = x.CheckOutDate,
+                FinalAmount = x.FinalAmount,
+                OrderDate = x.CheckOutDate.Date,
+                OrderType = EnumUtil.ParseEnum<OrderType>(x.OrderType),
+                Status = EnumUtil.ParseEnum<OrderStatus>(x.Status),
+                PaymentType = string.IsNullOrEmpty(x.PaymentType)
+                    ? PaymentTypeEnum.CASH
+                    : EnumUtil.ParseEnum<PaymentTypeEnum>(x.PaymentType),
+                CustomerName = x.OrderSource != null ? x.OrderSource.Name : null,
+                Phone = x.OrderSource != null ? x.OrderSource.Phone : null,
+                Address = x.OrderSource != null ? x.OrderSource.Address : null,
+                StoreName = x.Session.Store.Name,
+                PaymentStatus = x.OrderSource != null && x.OrderSource.PaymentStatus != null
+                    ? EnumUtil.ParseEnum<PaymentStatusEnum>(x.OrderSource.PaymentStatus)
+                    : null,
+            },
+            predicate: BuildGetOrdersInBrandQuery(brandId, startDate, endDate, orderType, status, paymentType),
+            include: x => x.Include(s => s.OrderSource).Include(v => v.Session).ThenInclude(p => p.Store),
+            orderBy: x =>
+                userRole == RoleEnum.Staff
+                    ? x.OrderByDescending(x => x.CheckInDate)
+                    : x.OrderByDescending(x => x.InvoiceId),
+            page: page,
+            size: size
+        );
+        return ordersResponse;
+    }
+
+    private Expression<Func<Order, bool>> BuildGetOrdersInBrandQuery(Guid brandId, DateTime? startDate,
+        DateTime? endDate, OrderType? orderType, OrderStatus? status, PaymentTypeEnum? paymentType)
+    {
+        Expression<Func<Order, bool>> filterQuery = p => p.Session.Store.BrandId.Equals(brandId);
+        if (startDate != null && endDate == null)
+        {
+            filterQuery = filterQuery.AndAlso(p =>
+                p.CheckInDate >= startDate && p.CheckInDate <= startDate.Value.AddDays(1));
+        }
+        else if (startDate != null)
+        {
+            filterQuery = filterQuery.AndAlso(p => p.CheckInDate >= startDate);
+        }
+
+        if (startDate != null)
+        {
+            filterQuery = filterQuery.AndAlso(p => p.CheckInDate <= startDate.Value.AddDays(1));
+        }
+
+        if (orderType != null)
+        {
+            filterQuery = filterQuery.AndAlso(p => p.OrderType.Equals(orderType.GetDescriptionFromEnum()));
+        }
+
+        if (status != null)
+        {
+            filterQuery = filterQuery.AndAlso(p => p.Status.Equals(status.GetDescriptionFromEnum()));
+        }
+
+        if (paymentType != null)
+        {
+            filterQuery = filterQuery.AndAlso(p => p.PaymentType.Equals(paymentType.GetDescriptionFromEnum()));
+        }
+
+        return filterQuery;
     }
 }

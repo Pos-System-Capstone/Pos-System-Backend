@@ -39,7 +39,7 @@ namespace Pos_System.API.Controllers
             return Ok(newOrderIdResponse);
         }
 
-        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager, RoleEnum.User)]
+        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager, RoleEnum.User, RoleEnum.BrandAdmin)]
         [HttpGet(ApiEndPointConstant.Order.OrderEndPoint)]
         [ProducesResponseType(typeof(GetOrderDetailResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetOrderDetail(Guid storeId, Guid id)

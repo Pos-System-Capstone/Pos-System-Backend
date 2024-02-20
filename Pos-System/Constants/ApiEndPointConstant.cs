@@ -33,6 +33,7 @@ public static class ApiEndPointConstant
 
         public const string BrandMenuEndpoint = BrandsEndpoint + "/menus";
         public const string StoresInBrandCodeEndpoint = BrandsEndpoint + "/stores";
+        public const string BrandOrdersEndpoint = BrandEndpoint + "/orders";
     }
 
     public static class Store
