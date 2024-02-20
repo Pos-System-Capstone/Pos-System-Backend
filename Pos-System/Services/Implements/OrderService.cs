@@ -1000,6 +1000,7 @@ namespace Pos_System.API.Services.Implements
                 Status = OrderStatus.PENDING.GetDescriptionFromEnum(),
                 SessionId = currentUserSession.Id,
                 PaymentType = createNewOrderRequest.PaymentType.GetDescriptionFromEnum(),
+                Note = createNewOrderRequest.Notes
             };
 
 
