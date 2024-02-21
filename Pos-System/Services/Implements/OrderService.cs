@@ -382,9 +382,12 @@ namespace Pos_System.API.Services.Implements
             order.PaymentType = updateOrderRequest.PaymentType != null
                 ? updateOrderRequest.PaymentType.GetDescriptionFromEnum()
                 : order.PaymentType;
-            order.Status = updateOrderRequest.Status != null
-                ? updateOrderRequest.Status.GetDescriptionFromEnum()
-                : order.Status;
+            string currentStatus = order.Status;
+            if(!currentStatus.Equals(updateOrderRequest.Status.GetDescriptionFromEnum()))
+            {
+                order.Status = updateOrderRequest.Status.GetDescriptionFromEnum();
+                await CreateOrderHistory(order, currentStatus, updateOrderRequest.Status.GetDescriptionFromEnum());
+            }
             if (updateOrderRequest.DeliStatus != null)
             {
                 if (order.OrderSourceId != null)
