@@ -31,7 +31,6 @@ namespace Pos_System.API.Services.Implements
         public const double VAT_PERCENT = 0.08;
         public const double VAT_STANDARD = 1.08;
 
-
         public UserService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<UserService> logger,
             IMapper mapper, IHttpContextAccessor httpContextAccessor) : base(
             unitOfWork, logger, mapper,
@@ -849,9 +848,15 @@ namespace Pos_System.API.Services.Implements
             order.PaymentType = updateOrderRequest.PaymentType != null
                 ? updateOrderRequest.PaymentType.GetDescriptionFromEnum()
                 : order.PaymentType;
-            order.Status = updateOrderRequest.Status != null
-                ? updateOrderRequest.Status.GetDescriptionFromEnum()
-                : order.Status;
+            string currentOrderStatus = order.Status;
+            //order.Status = updateOrderRequest.Status != null
+            //    ? updateOrderRequest.Status.GetDescriptionFromEnum()
+            //    : order.Status;
+            if (!currentOrderStatus.Equals(updateOrderRequest.Status.GetDescriptionFromEnum()))
+            {
+                order.Status = updateOrderRequest.Status.GetDescriptionFromEnum();
+                await CreateOrderHistory(order, currentOrderStatus, updateOrderRequest.Status.GetDescriptionFromEnum());
+            }
             if (updateOrderRequest.DeliStatus != null)
             {
                 if (order.OrderSourceId != null)
@@ -867,6 +872,23 @@ namespace Pos_System.API.Services.Implements
             _unitOfWork.GetRepository<Order>().UpdateAsync(order);
             await _unitOfWork.CommitAsync();
             return order.Id;
+        }
+
+        private async Task<bool> CreateOrderHistory(Order order, string fromStatus, string toStatus)
+        {
+            OrderHistory orderHistory = new OrderHistory()
+            {
+                Id = Guid.NewGuid(),
+                OrderId = order.Id,
+                CreatedTime = TimeUtils.GetCurrentSEATime(),
+                FromStatus = fromStatus,
+                ToStatus = toStatus,
+                ChangedBy = order.CheckInPerson,
+                Note = order.Note ?? null
+            };
+            await _unitOfWork.GetRepository<OrderHistory>().InsertAsync(orderHistory);
+            int check = await _unitOfWork.CommitAsync();
+            return check > 0;
         }
 
         public async Task<GetMenuDetailForStaffResponse> GetMenuDetailFromStore(Guid storeId)

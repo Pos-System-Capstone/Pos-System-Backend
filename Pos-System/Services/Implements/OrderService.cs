@@ -416,8 +416,17 @@ namespace Pos_System.API.Services.Implements
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId),
                     include: x => x.Include(p => p.PromotionOrderMappings));
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
+            
+            string statusOrderCurrent = order.Status;
             order.PaymentType = updateOrderRequest.PaymentType.GetDescriptionFromEnum();
-            order.Status = updateOrderRequest.Status.GetDescriptionFromEnum();
+            if(statusOrderCurrent.Equals(updateOrderRequest.Status.GetDescriptionFromEnum()))
+            {
+                order.Status = updateOrderRequest.Status.GetDescriptionFromEnum();
+                await CreateOrderHistory(order, statusOrderCurrent, updateOrderRequest.Status.GetDescriptionFromEnum());
+            }
+            
+
+
             if (updateOrderRequest.GuestNumber.HasValue)
             {
                 order.NumberOfGuest = updateOrderRequest.GuestNumber;
@@ -441,8 +450,9 @@ namespace Pos_System.API.Services.Implements
                     {
                         checkOutPointify.UserId = orderUser.UserId;
                     }
-
+                    string currentStatus = orderUser.Status;
                     orderUser.Status = OrderSourceStatus.DELIVERING.GetDescriptionFromEnum();
+                    await CreateOrderHistory(order, currentStatus, orderUser.Status);
                     _unitOfWork.GetRepository<OrderUser>().UpdateAsync(orderUser);
                 }
 
@@ -497,6 +507,22 @@ namespace Pos_System.API.Services.Implements
             _unitOfWork.GetRepository<Order>().UpdateAsync(order);
             await _unitOfWork.CommitAsync();
             return order.Id;
+        }
+
+        private async Task<bool> CreateOrderHistory(Order order, string fromStatus, string toStatus) {
+            OrderHistory orderHistory = new OrderHistory()
+            {
+                Id = Guid.NewGuid(),
+                OrderId = order.Id,
+                CreatedTime = TimeUtils.GetCurrentSEATime(),
+                FromStatus = fromStatus,
+                ToStatus = toStatus,
+                ChangedBy = order.CheckInPerson,
+                Note = order.Note?? null
+            };
+            await _unitOfWork.GetRepository<OrderHistory>().InsertAsync(orderHistory);
+            int check = await _unitOfWork.CommitAsync();
+            return check > 0;
         }
 
         public async Task<List<GetPromotionResponse>> GetPromotion(Guid storeId)
