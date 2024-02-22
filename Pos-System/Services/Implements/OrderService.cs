@@ -597,7 +597,7 @@ namespace Pos_System.API.Services.Implements
                         var user = await _userService.ScanUser(req.Code);
                         MemberActionRequest request = new MemberActionRequest()
                         {
-                            ApiKey = user.BrandId,
+                            ApiKey = order.Session.Store.BrandId,
                             StoreCode = order.Session.Store.Code,
                             Amount = order.FinalAmount,
                             Description = order.InvoiceId,
@@ -621,7 +621,7 @@ namespace Pos_System.API.Services.Implements
                             Transaction transaction = new Transaction()
                             {
                                 Id = Guid.NewGuid(),
-                                BrandId = user.BrandId,
+                                BrandId = order.Session.Store.BrandId,
                                 TransactionJson = response.Content
                                     .ReadAsStringAsync().Result,
                                 Amount = (decimal) order.FinalAmount,
@@ -633,6 +633,10 @@ namespace Pos_System.API.Services.Implements
                                 Currency = "đ",
                                 Status = TransactionStatusEnum.SUCCESS.GetDescriptionFromEnum(),
                             };
+                            if (order.Session.Store.BrandId != user.BrandId)
+                            {
+                                transaction.BrandPartnerId = user.BrandId;
+                            }
                             await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
                             order.PaymentType = req.PaymentType.GetDescriptionFromEnum();
                             _unitOfWork.GetRepository<Order>().UpdateAsync(order);
