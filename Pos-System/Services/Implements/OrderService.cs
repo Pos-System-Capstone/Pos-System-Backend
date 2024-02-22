@@ -316,9 +316,7 @@ namespace Pos_System.API.Services.Implements
                 predicate: BuildGetOrdersInStoreQuery(storeId, startDate, endDate, orderType, status, paymentType),
                 include: x => x.Include(s => s.OrderSource).Include(v => v.Session).ThenInclude(p => p.Store),
                 orderBy: x =>
-                    userRole == RoleEnum.Staff
-                        ? x.OrderByDescending(x => x.CheckInDate)
-                        : x.OrderByDescending(x => x.InvoiceId),
+                    x.OrderByDescending(x => x.CheckInDate),
                 page: page,
                 size: size
             );
@@ -565,6 +563,24 @@ namespace Pos_System.API.Services.Implements
                 throw new BadHttpRequestException(MessageConstant.Order.OrderCompleteBefore);
             }
 
+            if (order.OrderSourceId != null)
+            {
+                var orderUser = await _unitOfWork.GetRepository<OrderUser>()
+                    .SingleOrDefaultAsync(predicate: x => x.Id.Equals(order.OrderSourceId)
+                    );
+                if (orderUser.PaymentStatus != null &&
+                    orderUser.PaymentStatus.Equals(PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum()))
+                {
+                    PaymentOrderResponse response = new PaymentOrderResponse()
+                    {
+                        OrderId = order.Id,
+                        PaymentType = req.PaymentType,
+                        Status = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum()
+                    };
+                    return response;
+                }
+            }
+
 
             var paymentOrderResponse = new PaymentOrderResponse()
             {
@@ -616,6 +632,14 @@ namespace Pos_System.API.Services.Implements
                                 Currency = "đ",
                                 Status = TransactionStatusEnum.SUCCESS.GetDescriptionFromEnum(),
                             };
+                            if (order.OrderSourceId != null)
+                            {
+                                var orderUser = await _unitOfWork.GetRepository<OrderUser>()
+                                    .SingleOrDefaultAsync(predicate: x => x.Id.Equals(order.OrderSourceId)
+                                    );
+                                orderUser.PaymentStatus = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
+                                _unitOfWork.GetRepository<OrderUser>().UpdateAsync(orderUser);
+                            }
                             await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
                             order.PaymentType = req.PaymentType.GetDescriptionFromEnum();
                             _unitOfWork.GetRepository<Order>().UpdateAsync(order);

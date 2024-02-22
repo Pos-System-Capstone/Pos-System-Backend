@@ -268,9 +268,7 @@ public class BrandService : BaseService<BrandService>, IBrandService
             predicate: BuildGetOrdersInBrandQuery(brandId, startDate, endDate, orderType, status, paymentType),
             include: x => x.Include(s => s.OrderSource).Include(v => v.Session).ThenInclude(p => p.Store),
             orderBy: x =>
-                userRole == RoleEnum.Staff
-                    ? x.OrderByDescending(x => x.CheckInDate)
-                    : x.OrderByDescending(x => x.InvoiceId),
+                x.OrderByDescending(x => x.CheckInDate),
             page: page,
             size: size
         );
