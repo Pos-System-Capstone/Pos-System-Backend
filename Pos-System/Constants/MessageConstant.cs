@@ -19,6 +19,7 @@ public static class MessageConstant
         public const string EmptyBrandIdMessage = "Brand Id bị trống hoặc bạn không trong một brand nào";
         public const string UpdateBrandSuccessfulMessage = "Cập nhật thông tin brand thành công";
         public const string UpdateBrandFailedMessage = "Cập nhật thông tin brand thất bại";
+        public const string BrandPartnerNotFound = "Thông tin thành viên khôn tồn tại trong hệ thống";
     }
 
     public static class Account

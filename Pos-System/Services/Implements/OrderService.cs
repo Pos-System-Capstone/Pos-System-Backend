@@ -556,7 +556,7 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<PaymentOrderResponse> UpdatePaymentOrder(Guid orderId, PaymentOrderRequest req)
         {
-            Order order = await _unitOfWork.GetRepository<Order>()
+            var order = await _unitOfWork.GetRepository<Order>()
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId),
                     include: s => s.Include(x => x.Session).ThenInclude(s => s.Store));
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
@@ -565,24 +565,8 @@ namespace Pos_System.API.Services.Implements
                 throw new BadHttpRequestException(MessageConstant.Order.OrderCompleteBefore);
             }
 
-            if (order.OrderSourceId != null)
-            {
-                var orderUser = await _unitOfWork.GetRepository<OrderUser>()
-                    .SingleOrDefaultAsync(predicate: x => x.Id.Equals(order.OrderSourceId)
-                    );
-                if (orderUser.PaymentStatus.Equals(PaymentStatusEnum.PAID.GetDescriptionFromEnum()))
-                {
-                    PaymentOrderResponse response = new PaymentOrderResponse()
-                    {
-                        OrderId = order.Id,
-                        PaymentType = req.PaymentType,
-                        Status = PaymentStatusEnum.PAID.GetDescriptionFromEnum()
-                    };
-                    return response;
-                }
-            }
 
-            PaymentOrderResponse paymentOrderResponse = new PaymentOrderResponse()
+            var paymentOrderResponse = new PaymentOrderResponse()
             {
                 OrderId = order.Id,
                 PaymentType = req.PaymentType,
@@ -592,13 +576,12 @@ namespace Pos_System.API.Services.Implements
             {
                 case PaymentTypeEnum.POINTIFY:
                 {
-                    if (req.Code != null)
+                    var user = await _userService.ScanUser(req.Code);
+                    if (user.BrandId == order.Session.Store.BrandId)
                     {
-                        var user = await _userService.ScanUser(req.Code);
                         MemberActionRequest request = new MemberActionRequest()
                         {
                             ApiKey = order.Session.Store.BrandId,
-                            StoreCode = order.Session.Store.Code,
                             Amount = order.FinalAmount,
                             Description = order.InvoiceId,
                             MembershipId = user.Id,
@@ -633,15 +616,11 @@ namespace Pos_System.API.Services.Implements
                                 Currency = "đ",
                                 Status = TransactionStatusEnum.SUCCESS.GetDescriptionFromEnum(),
                             };
-                            if (order.Session.Store.BrandId != user.BrandId)
-                            {
-                                transaction.BrandPartnerId = user.BrandId;
-                            }
                             await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
                             order.PaymentType = req.PaymentType.GetDescriptionFromEnum();
                             _unitOfWork.GetRepository<Order>().UpdateAsync(order);
                             paymentOrderResponse.Message = "Thanh toán đơn hàng" + actionResponse.Description;
-                            paymentOrderResponse.Status = PaymentStatusEnum.PAID.GetDescriptionFromEnum();
+                            paymentOrderResponse.Status = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
                             await _unitOfWork.CommitAsync();
                         }
                         else
@@ -649,9 +628,100 @@ namespace Pos_System.API.Services.Implements
                             paymentOrderResponse.Message = actionResponse?.Description;
                         }
                     }
+                    else
+                    {
+                        var partner = await _unitOfWork.GetRepository<BrandPartner>()
+                            .SingleOrDefaultAsync(predicate: x =>
+                                x.MasterBrandId.Equals(order.Session.Store.BrandId) &&
+                                x.BrandPartnerId.Equals(user.BrandId)
+                            );
+                        if (partner == null)
+                        {
+                            throw new BadHttpRequestException(MessageConstant.Brand.BrandPartnerNotFound);
+                        }
 
-                    break;
+                        MemberActionRequest request = new MemberActionRequest()
+                        {
+                            ApiKey = partner.BrandPartnerId,
+                            Amount = order.FinalAmount,
+                            Description = order.InvoiceId,
+                            MembershipId = user.Id,
+                            MemberActionType = MemberActionType.PAYMENT.GetDescriptionFromEnum()
+                        };
+                        var url = "https://api-pointify.reso.vn/api/member-action";
+                        var response = await CallApiUtils.CallApiEndpoint(url, request);
+                        if (!response.StatusCode.Equals(HttpStatusCode.OK))
+                        {
+                            paymentOrderResponse.Message = "Thanh toán thất bại";
+                            return paymentOrderResponse;
+                        }
+
+                        var actionResponse =
+                            JsonConvert.DeserializeObject<MemberActionResponse>(response.Content
+                                .ReadAsStringAsync().Result);
+                        if (actionResponse != null &&
+                            actionResponse.Status.Equals(MemberActionStatus.SUCCESS.GetDescriptionFromEnum()))
+                        {
+                            var transaction = new Transaction()
+                            {
+                                Id = Guid.NewGuid(),
+                                BrandId = partner.BrandPartnerId,
+                                TransactionJson = response.Content
+                                    .ReadAsStringAsync().Result,
+                                Amount = (decimal) order.FinalAmount,
+                                CreatedDate = TimeUtils.GetCurrentSEATime(),
+                                UserId = user.Id,
+                                OrderId = order.Id,
+                                IsIncrease = false,
+                                Type = TransactionTypeEnum.PAYMENT.GetDescriptionFromEnum(),
+                                Currency = "đ",
+                                Status = TransactionStatusEnum.SUCCESS.GetDescriptionFromEnum(),
+                            };
+                            await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
+                            order.PaymentType = req.PaymentType.GetDescriptionFromEnum();
+                            _unitOfWork.GetRepository<Order>().UpdateAsync(order);
+                            paymentOrderResponse.Message = "Thanh toán đơn hàng" + actionResponse.Description;
+                            paymentOrderResponse.Status = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
+                            await _unitOfWork.CommitAsync();
+                            partner.DebtBalance += order.FinalAmount;
+                            partner.UpdatedAt = TimeUtils.GetCurrentSEATime();
+                            var partnerTrans = new Transaction()
+                            {
+                                Id = Guid.NewGuid(),
+                                BrandId = order.Session.Store.BrandId,
+                                TransactionJson = response.Content
+                                    .ReadAsStringAsync().Result,
+                                Amount = (decimal) order.FinalAmount,
+                                CreatedDate = TimeUtils.GetCurrentSEATime(),
+                                BrandPartnerId = user.BrandId,
+                                OrderId = order.Id,
+                                IsIncrease = false,
+                                Type = TransactionTypeEnum.PAYMENT.GetDescriptionFromEnum(),
+                                Currency = "đ",
+                                Status = TransactionStatusEnum.SUCCESS.GetDescriptionFromEnum(),
+                            };
+
+                            _unitOfWork.GetRepository<BrandPartner>().UpdateAsync(partner);
+                            await _unitOfWork.GetRepository<Transaction>().InsertAsync(partnerTrans);
+                            await _unitOfWork.CommitAsync();
+                        }
+                        else
+                        {
+                            paymentOrderResponse.Message = actionResponse?.Description;
+                        }
+                    }
                 }
+                    break;
+                case PaymentTypeEnum.CASH:
+                    break;
+                case PaymentTypeEnum.MOMO:
+                    break;
+                case PaymentTypeEnum.BANKING:
+                    break;
+                case PaymentTypeEnum.VISA:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
 
             return paymentOrderResponse;

@@ -20,6 +20,7 @@ namespace Pos_System.Domain.Models
         public virtual DbSet<BlogPost> BlogPosts { get; set; } = null!;
         public virtual DbSet<Brand> Brands { get; set; } = null!;
         public virtual DbSet<BrandAccount> BrandAccounts { get; set; } = null!;
+        public virtual DbSet<BrandPartner> BrandPartners { get; set; } = null!;
         public virtual DbSet<Category> Categories { get; set; } = null!;
         public virtual DbSet<Collection> Collections { get; set; } = null!;
         public virtual DbSet<CollectionProduct> CollectionProducts { get; set; } = null!;
@@ -145,6 +146,37 @@ namespace Pos_System.Domain.Models
                     .HasForeignKey(d => d.BrandId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_BrandAccount_Brand");
+            });
+
+            modelBuilder.Entity<BrandPartner>(entity =>
+            {
+                entity.ToTable("BrandPartner");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+
+                entity.Property(e => e.Status)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Type)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+                entity.HasOne(d => d.BrandPartnerNavigation)
+                    .WithMany(p => p.BrandPartnerBrandPartnerNavigations)
+                    .HasForeignKey(d => d.BrandPartnerId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("BrandPartner_Brand_Id_fk_2");
+
+                entity.HasOne(d => d.MasterBrand)
+                    .WithMany(p => p.BrandPartnerMasterBrands)
+                    .HasForeignKey(d => d.MasterBrandId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("BrandPartner_Brand_Id_fk");
             });
 
             modelBuilder.Entity<Category>(entity =>

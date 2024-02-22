@@ -11,6 +11,7 @@ using Pos_System.Repository.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
@@ -581,7 +582,6 @@ namespace Pos_System.API.Services.Implements
                 MemberActionRequest request = new MemberActionRequest()
                 {
                     ApiKey = user.BrandId,
-                    StoreCode = store.Code,
                     Amount = newOrder.FinalAmount,
                     Description = newOrder.InvoiceId,
                     MembershipId = user.Id,
@@ -591,7 +591,7 @@ namespace Pos_System.API.Services.Implements
                 var response = await CallApiUtils.CallApiEndpoint(url, request);
                 if (response.StatusCode.Equals(HttpStatusCode.OK))
                 {
-                    orderSource.PaymentStatus = PaymentStatusEnum.PAID.GetDescriptionFromEnum();
+                    orderSource.PaymentStatus = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
                 }
 
                 var actionResponse =
@@ -752,7 +752,6 @@ namespace Pos_System.API.Services.Implements
             MemberActionRequest request = new MemberActionRequest()
             {
                 ApiKey = store.BrandId,
-                StoreCode = store.Code,
                 Amount = req.Amount,
                 Description = "[TOP UP]",
                 MembershipId = user.Id,
@@ -797,7 +796,7 @@ namespace Pos_System.API.Services.Implements
                 await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
                 topUpUserWalletResponse.Message =
                     "Nạp tiền thành công cho người dùng " + user.FullName + ":" + actionResponse.Description;
-                topUpUserWalletResponse.Status = PaymentStatusEnum.PAID.GetDescriptionFromEnum();
+                topUpUserWalletResponse.Status = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
 
                 await _unitOfWork.CommitAsync();
             }
