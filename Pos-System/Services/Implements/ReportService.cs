@@ -40,24 +40,6 @@ namespace Pos_System.API.Services.Implements
                 .SingleOrDefaultAsync(predicate: x => x.BrandCode.Equals(brandCode));
             if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandCodeNotFoundMessage);
 
-            //Check StoreCode is existed
-
-            // Store store = await _unitOfWork.GetRepository<Store>()
-            //     .SingleOrDefaultAsync(predicate: x => x.BrandId.Equals(brand.Id));
-            // if (storeCode == null || store == null)
-            //     throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreCodeMessage);
-
-            #region ~~~~~~~~OldCode~~~~~~~~
-
-            //if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
-            //Guid currentUserStoreId = Guid.Parse(GetStoreIdFromJwt());
-            //if (currentUserStoreId != storeId)
-            //    throw new BadHttpRequestException(MessageConstant.Store.GetStoreOrdersUnAuthorized);
-
-            //Guid userBrandId = await _unitOfWork.GetRepository<Store>()
-            //   .SingleOrDefaultAsync(selector: x => x.BrandId, predicate: x => x.Id.Equals(currentUserStoreId));
-
-            #endregion
 
             GetStoreEndDayReport report = new GetStoreEndDayReport();
 
@@ -89,7 +71,7 @@ namespace Pos_System.API.Services.Implements
             report.TotalSizeM = 0;
             report.TotalSizeS = 0;
             report.TotalPromotionUsed = 0;
-            for (int i = 6; i < 24; i++)
+            for (var i = 6; i < 24; i++)
             {
                 report.TimeLine.Add(i);
                 report.TotalAmountTimeLine.Add(0);
@@ -110,11 +92,6 @@ namespace Pos_System.API.Services.Implements
 
             foreach (var item in orders)
             {
-                report.TotalAmount += item.TotalAmount;
-                report.TotalDiscount += item.Discount;
-                report.VatAmount += item.Vatamount;
-                report.FinalAmount += item.FinalAmount;
-                report.TotalOrder++;
                 if (item.PromotionOrderMappings.Any())
                 {
                     foreach (var promotionInOrder in item.PromotionOrderMappings)
@@ -135,11 +112,21 @@ namespace Pos_System.API.Services.Implements
                 {
                     report.InStoreAmount += item.FinalAmount;
                     report.TotalOrderInStore++;
+                    report.TotalAmount += item.TotalAmount;
+                    report.TotalDiscount += item.Discount;
+                    report.VatAmount += item.Vatamount;
+                    report.FinalAmount += item.FinalAmount;
+                    report.TotalOrder++;
                 }
                 else if (item.OrderType == OrderType.TAKE_AWAY.GetDescriptionFromEnum())
                 {
                     report.TakeAwayAmount += item.FinalAmount;
                     report.TotalOrderTakeAway++;
+                    report.TotalAmount += item.TotalAmount;
+                    report.TotalDiscount += item.Discount;
+                    report.VatAmount += item.Vatamount;
+                    report.FinalAmount += item.FinalAmount;
+                    report.TotalOrder++;
                 }
                 else if (item.OrderType == OrderType.TOP_UP.GetDescriptionFromEnum())
                 {
@@ -150,8 +137,13 @@ namespace Pos_System.API.Services.Implements
                 {
                     report.DeliAmount += item.FinalAmount;
                     report.TotalOrderDeli++;
+                    report.TotalAmount += item.TotalAmount;
+                    report.TotalDiscount += item.Discount;
+                    report.VatAmount += item.Vatamount;
+                    report.FinalAmount += item.FinalAmount;
+                    report.TotalOrder++;
                 }
-                
+
                 if (item.PaymentType == PaymentTypeEnum.VISA.GetDescriptionFromEnum())
                 {
                     report.VisaAmount += item.FinalAmount;
@@ -178,7 +170,6 @@ namespace Pos_System.API.Services.Implements
                     report.TotalCash++;
                 }
 
-                ;
                 foreach (var cateReport in report.CategoryReports)
                 {
                     foreach (var orderDetail in item.OrderDetails)
@@ -261,13 +252,13 @@ namespace Pos_System.API.Services.Implements
                     }
                 }
 
-                for (int i = 6; i < 24; i++)
+                for (var i = 6; i < 24; i++)
                 {
-                    if (i == item.CheckOutDate.Hour)
-                    {
-                        report.TotalOrderTimeLine[i - 6]++;
-                        report.TotalAmountTimeLine[i - 6] += item.FinalAmount;
-                    }
+                    if (i != item.CheckOutDate.Hour) continue;
+                    report.TotalOrderTimeLine[i - 6]++;
+                    report.TotalAmountTimeLine[i - 6] += item.OrderType != OrderType.TOP_UP.GetDescriptionFromEnum()
+                        ? item.FinalAmount
+                        : 0;
                 }
             }
 
