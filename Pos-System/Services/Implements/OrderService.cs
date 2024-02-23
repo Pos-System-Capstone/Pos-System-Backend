@@ -151,14 +151,8 @@ namespace Pos_System.API.Services.Implements
             return newOrder.Id;
         }
 
-        public async Task<GetOrderDetailResponse> GetOrderDetail(Guid storeId, Guid orderId)
+        public async Task<GetOrderDetailResponse> GetOrderDetail(Guid orderId)
         {
-            if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
-            if (orderId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Order.EmptyOrderIdMessage);
-
-            Store store = await _unitOfWork.GetRepository<Store>()
-                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(storeId));
-            if (store == null) throw new BadHttpRequestException(MessageConstant.Store.StoreNotFoundMessage);
             Order order = await _unitOfWork.GetRepository<Order>().SingleOrDefaultAsync(
                 predicate: x => x.Id.Equals(orderId),
                 include: x =>
@@ -360,12 +354,8 @@ namespace Pos_System.API.Services.Implements
             return filterQuery;
         }
 
-        public async Task<Guid> UpdateOrder(Guid storeId, Guid orderId, UpdateOrderRequest updateOrderRequest)
+        public async Task<Guid> UpdateOrder(Guid orderId, UpdateOrderRequest updateOrderRequest)
         {
-            if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
-            Store store = await _unitOfWork.GetRepository<Store>()
-                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(storeId));
-            if (store == null) throw new BadHttpRequestException(MessageConstant.Store.StoreNotFoundMessage);
             string currentUserName = GetUsernameFromJwt();
             Account currentUser = await _unitOfWork.GetRepository<Account>()
                 .SingleOrDefaultAsync(predicate: x => x.Username.Equals(currentUserName));
@@ -640,6 +630,7 @@ namespace Pos_System.API.Services.Implements
                                 orderUser.PaymentStatus = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
                                 _unitOfWork.GetRepository<OrderUser>().UpdateAsync(orderUser);
                             }
+
                             await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
                             order.PaymentType = req.PaymentType.GetDescriptionFromEnum();
                             _unitOfWork.GetRepository<Order>().UpdateAsync(order);

@@ -109,6 +109,8 @@ public static class ApiEndPointConstant
         public const string NewUserOrderEndPoint = Store.StoresEndpoint + "/{storeId}/user-order";
         public const string OrderEndPoint = OrdersEndPoint + "/{id}";
         public const string PrepareOrderEndPoint = Store.StoresEndpoint + "/prepare-order";
+        public const string OrdersListEndPoint = ApiEndpoint + "/orders";
+        public const string OrderEndPoints = OrdersListEndPoint + "/{id}";
     }
 
 

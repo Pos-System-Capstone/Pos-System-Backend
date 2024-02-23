@@ -44,7 +44,27 @@ namespace Pos_System.API.Controllers
         [ProducesResponseType(typeof(GetOrderDetailResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetOrderDetail(Guid storeId, Guid id)
         {
-            var response = await _orderService.GetOrderDetail(storeId, id);
+            var response = await _orderService.GetOrderDetail(id);
+            return Ok(response);
+        }
+
+        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager, RoleEnum.User, RoleEnum.BrandAdmin)]
+        [HttpGet(ApiEndPointConstant.Order.OrderEndPoints)]
+        [ProducesResponseType(typeof(GetOrderDetailResponse), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetOrderDetail(Guid id)
+        {
+            var response = await _orderService.GetOrderDetail(id);
+            return Ok(response);
+        }
+
+        [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager, RoleEnum.BrandAdmin, RoleEnum.BrandManager,
+            RoleEnum.User)]
+        [HttpPatch(ApiEndPointConstant.Order.OrderEndPoints)]
+        [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateOrder(Guid id,
+            UpdateOrderRequest updateOrderRequest)
+        {
+            var response = await _orderService.UpdateOrder(id, updateOrderRequest);
             return Ok(response);
         }
 
@@ -54,7 +74,7 @@ namespace Pos_System.API.Controllers
         public async Task<IActionResult> UpdateOrderPayment(Guid storeId, Guid id,
             UpdateOrderRequest updateOrderRequest)
         {
-            var response = await _orderService.UpdateOrder(storeId, id, updateOrderRequest);
+            var response = await _orderService.UpdateOrder(id, updateOrderRequest);
             return Ok(response);
         }
 
@@ -95,7 +115,7 @@ namespace Pos_System.API.Controllers
             var response = await _orderService.CheckoutOrder(storeId, id, updateOrderRequest);
             return Ok(response);
         }
-        
+
         [HttpGet(ApiEndPointConstant.Order.NewUserOrderEndPoint)]
         [ProducesResponseType(typeof(NewUserOrderResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> FindNewUserOrder(Guid storeId)
