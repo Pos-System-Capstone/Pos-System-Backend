@@ -141,13 +141,17 @@ namespace Pos_System.API.Services.Implements
                     report.TakeAwayAmount += item.FinalAmount;
                     report.TotalOrderTakeAway++;
                 }
-                else
+                else if (item.OrderType == OrderType.TOP_UP.GetDescriptionFromEnum())
+                {
+                    report.TopUpAmount += item.FinalAmount;
+                    report.TotalOrderTopUp++;
+                }
+                else if (item.OrderType == OrderType.DELIVERY.GetDescriptionFromEnum())
                 {
                     report.DeliAmount += item.FinalAmount;
                     report.TotalOrderDeli++;
                 }
-
-                ;
+                
                 if (item.PaymentType == PaymentTypeEnum.VISA.GetDescriptionFromEnum())
                 {
                     report.VisaAmount += item.FinalAmount;
@@ -162,6 +166,11 @@ namespace Pos_System.API.Services.Implements
                 {
                     report.BankingAmount += item.FinalAmount;
                     report.TotalBanking++;
+                }
+                else if (item.PaymentType == PaymentTypeEnum.POINTIFY.GetDescriptionFromEnum())
+                {
+                    report.PointifyAmount += item.FinalAmount;
+                    report.TotalPointify++;
                 }
                 else
                 {
