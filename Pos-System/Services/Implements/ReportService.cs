@@ -427,13 +427,13 @@ namespace Pos_System.API.Services.Implements
                     report.TopUpAmount += item.FinalAmount;
                     report.TotalOrderTopUp++;
                 }
-                else
+                else if (item.OrderType == OrderType.DELIVERY.GetDescriptionFromEnum())
                 {
                     report.DeliAmount += item.FinalAmount;
                     report.TotalOrderDeli++;
                 }
 
-                ;
+
                 if (item.PaymentType == PaymentTypeEnum.VISA.GetDescriptionFromEnum())
                 {
                     report.VisaAmount += item.FinalAmount;

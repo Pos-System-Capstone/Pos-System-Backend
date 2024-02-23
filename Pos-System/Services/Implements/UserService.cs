@@ -738,6 +738,37 @@ namespace Pos_System.API.Services.Implements
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(req.StoreId));
             if (store == null) throw new BadHttpRequestException(MessageConstant.Store.StoreNotFoundMessage);
 
+            string currentUserName = GetUsernameFromJwt();
+            DateTime currentTime = TimeUtils.GetCurrentSEATime();
+            string currentTimeStamp = TimeUtils.GetTimestamp(currentTime);
+            Account currentUser = await _unitOfWork.GetRepository<Account>()
+                .SingleOrDefaultAsync(predicate: x => x.Username.Equals(currentUserName));
+            Session currentUserSession = await _unitOfWork.GetRepository<Session>().SingleOrDefaultAsync(predicate: x =>
+                x.StoreId.Equals(req.StoreId)
+                && DateTime.Compare(x.StartDateTime, currentTime) < 0
+                && DateTime.Compare(x.EndDateTime, currentTime) > 0);
+
+            if (currentUserSession == null)
+                throw new BadHttpRequestException(MessageConstant.Order.UserNotInSessionMessage);
+            string newInvoiceId = store.Code + currentTimeStamp;
+            Order newOrder = new Order()
+            {
+                Id = Guid.NewGuid(),
+                CheckInPerson = currentUser.Id,
+                CheckInDate = currentTime,
+                CheckOutDate = currentTime,
+                InvoiceId = newInvoiceId,
+                TotalAmount = req.Amount,
+                Discount = 0,
+                FinalAmount = req.Amount,
+                Vat = 0,
+                Vatamount = 0,
+                OrderType = OrderType.TOP_UP.GetDescriptionFromEnum(),
+                NumberOfGuest = 1,
+                Status = OrderStatus.PAID.GetDescriptionFromEnum(),
+                SessionId = currentUserSession.Id,
+                PaymentType = req.PaymentType.GetDescriptionFromEnum(),
+            };
             User user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
                 predicate: x =>
                     x.Id.Equals(req.UserId)
@@ -793,6 +824,7 @@ namespace Pos_System.API.Services.Implements
                     Status = TransactionStatusEnum.SUCCESS.GetDescriptionFromEnum(),
                     PaymentType = req.PaymentType.GetDescriptionFromEnum()
                 };
+                await _unitOfWork.GetRepository<Order>().InsertAsync(newOrder);
                 await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
                 topUpUserWalletResponse.Message =
                     "Nạp tiền thành công cho người dùng " + user.FullName + ":" + actionResponse.Description;
