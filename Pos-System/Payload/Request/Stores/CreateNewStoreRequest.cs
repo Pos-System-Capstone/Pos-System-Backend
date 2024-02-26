@@ -24,7 +24,7 @@ namespace Pos_System.API.Payload.Request.Stores
         public string? Code { get; set; }
 
         public string? Address { get; set; }
-        
+
         public string? WifiName { get; set; }
         public string? WifiPassword { get; set; }
     }

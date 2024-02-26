@@ -60,6 +60,7 @@ public static class DependencyServices
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IPromotionService, PromotionService>();
+        services.AddScoped<ITransactionService, TransactionService>();
         services.AddScoped<IFirebaseService, FirebaseService>();
         return services;
     }

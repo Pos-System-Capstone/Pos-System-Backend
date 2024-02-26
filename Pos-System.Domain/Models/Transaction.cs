@@ -18,6 +18,7 @@ namespace Pos_System.Domain.Models
         public bool? IsIncrease { get; set; }
         public string? Type { get; set; }
         public string? PaymentType { get; set; }
+        public string? Description { get; set; }
 
         public virtual Brand Brand { get; set; } = null!;
     }

@@ -12,6 +12,7 @@ using Pos_System.API.Payload.Response.Stores;
 using Pos_System.API.Services.Implements;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.API.Validators;
+using Pos_System.Domain.Models;
 using Pos_System.Domain.Paginate;
 
 namespace Pos_System.API.Controllers
@@ -25,10 +26,12 @@ namespace Pos_System.API.Controllers
         private readonly ICategoryService _categoryService;
         private readonly ICollectionService _collectionService;
         private readonly IReportService _reportService;
+        private readonly ITransactionService _transactionService;
 
         public BrandController(ILogger<BrandController> logger, IBrandService brandService,
             IAccountService accountService, IStoreService storeService, ICategoryService categoryService,
-            ICollectionService collectionService, IReportService reportService) : base(logger)
+            ICollectionService collectionService, IReportService reportService,
+            ITransactionService transactionService) : base(logger)
         {
             _brandService = brandService;
             _accountService = accountService;
@@ -36,6 +39,7 @@ namespace Pos_System.API.Controllers
             _categoryService = categoryService;
             _collectionService = collectionService;
             _reportService = reportService;
+            _transactionService = transactionService;
         }
 
         [CustomAuthorize(RoleEnum.SysAdmin)]
@@ -175,6 +179,17 @@ namespace Pos_System.API.Controllers
         {
             var response =
                 await _brandService.GetOrderInBrand(id, page, size, startDate, endDate, orderType, status, paymentType);
+            return Ok(response);
+        }
+
+        [CustomAuthorize(RoleEnum.BrandAdmin, RoleEnum.BrandManager)]
+        [HttpGet(ApiEndPointConstant.Brand.BrandTransactionEndpoint)]
+        [ProducesResponseType(typeof(IPaginate<Transaction>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetTransactionsInBrand(Guid id, [FromQuery] int page, [FromQuery] int size
+        )
+        {
+            var response =
+                await _transactionService.GetListTransactionOfBrand(id, page, size);
             return Ok(response);
         }
     }

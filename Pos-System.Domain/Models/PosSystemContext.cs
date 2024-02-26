@@ -748,6 +748,8 @@ namespace Pos_System.Domain.Models
 
                 entity.Property(e => e.Currency).HasMaxLength(20);
 
+                entity.Property(e => e.Description).HasMaxLength(100);
+
                 entity.Property(e => e.PaymentType)
                     .HasMaxLength(20)
                     .IsUnicode(false);

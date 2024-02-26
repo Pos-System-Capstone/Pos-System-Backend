@@ -4,7 +4,10 @@ namespace Pos_System.API.Enums
     {
         PAYMENT,
         GET_POINT,
-        TOP_UP
+        TOP_UP,
+        DEPT,
+        PAY_DEPT,
+        BRAND_BALANCE
     }
 
     public enum TransactionStatusEnum

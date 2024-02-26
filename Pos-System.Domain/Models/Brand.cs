@@ -28,6 +28,7 @@ namespace Pos_System.Domain.Models
         public string? PicUrl { get; set; }
         public string Status { get; set; } = null!;
         public string? BrandCode { get; set; }
+        public double? BrandBalance { get; set; }
 
         public virtual ICollection<BrandAccount> BrandAccounts { get; set; }
         public virtual ICollection<BrandPartner> BrandPartnerBrandPartnerNavigations { get; set; }
