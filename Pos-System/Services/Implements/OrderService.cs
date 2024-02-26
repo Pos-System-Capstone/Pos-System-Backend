@@ -171,6 +171,7 @@ namespace Pos_System.API.Services.Implements
             orderDetailResponse.VatAmount = order.Vatamount;
             orderDetailResponse.Discount = order.Discount;
             orderDetailResponse.CustomerNumber = order.NumberOfGuest;
+            orderDetailResponse.Notes = order.Note;
             orderDetailResponse.OrderStatus = EnumUtil.ParseEnum<OrderStatus>(order.Status);
             orderDetailResponse.OrderType = EnumUtil.ParseEnum<OrderType>(order.OrderType);
             orderDetailResponse.PaymentType = string.IsNullOrEmpty(order.PaymentType)
@@ -879,6 +880,7 @@ namespace Pos_System.API.Services.Implements
             orderDetailResponse.Vat = order.Vat;
             orderDetailResponse.VatAmount = order.Vatamount;
             orderDetailResponse.Discount = order.Discount;
+            orderDetailResponse.Notes = order.Note;
             orderDetailResponse.OrderStatus = EnumUtil.ParseEnum<OrderStatus>(order.Status);
             orderDetailResponse.OrderType = EnumUtil.ParseEnum<OrderType>(order.OrderType);
             orderDetailResponse.PaymentType = string.IsNullOrEmpty(order.PaymentType)
