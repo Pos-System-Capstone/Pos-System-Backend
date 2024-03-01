@@ -67,7 +67,6 @@ namespace Pos_System.API.Controllers
             var response = await _orderService.UpdateOrder(id, updateOrderRequest);
             return Ok(response);
         }
-
         [CustomAuthorize(RoleEnum.Staff, RoleEnum.StoreManager, RoleEnum.User)]
         [HttpPatch(ApiEndPointConstant.Order.OrderEndPoint)]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]

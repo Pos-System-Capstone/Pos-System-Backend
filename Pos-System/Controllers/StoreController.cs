@@ -133,9 +133,11 @@ namespace Pos_System.API.Controllers
         [ProducesResponseType(typeof(IPaginate<ViewOrdersResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetOrdersOfStore(Guid id, [FromQuery] int page, [FromQuery] int size,
             [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] OrderType? orderType,
-            [FromQuery] OrderStatus? status,PaymentTypeEnum? paymentType)
+            [FromQuery] OrderStatus? status, PaymentTypeEnum? paymentType)
         {
-            var response = await _orderService.GetOrdersInStore(id, page, size, startDate, endDate, orderType, status,paymentType);
+            var response =
+                await _orderService.GetOrdersInStore(id, page, size, startDate, endDate, orderType, status,
+                    paymentType);
             return Ok(response);
         }
 
@@ -204,12 +206,20 @@ namespace Pos_System.API.Controllers
             var userResponse = await _storeService.GetPromotionInStore(id);
             return Ok(userResponse);
         }
-        
+
         [HttpGet(ApiEndPointConstant.Store.ScanUserFromStore)]
         [ProducesResponseType(typeof(GetUserInfo), StatusCodes.Status200OK)]
         public async Task<IActionResult> ScanUserInStore(Guid id, [FromQuery] string phone)
         {
             var userResponse = await _userService.ScanUserPhoneNumber(phone, id);
+            return Ok(userResponse);
+        }
+
+        [HttpGet(ApiEndPointConstant.Store.ScanUserCodeFromStore)]
+        [ProducesResponseType(typeof(GetUserInfo), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ScanUserCodeInStore([FromQuery] string code)
+        {
+            var userResponse = await _userService.ScanUser(code);
             return Ok(userResponse);
         }
     }

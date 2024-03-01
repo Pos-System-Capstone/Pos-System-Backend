@@ -8,12 +8,10 @@ using Pos_System.API.Enums;
 using Pos_System.API.Extensions;
 using Pos_System.API.Helpers;
 using Pos_System.API.Payload.Pointify;
-using Pos_System.API.Payload.Request;
 using Pos_System.API.Payload.Request.CheckoutOrder;
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Response.CheckoutOrderResponse;
 using Pos_System.API.Payload.Response.Orders;
-using Pos_System.API.Payload.Response.Products;
 using Pos_System.API.Payload.Response.Promotion;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.API.Utils;
@@ -25,8 +23,8 @@ namespace Pos_System.API.Services.Implements
 {
     public class OrderService : BaseService<OrderService>, IOrderService
     {
-        public const double VAT_PERCENT = 0.1;
-        public const double VAT_STANDARD = 1.1;
+        private const double VatPercent = 0.1;
+        private const double VatStandard = 1.1;
         private readonly IUserService _userService;
 
         public OrderService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<OrderService> logger, IMapper mapper,
@@ -59,10 +57,9 @@ namespace Pos_System.API.Services.Implements
                 throw new BadHttpRequestException(MessageConstant.Order.NoProductsInOrderMessage);
 
             string newInvoiceId = store.Code + currentTimeStamp;
-            double SystemDiscountAmount = 0;
             int defaultGuest = 1;
 
-            double VATAmount = (createNewOrderRequest.FinalAmount / VAT_STANDARD) * VAT_PERCENT;
+            double vatAmount = (createNewOrderRequest.FinalAmount / VatStandard) * VatPercent;
 
             Order newOrder = new Order()
             {
@@ -74,8 +71,8 @@ namespace Pos_System.API.Services.Implements
                 TotalAmount = createNewOrderRequest.TotalAmount,
                 Discount = createNewOrderRequest.DiscountAmount,
                 FinalAmount = createNewOrderRequest.FinalAmount,
-                Vat = VAT_PERCENT,
-                Vatamount = VATAmount,
+                Vat = VatPercent,
+                Vatamount = vatAmount,
                 OrderType = createNewOrderRequest.OrderType.GetDescriptionFromEnum(),
                 NumberOfGuest = defaultGuest,
                 Status = OrderStatus.PENDING.GetDescriptionFromEnum(),
@@ -1147,7 +1144,7 @@ namespace Pos_System.API.Services.Implements
             string newInvoiceId = store.Code + currentTimeStamp;
             int defaultGuest = 1;
 
-            double vatAmount = (createNewOrderRequest.FinalAmount / VAT_STANDARD) * VAT_PERCENT;
+            double vatAmount = (createNewOrderRequest.FinalAmount / VatStandard) * VatPercent;
 
             Order newOrder = new Order()
             {
@@ -1159,7 +1156,7 @@ namespace Pos_System.API.Services.Implements
                 TotalAmount = createNewOrderRequest.TotalAmount,
                 Discount = createNewOrderRequest.DiscountAmount,
                 FinalAmount = createNewOrderRequest.FinalAmount,
-                Vat = VAT_PERCENT,
+                Vat = VatPercent,
                 Vatamount = vatAmount,
                 OrderType = createNewOrderRequest.OrderType.GetDescriptionFromEnum(),
                 NumberOfGuest = createNewOrderRequest.CustomerNumber,

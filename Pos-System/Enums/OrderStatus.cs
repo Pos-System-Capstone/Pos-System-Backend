@@ -2,10 +2,12 @@
 {
     public enum OrderStatus
     {
+        NEW,
         PENDING,
         PAID,
         CANCELED
     }
+
     public enum OrderSourceStatus
     {
         PENDING,
