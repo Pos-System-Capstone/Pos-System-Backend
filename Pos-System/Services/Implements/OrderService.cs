@@ -587,15 +587,29 @@ namespace Pos_System.API.Services.Implements
             {
                 case PaymentTypeEnum.POINTIFY:
                 {
-                    var user = await _userService.ScanUser(req.Code);
-                    if (user.BrandId == order.Session.Store.BrandId)
+                    var userId =
+                        await _unitOfWork.GetRepository<OrderUser>()
+                            .SingleOrDefaultAsync(
+                                selector: a => a.UserId,
+                                predicate:
+                                x => x.Id.Equals(order.OrderSourceId)
+                            );
+                    var userBrandId = order.Session.Store.BrandId;
+                    if (userId == null)
+                    {
+                        var user = await _userService.ScanUser(req.Code);
+                        userId = user.Id;
+                        userBrandId = user.BrandId;
+                    }
+
+                    if (userBrandId == order.Session.Store.BrandId && userId != null)
                     {
                         MemberActionRequest request = new MemberActionRequest()
                         {
                             ApiKey = order.Session.Store.BrandId,
                             Amount = order.FinalAmount,
                             Description = order.InvoiceId,
-                            MembershipId = user.Id,
+                            MembershipId = (Guid) userId,
                             MemberActionType = MemberActionType.PAYMENT.GetDescriptionFromEnum()
                         };
                         var url = "https://api-pointify.reso.vn/api/member-action";
@@ -623,7 +637,7 @@ namespace Pos_System.API.Services.Implements
                                         .ReadAsStringAsync().Result,
                                     Amount = (decimal) order.FinalAmount,
                                     CreatedDate = TimeUtils.GetCurrentSEATime(),
-                                    UserId = user.Id,
+                                    UserId = userId,
                                     OrderId = order.Id,
                                     IsIncrease = false,
                                     Type = TransactionTypeEnum.PAYMENT.GetDescriptionFromEnum(),
@@ -676,7 +690,7 @@ namespace Pos_System.API.Services.Implements
                         var brandPartner = await _unitOfWork.GetRepository<BrandPartner>()
                             .SingleOrDefaultAsync(predicate: x =>
                                 x.MasterBrandId.Equals(order.Session.Store.BrandId) &&
-                                x.BrandPartnerId.Equals(user.BrandId)
+                                x.BrandPartnerId.Equals(userBrandId)
                             );
                         if (brandPartner == null)
                         {
@@ -695,7 +709,7 @@ namespace Pos_System.API.Services.Implements
                             ApiKey = partner.Id,
                             Amount = order.FinalAmount,
                             Description = order.InvoiceId,
-                            MembershipId = user.Id,
+                            MembershipId = (Guid) userId!,
                             MemberActionType = MemberActionType.PAYMENT.GetDescriptionFromEnum()
                         };
                         var url = "https://api-pointify.reso.vn/api/member-action";
@@ -726,7 +740,7 @@ namespace Pos_System.API.Services.Implements
                                         .ReadAsStringAsync().Result,
                                     Amount = (decimal) order.FinalAmount,
                                     CreatedDate = TimeUtils.GetCurrentSEATime(),
-                                    UserId = user.Id,
+                                    UserId = userId,
                                     OrderId = order.Id,
                                     IsIncrease = false,
                                     Type = TransactionTypeEnum.PAYMENT.GetDescriptionFromEnum(),
