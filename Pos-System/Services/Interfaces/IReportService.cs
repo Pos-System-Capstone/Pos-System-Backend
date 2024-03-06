@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Pos_System.API.Payload.Response.Report;
 using Pos_System.API.Payload.Response.Stores;
 

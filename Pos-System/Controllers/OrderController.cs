@@ -1,16 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
-using Pos_System.API.Payload.Request.Menus;
 using Pos_System.API.Payload.Request.Orders;
-using Pos_System.API.Payload.Request.Products;
-using Pos_System.API.Payload.Request.User;
 using Pos_System.API.Payload.Response.Orders;
-using Pos_System.API.Payload.Response.User;
-using Pos_System.API.Services.Implements;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.API.Validators;
-using Pos_System.Domain.Models;
 
 namespace Pos_System.API.Controllers
 {

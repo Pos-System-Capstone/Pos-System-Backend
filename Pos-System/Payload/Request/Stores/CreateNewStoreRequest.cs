@@ -1,5 +1,4 @@
-﻿using Pos_System.API.Enums;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Pos_System.API.Payload.Request.Stores
 {

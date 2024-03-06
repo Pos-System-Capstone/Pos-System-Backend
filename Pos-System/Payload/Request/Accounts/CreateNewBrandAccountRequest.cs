@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Pos_System.API.Enums;
-using Pos_System.API.Utils;
 
 namespace Pos_System.API.Payload.Request.Brands;
 

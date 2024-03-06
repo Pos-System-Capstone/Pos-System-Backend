@@ -1,5 +1,4 @@
 ﻿using Pos_System.API.Enums;
-using Pos_System.Domain.Models;
 using Pos_System.Domain.Paginate;
 
 namespace Pos_System.API.Payload.Response.Collections

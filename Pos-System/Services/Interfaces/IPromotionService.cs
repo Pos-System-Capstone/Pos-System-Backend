@@ -1,5 +1,4 @@
-﻿using System;
-using Pos_System.API.Enums;
+﻿using Pos_System.API.Enums;
 using Pos_System.API.Payload.Request.Promotion;
 using Pos_System.API.Payload.Response.Promotion;
 using Pos_System.Domain.Paginate;

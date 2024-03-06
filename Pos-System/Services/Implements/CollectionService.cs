@@ -1,10 +1,7 @@
 ﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
-using Pos_System.API.Payload.Request.Brands;
 using Pos_System.API.Payload.Request.Collections;
-using Pos_System.API.Payload.Response.Categories;
 using Pos_System.API.Payload.Response.Collections;
 using Pos_System.API.Payload.Response.Products;
 using Pos_System.API.Services.Interfaces;

@@ -1,10 +1,8 @@
-﻿using System;
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
 using Pos_System.API.Payload.Request.Promotion;
-using Pos_System.API.Payload.Response;
 using Pos_System.API.Payload.Response.Promotion;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.API.Utils;

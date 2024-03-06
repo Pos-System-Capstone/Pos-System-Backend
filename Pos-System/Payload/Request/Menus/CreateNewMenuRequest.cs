@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Pos_System.API.Enums;
 
 namespace Pos_System.API.Payload.Request.Menus
 {

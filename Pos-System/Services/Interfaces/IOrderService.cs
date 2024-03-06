@@ -2,7 +2,6 @@
 using Pos_System.API.Payload.Request.Orders;
 using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.Promotion;
-using Pos_System.Domain.Models;
 using Pos_System.Domain.Paginate;
 
 namespace Pos_System.API.Services.Interfaces

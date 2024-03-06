@@ -1,7 +1,5 @@
-﻿using System;
-using Pos_System.API.Enums;
+﻿using Pos_System.API.Enums;
 using Pos_System.API.Utils;
-using Pos_System.Domain.Models;
 
 namespace Pos_System.API.Payload.Response.Products
 {

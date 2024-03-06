@@ -1,5 +1,4 @@
-﻿using Pos_System.API.Constants;
-using Pos_System.API.Payload.Response.User;
+﻿using Pos_System.API.Payload.Response.User;
 
 namespace Pos_System.API.Utils
 {

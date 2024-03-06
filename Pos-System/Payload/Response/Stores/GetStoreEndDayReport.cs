@@ -1,8 +1,4 @@
-﻿using System;
-using Pos_System.API.Enums;
-using Pos_System.API.Payload.Response.Orders;
-
-namespace Pos_System.API.Payload.Response.Stores
+﻿namespace Pos_System.API.Payload.Response.Stores
 {
     public class GetStoreEndDayReport
     {

@@ -1,6 +1,4 @@
-﻿using System;
-
-using Pos_System.API.Payload.Response.Products;
+﻿using Pos_System.API.Payload.Response.Products;
 using Pos_System.API.Payload.Request.Products;
 using Pos_System.Domain.Paginate;
 using Pos_System.API.Enums;

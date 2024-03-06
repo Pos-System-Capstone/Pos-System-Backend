@@ -1,5 +1,4 @@
 ﻿using Pos_System.API.Payload.Request.BlogPost;
-using Pos_System.API.Payload.Request.User;
 using Pos_System.API.Payload.Response.BlogPost;
 using Pos_System.Domain.Models;
 using Pos_System.Domain.Paginate;

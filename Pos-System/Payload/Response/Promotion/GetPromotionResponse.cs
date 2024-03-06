@@ -1,5 +1,4 @@
-﻿using System;
-using Pos_System.API.Enums;
+﻿using Pos_System.API.Enums;
 
 namespace Pos_System.API.Payload.Response.Promotion
 {

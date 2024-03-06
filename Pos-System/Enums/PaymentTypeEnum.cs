@@ -1,5 +1,4 @@
-﻿using System;
-namespace Pos_System.API.Enums
+﻿namespace Pos_System.API.Enums
 {
 	public enum PaymentTypeEnum
 	{

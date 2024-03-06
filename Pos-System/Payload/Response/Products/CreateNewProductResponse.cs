@@ -1,5 +1,4 @@
-﻿using System;
-namespace Pos_System.API.Payload.Response.Products
+﻿namespace Pos_System.API.Payload.Response.Products
 {
     public class CreateNewProductResponse
     {

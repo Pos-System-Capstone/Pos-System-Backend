@@ -1,7 +1,4 @@
-﻿using System.Net;
-using System.Runtime.InteropServices;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
 using Pos_System.API.Payload.Request.Brands;
@@ -9,7 +6,6 @@ using Pos_System.API.Payload.Response;
 using Pos_System.API.Payload.Response.Brands;
 using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.Stores;
-using Pos_System.API.Services.Implements;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.API.Validators;
 using Pos_System.Domain.Models;

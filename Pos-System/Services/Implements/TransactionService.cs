@@ -1,6 +1,5 @@
 using AutoMapper;
 using Pos_System.API.Constants;
-using Pos_System.API.Enums;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.Domain.Models;
 using Pos_System.Domain.Paginate;

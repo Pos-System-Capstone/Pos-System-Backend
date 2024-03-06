@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Runtime.Intrinsics.X86;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;

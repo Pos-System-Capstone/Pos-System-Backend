@@ -1,9 +1,6 @@
 ﻿namespace Pos_System.API.Middlewares;
 
 using System.Net;
-
-using Microsoft.AspNetCore.Mvc;
-
 using Pos_System.API.Payload.Response;
 
 public class ExceptionHandlingMiddleware

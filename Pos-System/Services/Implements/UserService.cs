@@ -11,7 +11,6 @@ using Pos_System.Repository.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +21,6 @@ using Pos_System.Domain.Paginate;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using Pos_System.API.Payload.Response.Menus;
 using Pos_System.API.Helpers;
-using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.Products;
 
 namespace Pos_System.API.Services.Implements
@@ -567,7 +565,8 @@ namespace Pos_System.API.Services.Implements
                 CreatedAt = currentTime,
                 Status = OrderSourceStatus.PENDING.GetDescriptionFromEnum(),
                 PaymentStatus = PaymentStatusEnum.PENDING.GetDescriptionFromEnum(),
-                CompletedAt = currentTime
+                CompletedAt = currentTime,
+                IsSync = false
             };
             newOrder.OrderSourceId = orderSource.Id;
             await _unitOfWork.GetRepository<Order>().InsertAsync(newOrder);
@@ -1063,6 +1062,71 @@ namespace Pos_System.API.Services.Implements
             }
 
             return menuOfStore;
+        }
+
+        public async Task<bool> UpdateUserPoint()
+        {
+            var userOrderNotSynced = await _unitOfWork.GetRepository<OrderUser>()
+                .GetListAsync(predicate: x => x.IsSync == false && x.UserId != null);
+
+            if (userOrderNotSynced == null)
+            {
+                return false;
+            }
+
+            foreach (var userOrder in
+                     userOrderNotSynced)
+            {
+                var order = await _unitOfWork.GetRepository<Order>()
+                    .SingleOrDefaultAsync(predicate: x => x.OrderSourceId.Equals(userOrder.Id)
+                    );
+                MemberActionRequest request = new MemberActionRequest()
+                {
+                    ApiKey = order.Session.Store.BrandId,
+                    Amount = order.FinalAmount,
+                    Description = order.InvoiceId,
+                    MembershipId = (Guid) userOrder.UserId,
+                    MemberActionType = MemberActionType.GET_POINT.GetDescriptionFromEnum()
+                };
+                var url = "https://api-pointify.reso.vn/api/member-action";
+                var response = await CallApiUtils.CallApiEndpoint(url, request);
+                if (!response.StatusCode.Equals(HttpStatusCode.OK))
+                {
+                    _logger.LogInformation("Update point member {UserOrderUserId} false with order {OrderInvoiceId}",
+                        userOrder.UserId, order.InvoiceId);
+                    continue;
+                }
+
+                var actionResponse =
+                    JsonConvert.DeserializeObject<MemberActionResponse>(response.Content
+                        .ReadAsStringAsync().Result);
+                if (
+                    actionResponse == null)
+                {
+                    _logger.LogInformation(
+                        "Update point member {UserOrderUserId} false with order {OrderInvoiceId} with null response ",
+                        userOrder.UserId, order.InvoiceId);
+                    continue;
+                }
+                else if (
+                    actionResponse.Status.Equals(MemberActionStatus.FAIL.GetDescriptionFromEnum()))
+                {
+                    _logger.LogInformation(
+                        "Update point member {UserOrderUserId} false with order {OrderInvoiceId} for reason {Value} ",
+                        userOrder.UserId, order.InvoiceId, actionResponse.Description);
+                    continue;
+                }
+
+                _logger.LogInformation(
+                    message:
+                    "Update point member {UserOrderUserId} success with order {OrderInvoiceId} and with value {Value} ",
+                    userOrder.UserId, order.InvoiceId, actionResponse.ActionValue);
+                userOrder.IsSync = true;
+                _unitOfWork.GetRepository<OrderUser>().UpdateAsync(userOrder);
+            }
+
+            await _unitOfWork.CommitAsync();
+            return true;
         }
     }
 }

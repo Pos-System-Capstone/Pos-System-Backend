@@ -1,5 +1,4 @@
-﻿using System;
-namespace Pos_System.API.Payload.Response.Report
+﻿namespace Pos_System.API.Payload.Response.Report
 {
     public class SessionReport
     {

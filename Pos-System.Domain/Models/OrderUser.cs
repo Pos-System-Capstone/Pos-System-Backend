@@ -21,6 +21,7 @@ namespace Pos_System.Domain.Models
         public string? Name { get; set; }
         public string? Phone { get; set; }
         public string? PaymentStatus { get; set; }
+        public bool? IsSync { get; set; }
 
         public virtual ICollection<Order> Orders { get; set; }
     }

@@ -1282,7 +1282,8 @@ namespace Pos_System.API.Services.Implements
                     Phone = createNewOrderRequest.CustomerPhone,
                     CreatedAt = currentTime,
                     Status = OrderSourceStatus.PENDING.GetDescriptionFromEnum(),
-                    CompletedAt = currentTime
+                    CompletedAt = currentTime,
+                    IsSync = false
                 };
                 newOrder.OrderSourceId = orderSource.Id;
                 await _unitOfWork.GetRepository<OrderUser>().InsertAsync(orderSource);
@@ -1298,7 +1299,8 @@ namespace Pos_System.API.Services.Implements
                     Name = createNewOrderRequest.CustomerName,
                     Phone = createNewOrderRequest.CustomerPhone,
                     CreatedAt = currentTime,
-                    Status = OrderSourceStatus.PENDING.GetDescriptionFromEnum()
+                    Status = OrderSourceStatus.PENDING.GetDescriptionFromEnum(),
+                    IsSync = false
                 };
                 newOrder.OrderSourceId = orderSource.Id;
                 await _unitOfWork.GetRepository<OrderUser>().InsertAsync(orderSource);
