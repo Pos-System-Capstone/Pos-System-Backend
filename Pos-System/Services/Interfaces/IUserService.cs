@@ -32,7 +32,6 @@ namespace Pos_System.API.Services.Interfaces
         Task<GetMenuDetailForStaffResponse> GetMenuDetailFromStore(Guid storeId);
 
         Task<SignInResponse> LoginUserMiniApp(LoginMiniApp req);
-
-        Task<bool> UpdateUserPoint();
+        
     }
 }

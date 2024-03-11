@@ -411,7 +411,6 @@ namespace Pos_System.API.Services.Implements
 
             if (order.PromotionOrderMappings.Any() && updateOrderRequest.Status.Equals(OrderStatus.PAID))
             {
-                List<Transaction> transactions = new List<Transaction>();
                 CheckOutPointifyRequest checkOutPointify = new CheckOutPointifyRequest()
                 {
                     StoreCode = store.Code,
@@ -440,24 +439,6 @@ namespace Pos_System.API.Services.Implements
                         EffectType = promotionOrder.EffectType,
                         Amount = promotionOrder.DiscountAmount ?? 0
                     });
-                    if (promotionOrder.EffectType is "GET_POINT")
-                    {
-                        Transaction newTransaction = new Transaction()
-                        {
-                            Id = Guid.NewGuid(),
-                            CreatedDate = currentTime,
-                            Amount = (decimal) (promotionOrder.DiscountAmount ?? 0),
-                            BrandId = store.BrandId,
-                            Currency = "Point",
-                            IsIncrease = true,
-                            OrderId = orderId,
-                            UserId = checkOutPointify.UserId, Status = "SUCCESS",
-                            Type = TransactionTypeEnum.GET_POINT.GetDescriptionFromEnum()
-                        };
-                        transactions.Add(newTransaction);
-                        checkOutPointify.BonusPoint = promotionOrder.DiscountAmount ?? 0;
-                    }
-
                     if (promotionOrder.VoucherCode != null)
                     {
                         checkOutPointify.VoucherCode = promotionOrder.VoucherCode;
@@ -466,17 +447,14 @@ namespace Pos_System.API.Services.Implements
 
                 checkOutPointify.InvoiceId = order.InvoiceId;
 
-                string url = "https://api-pointify.reso.vn/api/promotions/check-out-promotion";
+                var url = "https://api-pointify.reso.vn/api/promotions/check-out-promotion";
                 var response = await CallApiUtils.CallApiEndpoint(url, checkOutPointify);
-                // if (!response.StatusCode.Equals(HttpStatusCode.OK))
-                // {
-                //     throw new BadHttpRequestException("Cập nhật khuyến mãi đơn hàng thất bại");
-                // }
-
-                await _unitOfWork.GetRepository<Transaction>().InsertRangeAsync(transactions);
+                if (!response.StatusCode.Equals(HttpStatusCode.OK))
+                {
+                    _logger.LogInformation("Cập nhật khuyến mãi đơn hàng thất bại vào lúc  " +
+                                           TimeUtils.GetCurrentSEATime());
+                }
             }
-
-
             order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
 

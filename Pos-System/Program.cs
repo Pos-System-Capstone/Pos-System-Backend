@@ -4,6 +4,7 @@ using Pos_System.API.Constants;
 using Pos_System.API.Converter;
 using Pos_System.API.Extensions;
 using Pos_System.API.Middlewares;
+using Pos_System.API.Services;
 
 var logger = NLog.LogManager.LoadConfiguration(string.Concat(Directory.GetCurrentDirectory(), "/nlog.config"))
     .GetCurrentClassLogger();

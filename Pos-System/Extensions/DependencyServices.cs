@@ -4,6 +4,7 @@ using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Pos_System.API.Services;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Pos_System.API.Extensions;
@@ -62,6 +63,7 @@ public static class DependencyServices
         services.AddScoped<IPromotionService, PromotionService>();
         services.AddScoped<ITransactionService, TransactionService>();
         services.AddScoped<IFirebaseService, FirebaseService>();
+        services.AddHostedService<BackgroundJobService>();
         return services;
     }
 
