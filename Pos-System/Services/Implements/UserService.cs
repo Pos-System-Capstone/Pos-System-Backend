@@ -471,7 +471,7 @@ namespace Pos_System.API.Services.Implements
                 Vatamount = vatAmount,
                 OrderType = createNewOrderRequest.OrderType.GetDescriptionFromEnum(),
                 NumberOfGuest = defaultGuest,
-                Status = OrderStatus.PENDING.GetDescriptionFromEnum(),
+                Status = OrderStatus.NEW.GetDescriptionFromEnum(),
                 SessionId = currentUserSession.Id,
                 PaymentType = createNewOrderRequest.PaymentType.GetDescriptionFromEnum(),
                 Note = createNewOrderRequest.Notes
@@ -1063,7 +1063,5 @@ namespace Pos_System.API.Services.Implements
 
             return menuOfStore;
         }
-
-       
     }
 }

@@ -275,7 +275,7 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<IPaginate<ViewOrdersResponse>> GetOrdersInStore(Guid storeId, int page, int size,
             DateTime? startDate, DateTime? endDate, OrderType? orderType, OrderStatus? status,
-            PaymentTypeEnum? paymentType)
+            PaymentTypeEnum? paymentType, string? invoiceID)
         {
             RoleEnum userRole = EnumUtil.ParseEnum<RoleEnum>(GetRoleFromJwt());
             if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
@@ -305,7 +305,8 @@ namespace Pos_System.API.Services.Implements
                         ? EnumUtil.ParseEnum<PaymentStatusEnum>(x.OrderSource.PaymentStatus)
                         : null,
                 },
-                predicate: BuildGetOrdersInStoreQuery(storeId, startDate, endDate, orderType, status, paymentType),
+                predicate: BuildGetOrdersInStoreQuery(storeId, startDate, endDate, orderType, status, paymentType,
+                    invoiceID),
                 include: x => x.Include(s => s.OrderSource).Include(v => v.Session).ThenInclude(p => p.Store),
                 orderBy: x =>
                     x.OrderByDescending(x => x.CheckInDate),
@@ -316,7 +317,8 @@ namespace Pos_System.API.Services.Implements
         }
 
         private Expression<Func<Order, bool>> BuildGetOrdersInStoreQuery(Guid storeId, DateTime? startDate,
-            DateTime? endDate, OrderType? orderType, OrderStatus? status, PaymentTypeEnum? paymentType)
+            DateTime? endDate, OrderType? orderType, OrderStatus? status, PaymentTypeEnum? paymentType,
+            string? invoiceID)
         {
             Expression<Func<Order, bool>> filterQuery = p => p.Session.StoreId.Equals(storeId);
             if (startDate != null && endDate == null)
@@ -347,6 +349,11 @@ namespace Pos_System.API.Services.Implements
             if (paymentType != null)
             {
                 filterQuery = filterQuery.AndAlso(p => p.PaymentType.Equals(paymentType.GetDescriptionFromEnum()));
+            }
+
+            if (invoiceID != null)
+            {
+                filterQuery = filterQuery.AndAlso(p => p.InvoiceId.Contains(invoiceID));
             }
 
             return filterQuery;
@@ -455,6 +462,7 @@ namespace Pos_System.API.Services.Implements
                                            TimeUtils.GetCurrentSEATime());
                 }
             }
+
             order.CheckInPerson = currentUser.Id;
             order.CheckOutDate = currentTime;
 
@@ -1297,7 +1305,7 @@ namespace Pos_System.API.Services.Implements
             DateTime currentTime = TimeUtils.GetCurrentSEATime();
             var orders = (List<Order>) await _unitOfWork.GetRepository<Order>().GetListAsync(
                 predicate: x =>
-                    x.Status.Equals(OrderStatus.PENDING.GetDescriptionFromEnum()) && x.OrderSourceId.HasValue &&
+                    x.Status.Equals(OrderStatus.NEW.GetDescriptionFromEnum()) && x.OrderSourceId.HasValue &&
                     x.CheckInDate.Date.Equals(currentTime.Date) &&
                     x.Session.StoreId.Equals(storeId),
                 include:

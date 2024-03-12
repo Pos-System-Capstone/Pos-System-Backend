@@ -14,7 +14,7 @@ namespace Pos_System.API.Services.Interfaces
 
         public Task<IPaginate<ViewOrdersResponse>> GetOrdersInStore(Guid storeId, int page, int size,
             DateTime? startDate, DateTime? endDate, OrderType? orderType, OrderStatus? orderStatus,
-            PaymentTypeEnum? paymentType);
+            PaymentTypeEnum? paymentType, string? invoiceID);
 
         public Task<List<GetPromotionResponse>> GetPromotion(Guid storeId);
 

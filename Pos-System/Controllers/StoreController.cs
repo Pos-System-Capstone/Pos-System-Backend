@@ -130,11 +130,11 @@ namespace Pos_System.API.Controllers
         [ProducesResponseType(typeof(IPaginate<ViewOrdersResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetOrdersOfStore(Guid id, [FromQuery] int page, [FromQuery] int size,
             [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] OrderType? orderType,
-            [FromQuery] OrderStatus? status, PaymentTypeEnum? paymentType)
+            [FromQuery] OrderStatus? status, PaymentTypeEnum? paymentType, string? invoiceId)
         {
             var response =
                 await _orderService.GetOrdersInStore(id, page, size, startDate, endDate, orderType, status,
-                    paymentType);
+                    paymentType, invoiceId);
             return Ok(response);
         }
 
@@ -190,7 +190,7 @@ namespace Pos_System.API.Controllers
         [CustomAuthorize(RoleEnum.StoreManager, RoleEnum.Staff)]
         [HttpGet(ApiEndPointConstant.Store.GetPromotion)]
         [ProducesResponseType(typeof(GetPromotionResponse), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetPrmotion(Guid id)
+        public async Task<IActionResult> GetPromotion(Guid id)
         {
             var response = await _orderService.GetPromotion(id);
             return Ok(response);
