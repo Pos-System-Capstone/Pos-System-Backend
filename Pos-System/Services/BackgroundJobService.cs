@@ -46,12 +46,21 @@ public class BackgroundJobService : BackgroundService
                              userOrderNotSynced)
                     {
                         var order = await unitOfWork.GetRepository<Order>()
-                            .SingleOrDefaultAsync(predicate: o => o.OrderSourceId.Equals(userOrder.Id),
+                            .SingleOrDefaultAsync(
+                                predicate: o =>
+                                    o.OrderSourceId.Equals(userOrder.Id) && o.Status.Equals(OrderStatus.PAID),
                                 include: x =>
                                     x.Include(o => o.OrderSource)
                                         .Include(o => o.Session).ThenInclude(s => s.Store)
                             );
-                        MemberActionRequest request = new MemberActionRequest()
+                        if (order == null)
+                        {
+                            _logger.LogInformation(
+                                "All user order are synced");
+                            continue;
+                        }
+
+                        var request = new MemberActionRequest()
                         {
                             ApiKey = order.Session.Store.BrandId,
                             Amount = order.FinalAmount,
