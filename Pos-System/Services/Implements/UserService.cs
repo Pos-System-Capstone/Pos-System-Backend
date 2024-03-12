@@ -553,6 +553,7 @@ namespace Pos_System.API.Services.Implements
                 await _unitOfWork.GetRepository<PromotionOrderMapping>().InsertRangeAsync(promotionMappingList);
             }
 
+
             OrderUser orderSource = new OrderUser()
             {
                 Id = Guid.NewGuid(),
@@ -568,6 +569,14 @@ namespace Pos_System.API.Services.Implements
                 CompletedAt = currentTime,
                 IsSync = false
             };
+            if (createNewOrderRequest.CustomerId != null)
+            {
+                var user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
+                    predicate: x => x.Id.Equals(createNewOrderRequest.CustomerId));
+                orderSource.Phone = user.PhoneNumber;
+                orderSource.Name = user.FullName;
+            }
+
             newOrder.OrderSourceId = orderSource.Id;
             await _unitOfWork.GetRepository<Order>().InsertAsync(newOrder);
             await _unitOfWork.GetRepository<OrderDetail>().InsertRangeAsync(orderDetails);
