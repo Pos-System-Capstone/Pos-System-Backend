@@ -23,7 +23,8 @@ namespace Pos_System.API.Controllers
         [CustomAuthorize(RoleEnum.SysAdmin, RoleEnum.BrandAdmin)]
         [HttpGet(ApiEndPointConstant.BlogPost.BlogPostsEndpoint)]
         [ProducesResponseType(typeof(IPaginate<GetBlogPostResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetBlogPostByBrandCode([FromQuery] int page, [FromQuery] int size)
+        public async Task<IActionResult> GetBlogPostByBrandCode([FromQuery] int page,
+            [FromQuery] int size)
         {
             var blogPostInBrand = await _blogPostService.GetBlogPost(page, size);
             return Ok(blogPostInBrand);
@@ -64,7 +65,7 @@ namespace Pos_System.API.Controllers
         [HttpPatch(ApiEndPointConstant.BlogPost.BlogPostEndpoint)]
         public async Task<IActionResult> UpdateBlogPostInformation(Guid id, UpdateBlogPostRequest updatelogpost)
         {
-            bool isSuccessfuly = await _blogPostService.UpdateBlogPost(id, updatelogpost);
+            var isSuccessfuly = await _blogPostService.UpdateBlogPost(id, updatelogpost);
             if (!isSuccessfuly) return BadRequest(MessageConstant.BlogPost.UpdateBlogPostFailedMessage);
             return Ok(MessageConstant.BlogPost.UpdateBlogPostSuccessfulMessage);
         }

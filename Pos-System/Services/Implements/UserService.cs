@@ -236,11 +236,6 @@ namespace Pos_System.API.Services.Implements
                         && x.Status.Equals("Active"));
 
                     guidClaim = new Tuple<string, Guid>("brandId", brandId);
-                    //string? brandPicUrl = await _unitOfWork.GetRepository<Store>().SingleOrDefaultAsync(
-                    //    selector: store => store.Brand.PicUrl,
-                    //    predicate: store => store.Id.Equals(storeId),
-                    //    include: store => store.Include(store => store.Brand)
-                    //);
                     configuration = new ConfigurationBuilder()
                         .AddEnvironmentVariables(EnvironmentVariableConstant.Prefix).Build();
                     jwtHandler = new JwtSecurityTokenHandler();

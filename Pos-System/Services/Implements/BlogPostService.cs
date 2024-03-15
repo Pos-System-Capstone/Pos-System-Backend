@@ -22,17 +22,13 @@ namespace Pos_System.API.Services.Implements
         public async Task<IPaginate<GetBlogPostResponse>> GetBlogPost(int page, int size)
         {
             Guid brandId = Guid.Parse(GetBrandIdFromJwt());
-            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
-            Brand brand = await _unitOfWork.GetRepository<Brand>()
-                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
-            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
 
             IPaginate<GetBlogPostResponse> blogPostResponse = await _unitOfWork.GetRepository<BlogPost>()
                 .GetPagingListAsync(
                     selector: x => new GetBlogPostResponse(x.Id, x.Title, x.BlogContent, x.BrandId, x.Image, x.IsDialog,
                         x.MetaData, x.Status, x.Priority),
                     predicate: x =>
-                        x.BrandId.Equals(brand.Id) && x.Status.Equals(BlogPostStatus.Active.GetDescriptionFromEnum()),
+                        x.BrandId.Equals(brandId) && x.Status.Equals(BlogPostStatus.Active.GetDescriptionFromEnum()),
                     page: page,
                     size: size,
                     orderBy: x => x.OrderByDescending(x => x.Priority));

@@ -2,15 +2,17 @@
 
 public class UpdateCategoryRequest
 {
-	public string? Name { get; set; }
-	public int? DisplayOrder { get; set; }
-	public string? Description { get; set; }
-	
-	public string? Status { get; set; }
+    public string? Name { get; set; }
+    public int? DisplayOrder { get; set; }
+    public string? Description { get; set; }
 
-	public void TrimString()
-	{
-		Name = Name?.Trim();
-		Description = Description?.Trim();
-	}
+    public string? PicUrl { get; set; }
+
+    public string? Status { get; set; }
+
+    public void TrimString()
+    {
+        Name = Name?.Trim();
+        Description = Description?.Trim();
+    }
 }

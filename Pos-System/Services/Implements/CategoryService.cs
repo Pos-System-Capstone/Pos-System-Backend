@@ -95,8 +95,9 @@ public class CategoryService : BaseService<CategoryService>, ICategoryService
         category.Description = string.IsNullOrEmpty(request.Description) ? category.Description : request.Description;
         category.DisplayOrder = (request.DisplayOrder ?? category.DisplayOrder);
         category.Status = string.IsNullOrEmpty(request.Status) ? category.Status : request.Status;
+        category.PicUrl = string.IsNullOrEmpty(request.PicUrl) ? category.PicUrl : request.PicUrl;
         _unitOfWork.GetRepository<Category>().UpdateAsync(category);
-        bool isSuccessful = await _unitOfWork.CommitAsync() > 0;
+        var isSuccessful = await _unitOfWork.CommitAsync() > 0;
         return isSuccessful;
     }
 
