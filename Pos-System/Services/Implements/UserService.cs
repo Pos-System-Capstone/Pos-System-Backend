@@ -906,7 +906,7 @@ namespace Pos_System.API.Services.Implements
         public async Task<GetMenuDetailForStaffResponse> GetMenuDetailFromStore(Guid storeId)
         {
             //Filter Menu, make sure it return correct menu in specific time
-            List<MenuStore> allMenuAvailable = (List<MenuStore>) await _unitOfWork.GetRepository<MenuStore>()
+            var allMenuAvailable = (List<MenuStore>) await _unitOfWork.GetRepository<MenuStore>()
                 .GetListAsync(predicate: x => x.StoreId.Equals(storeId)
                                               && x.Menu.Status.Equals(MenuStatus.Active.GetDescriptionFromEnum())
                                               && x.Store.Brand.Status.Equals(
@@ -917,25 +917,15 @@ namespace Pos_System.API.Services.Implements
                 );
             if (!allMenuAvailable.Any()) throw new BadHttpRequestException(MessageConstant.Menu.NoMenusFoundMessage);
 
-            DateTime currentSEATime = TimeUtils.GetCurrentSEATime();
-            DateFilter currentDay = DateTimeHelper.GetDateFromDateTime(currentSEATime);
-            TimeOnly currentTime = TimeOnly.FromDateTime(currentSEATime);
+            var currentSEATime = TimeUtils.GetCurrentSEATime();
+            var currentDay = DateTimeHelper.GetDateFromDateTime(currentSEATime);
+            var currentTime = TimeOnly.FromDateTime(currentSEATime);
 
-            List<MenuStore> menusAvailableInDay = new List<MenuStore>();
-            foreach (var menu in allMenuAvailable)
-            {
-                //Find the menu available days and time
-                List<DateFilter> menuAvailableDays = DateTimeHelper.GetDatesFromDateFilter(menu.Menu.DateFilter);
-                TimeOnly menuStartTime = DateTimeHelper.ConvertIntToTimeOnly(menu.Menu.StartTime);
-                TimeOnly menuEndTime = DateTimeHelper.ConvertIntToTimeOnly(menu.Menu.EndTime);
-                if (menuAvailableDays.Contains(currentDay) && currentTime <= menuEndTime &&
-                    currentTime >= menuStartTime)
-                    menusAvailableInDay.Add(menu);
-            }
+            List<MenuStore> menusAvailableInDay = (from menu in allMenuAvailable let menuAvailableDays = DateTimeHelper.GetDatesFromDateFilter(menu.Menu.DateFilter) let menuStartTime = DateTimeHelper.ConvertIntToTimeOnly(menu.Menu.StartTime) let menuEndTime = DateTimeHelper.ConvertIntToTimeOnly(menu.Menu.EndTime) where menuAvailableDays.Contains(currentDay) && currentTime <= menuEndTime && currentTime >= menuStartTime select menu).ToList();
 
             //If there are more than 2 menus available take the highest priority one
-            MenuStore menuAvailableWithHighestPriority =
-                menusAvailableInDay.OrderByDescending(x => x.Menu.Priority).FirstOrDefault();
+            var menuAvailableWithHighestPriority =
+                menusAvailableInDay.MaxBy(x => x.Menu.Priority);
             if (menuAvailableWithHighestPriority == null)
                 throw new BadHttpRequestException(MessageConstant.Menu.NoMenusAvailableMessage);
             Guid menuOfStoreId = menuAvailableWithHighestPriority.MenuId;
@@ -981,7 +971,8 @@ namespace Pos_System.API.Services.Implements
                     ),
                     predicate: x =>
                         x.MenuId.Equals(menuOfStoreId) &&
-                        x.Status.Equals(MenuProductStatus.Active.GetDescriptionFromEnum()),
+                        x.Status.Equals(MenuProductStatus.Active.GetDescriptionFromEnum()) &&
+                        x.Product.DisplayOrder > 0,
                     include: menuProduct => menuProduct
                         .Include(menuProduct => menuProduct.Product)
                         .ThenInclude(product => product.CollectionProducts)
@@ -1014,10 +1005,10 @@ namespace Pos_System.API.Services.Implements
                     ),
                     predicate: x =>
                         x.BrandId.Equals(userBrandId) &&
-                        x.Status.Equals(CategoryStatus.Active.GetDescriptionFromEnum()));
+                        x.Status.Equals(CategoryStatus.Active.GetDescriptionFromEnum()) && x.DisplayOrder > 0);
 
             //Use to filter which productInGroups is added to menu
-            List<Guid> productIdsInMenu = menuOfStore.ProductsInMenu.Select(x => x.Id).ToList();
+            var productIdsInMenu = menuOfStore.ProductsInMenu.Select(x => x.Id).ToList();
 
             menuOfStore.groupProductInMenus = (List<GroupProductInMenu>) await _unitOfWork.GetRepository<GroupProduct>()
                 .GetListAsync(
