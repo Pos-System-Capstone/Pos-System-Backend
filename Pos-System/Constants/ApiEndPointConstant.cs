@@ -50,7 +50,7 @@ public static class ApiEndPointConstant
         public const string StoreEndDayReportEndpoint = StoreEndpoint + "/day-report";
         public const string GetPromotion = StoreEndpoint + "/promotion";
         public const string GetListPromotion = StoreEndpoint + "/promotions";
-        public const string ScanUserFromStore = StoreEndpoint + "/scan-user"; 
+        public const string ScanUserFromStore = StoreEndpoint + "/scan-user";
         public const string ScanUserCodeFromStore = StoresEndpoint + "/scan-code";
     }
 
@@ -139,6 +139,8 @@ public static class ApiEndPointConstant
         public const string UserOrderEndpoint = UserEndpoint + "/orders";
         public const string OrderDetailsEndpoint = UsersEndpoint + "/orders/{id}";
         public const string UserBlogPostEndpoint = UsersEndpoint + "/blog";
+
+        public const string PaymentCallback = UsersEndpoint + "/zalo-payment";
     }
 
     public static class BlogPost

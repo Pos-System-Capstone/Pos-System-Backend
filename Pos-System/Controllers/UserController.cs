@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Cryptography;
+using Microsoft.AspNetCore.Mvc;
 using Pos_System.API.Constants;
 using Pos_System.API.Enums;
 using Pos_System.API.Payload.Pointify;
@@ -9,6 +10,7 @@ using Pos_System.API.Payload.Response.Menus;
 using Pos_System.API.Payload.Response.Orders;
 using Pos_System.API.Payload.Response.User;
 using Pos_System.API.Services.Interfaces;
+using Pos_System.API.Utils;
 using Pos_System.API.Validators;
 using Pos_System.Domain.Models;
 using Pos_System.Domain.Paginate;
@@ -178,6 +180,29 @@ namespace Pos_System.API.Controllers
         {
             var response = await _userService.GetMenuDetailFromStore(id);
             return Ok(response);
+        }
+
+        [HttpGet(ApiEndPointConstant.User.PaymentCallback)]
+        [ProducesResponseType(typeof(GetMenuDetailForStaffResponse), StatusCodes.Status200OK)]
+        public Task<IActionResult> ZaloMiniAppPaymentCallBack(string? data, string? mac
+        )
+        {
+            var reqmac = EnCodeBase64.GenerateHmacSha256("c876b6b2e0906a5413e9dd328b5de6b0", data);
+
+            if (reqmac == mac)
+            {
+                return Task.FromResult<IActionResult>(Ok(new ZaloCallbackResponse()
+                {
+                    ReturnCode = 1,
+                    ReturnMessage = "Thành công"
+                }));
+            }
+
+            return Task.FromResult<IActionResult>(Ok(new ZaloCallbackResponse()
+            {
+                ReturnCode = 0,
+                ReturnMessage = "Thất bại"
+            }));
         }
     }
 }

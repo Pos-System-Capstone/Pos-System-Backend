@@ -921,7 +921,13 @@ namespace Pos_System.API.Services.Implements
             var currentDay = DateTimeHelper.GetDateFromDateTime(currentSEATime);
             var currentTime = TimeOnly.FromDateTime(currentSEATime);
 
-            List<MenuStore> menusAvailableInDay = (from menu in allMenuAvailable let menuAvailableDays = DateTimeHelper.GetDatesFromDateFilter(menu.Menu.DateFilter) let menuStartTime = DateTimeHelper.ConvertIntToTimeOnly(menu.Menu.StartTime) let menuEndTime = DateTimeHelper.ConvertIntToTimeOnly(menu.Menu.EndTime) where menuAvailableDays.Contains(currentDay) && currentTime <= menuEndTime && currentTime >= menuStartTime select menu).ToList();
+            List<MenuStore> menusAvailableInDay = (from menu in allMenuAvailable
+                let menuAvailableDays = DateTimeHelper.GetDatesFromDateFilter(menu.Menu.DateFilter)
+                let menuStartTime = DateTimeHelper.ConvertIntToTimeOnly(menu.Menu.StartTime)
+                let menuEndTime = DateTimeHelper.ConvertIntToTimeOnly(menu.Menu.EndTime)
+                where menuAvailableDays.Contains(currentDay) && currentTime <= menuEndTime &&
+                      currentTime >= menuStartTime
+                select menu).ToList();
 
             //If there are more than 2 menus available take the highest priority one
             var menuAvailableWithHighestPriority =

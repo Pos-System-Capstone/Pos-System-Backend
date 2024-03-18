@@ -35,7 +35,7 @@ public static class DependencyServices
 
     private static string CreateConnectionString(IConfiguration configuration)
     {
-        string connectionString =
+        var connectionString =
             $"Server={configuration.GetValue<string>(DatabaseConstant.Host)},{configuration.GetValue<string>(DatabaseConstant.Port)};User Id={configuration.GetValue<string>(DatabaseConstant.UserName)};Password={configuration.GetValue<string>(DatabaseConstant.Password)};Database={configuration.GetValue<string>(DatabaseConstant.Database)}";
         return connectionString;
     }

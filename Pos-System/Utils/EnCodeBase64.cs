@@ -1,4 +1,5 @@
-﻿using Pos_System.API.Payload.Response.User;
+﻿using System.Security.Cryptography;
+using Pos_System.API.Payload.Response.User;
 
 namespace Pos_System.API.Utils
 {
@@ -32,6 +33,21 @@ namespace Pos_System.API.Utils
                 CurrentTime = currentTime
             };
             return response;
+        }
+
+        public static string GenerateHmacSha256(string data, string secretKey)
+        {
+            // Convert the data and secret key to byte arrays
+            var dataBytes = System.Text.Encoding.UTF8.GetBytes(data);
+            var keyBytes = System.Text.Encoding.UTF8.GetBytes(secretKey);
+
+            // Create an instance of HMACSHA256 with the secret key
+            using HMACSHA256 hmac = new HMACSHA256(keyBytes);
+            // Compute the hash for the data
+            var hashBytes = hmac.ComputeHash(dataBytes);
+
+            // Convert the hash to a hexadecimal string
+            return BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
         }
     }
 }
