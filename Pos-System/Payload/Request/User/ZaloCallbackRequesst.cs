@@ -1,13 +1,15 @@
 namespace Pos_System.API.Payload.Request.User;
 
-public class ZaloCallbackRequesst
+public class ZaloCallbackRequest
 {
-    public ZaloCallbackRequesst(string data, string mac)
+    public ZaloCallbackRequest(string appId, string orderId, string method)
     {
-        Data = data;
-        Mac = mac;
+        appId = appId;
+        orderId = orderId;
+        method = method;
     }
 
-    public string Data { get; set; }
-    public string Mac { get; set; }
+    public string appId { get; set; }
+    public string orderId { get; set; }
+    public string method { get; set; }
 }

@@ -181,27 +181,37 @@ namespace Pos_System.API.Controllers
             return Ok(response);
         }
 
-        [HttpPost(ApiEndPointConstant.User.PaymentCallback)]
+        // [HttpPost(ApiEndPointConstant.User.PaymentCallback)]
+        // [ProducesResponseType(typeof(ZaloCallbackResponse), StatusCodes.Status200OK)]
+        // public Task<IActionResult> ZaloMiniAppPaymentCallBack([FromBody] ZaloCallbackRequesst request
+        // )
+        // {
+        //     var reqmac = EnCodeBase64.GenerateHmacSha256(request.Data, "c876b6b2e0906a5413e9dd328b5de6b0");
+        //
+        //     if (reqmac == request.Mac)
+        //     {
+        //         return Task.FromResult<IActionResult>(Ok(new ZaloCallbackResponse()
+        //         {
+        //             ReturnCode = 1,
+        //             ReturnMessage = "Thành công"
+        //         }));
+        //     }
+        //
+        //     return Task.FromResult<IActionResult>(Ok(new ZaloCallbackResponse()
+        //     {
+        //         ReturnCode = 0,
+        //         ReturnMessage = "Thất bại"
+        //     }));
+        // }
+
+        [HttpPost(ApiEndPointConstant.User.NotifyCallBack)]
         [ProducesResponseType(typeof(ZaloCallbackResponse), StatusCodes.Status200OK)]
-        public Task<IActionResult> ZaloMiniAppPaymentCallBack([FromBody] ZaloCallbackRequesst request
+        public async Task<IActionResult> ZaloMiniAppPaymentNotify([FromQuery] ZaloCallbackRequest data,
+            [FromQuery] string mac
         )
         {
-            var reqmac = EnCodeBase64.GenerateHmacSha256(request.Data, "c876b6b2e0906a5413e9dd328b5de6b0");
-
-            if (reqmac == request.Mac)
-            {
-                return Task.FromResult<IActionResult>(Ok(new ZaloCallbackResponse()
-                {
-                    ReturnCode = 1,
-                    ReturnMessage = "Thành công"
-                }));
-            }
-
-            return Task.FromResult<IActionResult>(Ok(new ZaloCallbackResponse()
-            {
-                ReturnCode = 0,
-                ReturnMessage = "Thất bại"
-            }));
+            var res = await _userService.ZaloNotifyPayment(data, mac);
+            return Ok(res);
         }
     }
 }

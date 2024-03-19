@@ -141,6 +141,7 @@ public static class ApiEndPointConstant
         public const string UserBlogPostEndpoint = UsersEndpoint + "/blog";
 
         public const string PaymentCallback = UsersEndpoint + "/zalo-payment";
+        public const string NotifyCallBack = UsersEndpoint + "/zalo-notify";
     }
 
     public static class BlogPost
