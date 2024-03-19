@@ -32,40 +32,33 @@ public class BackgroundJobService : BackgroundService
             {
                 using var scope = _serviceProvider.CreateScope();
                 var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork<PosSystemContext>>();
-                var userOrderNotSynced = await unitOfWork.GetRepository<OrderUser>()
-                    .GetListAsync(predicate: x => x.IsSync == false && x.UserId != null);
+                var currenTime = TimeUtils.GetCurrentSEATime();
+                var orderNotSync = await unitOfWork.GetRepository<Order>()
+                    .GetListAsync(
+                        predicate: o =>
+                            o.OrderSourceId != null
+                            && o.OrderSource.UserId != null
+                            && o.Status.Equals(OrderStatus.PAID.GetDescriptionFromEnum()) &&
+                            o.CheckInDate.Date.Equals(currenTime.Date) &&
+                            o.OrderSource.IsSync == false,
+                        include: x =>
+                            x.Include(o => o.OrderSource)
+                                .Include(o => o.Session).ThenInclude(s => s.Store)
+                    );
 
-                if (userOrderNotSynced == null)
+                if (orderNotSync.Any())
                 {
-                    _logger.LogInformation(
-                        "All user order are synced");
-                }
-                else
-                {
-                    foreach (var userOrder in
-                             userOrderNotSynced)
+                    foreach (var order in
+                             orderNotSync)
                     {
-                        var order = await unitOfWork.GetRepository<Order>()
-                            .SingleOrDefaultAsync(
-                                predicate: o =>
-                                    o.OrderSourceId.Equals(userOrder.Id) && o.Status.Equals(OrderStatus.PAID),
-                                include: x =>
-                                    x.Include(o => o.OrderSource)
-                                        .Include(o => o.Session).ThenInclude(s => s.Store)
-                            );
-                        if (order == null)
-                        {
-                            _logger.LogInformation(
-                                "All user order are synced");
-                            continue;
-                        }
-
+                        var userOrder = await unitOfWork.GetRepository<OrderUser>()
+                            .SingleOrDefaultAsync(predicate: x => x.Id.Equals(order.OrderSourceId));
                         var request = new MemberActionRequest()
                         {
                             ApiKey = order.Session.Store.BrandId,
                             Amount = order.FinalAmount,
                             Description = order.InvoiceId,
-                            MembershipId = (Guid) userOrder.UserId!,
+                            MembershipId = (Guid) order.OrderSource.UserId,
                             MemberActionType = MemberActionType.GET_POINT.GetDescriptionFromEnum()
                         };
                         var url = "https://api-pointify.reso.vn/api/member-action";
@@ -74,7 +67,7 @@ public class BackgroundJobService : BackgroundService
                         {
                             _logger.LogInformation(
                                 "Update point member {UserOrderUserId} false with order {OrderInvoiceId}",
-                                userOrder.UserId, order.InvoiceId);
+                                order.OrderSource.UserId, order.InvoiceId);
                             continue;
                         }
 
@@ -86,7 +79,7 @@ public class BackgroundJobService : BackgroundService
                         {
                             _logger.LogInformation(
                                 "Update point member {UserOrderUserId} false with order {OrderInvoiceId} with null response ",
-                                userOrder.UserId, order.InvoiceId);
+                                order.OrderSource.UserId, order.InvoiceId);
                             continue;
                         }
 
@@ -95,11 +88,11 @@ public class BackgroundJobService : BackgroundService
                         {
                             _logger.LogInformation(
                                 "Update point member {UserOrderUserId} false with order {OrderInvoiceId} for reason {Value} ",
-                                userOrder.UserId, order.InvoiceId, actionResponse.Description);
+                                order.OrderSource.UserId, order.InvoiceId, actionResponse.Description);
                             continue;
                         }
 
-                        Transaction newTransaction = new Transaction()
+                        var newTransaction = new Transaction()
                         {
                             Id = Guid.NewGuid(),
                             CreatedDate = TimeUtils.GetCurrentSEATime(),
@@ -108,7 +101,7 @@ public class BackgroundJobService : BackgroundService
                             Currency = "Point",
                             IsIncrease = true,
                             OrderId = order.Id,
-                            UserId = userOrder.UserId,
+                            UserId = order.OrderSource.UserId,
                             Status = "SUCCESS",
                             Description = "Tích điểm thành viên cho đơn hàng " + order.InvoiceId,
                             Type = TransactionTypeEnum.GET_POINT.GetDescriptionFromEnum()
@@ -117,12 +110,13 @@ public class BackgroundJobService : BackgroundService
                         _logger.LogInformation(
                             message:
                             "Update point member {UserOrderUserId} success with order {OrderInvoiceId} and with value {Value} ",
-                            userOrder.UserId, order.InvoiceId, actionResponse.ActionValue);
+                            order.OrderSource.UserId, order.InvoiceId, actionResponse.ActionValue);
                         userOrder.IsSync = true;
                         unitOfWork.GetRepository<OrderUser>().UpdateAsync(userOrder);
                         await unitOfWork.CommitAsync();
                     }
                 }
+
 
                 await Task.Delay(TimeSpan.FromHours(4), stoppingToken);
             }
