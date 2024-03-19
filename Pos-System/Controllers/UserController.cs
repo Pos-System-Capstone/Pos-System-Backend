@@ -180,14 +180,15 @@ namespace Pos_System.API.Controllers
             var response = await _userService.GetMenuDetailFromStore(id);
             return Ok(response);
         }
+
         [HttpPost(ApiEndPointConstant.User.PaymentCallback)]
         [ProducesResponseType(typeof(ZaloCallbackResponse), StatusCodes.Status200OK)]
-        public Task<IActionResult> ZaloMiniAppPaymentCallBack(string? data, string? mac
+        public Task<IActionResult> ZaloMiniAppPaymentCallBack([FromBody] ZaloCallbackRequesst request
         )
         {
-            var reqmac = EnCodeBase64.GenerateHmacSha256("c876b6b2e0906a5413e9dd328b5de6b0", data);
+            var reqmac = EnCodeBase64.GenerateHmacSha256(request.Data, "c876b6b2e0906a5413e9dd328b5de6b0");
 
-            if (reqmac == mac)
+            if (reqmac == request.Mac)
             {
                 return Task.FromResult<IActionResult>(Ok(new ZaloCallbackResponse()
                 {
