@@ -174,16 +174,14 @@ namespace Pos_System.API.Controllers
         }
 
         [HttpGet("users/stores/{id}/menu")]
-        //[CustomAuthorize( RoleEnum.User)]
         [ProducesResponseType(typeof(GetMenuDetailForStaffResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMenuDetailFromStore(Guid id)
         {
             var response = await _userService.GetMenuDetailFromStore(id);
             return Ok(response);
         }
-
-        [HttpGet(ApiEndPointConstant.User.PaymentCallback)]
-        [ProducesResponseType(typeof(GetMenuDetailForStaffResponse), StatusCodes.Status200OK)]
+        [HttpPost(ApiEndPointConstant.User.PaymentCallback)]
+        [ProducesResponseType(typeof(ZaloCallbackResponse), StatusCodes.Status200OK)]
         public Task<IActionResult> ZaloMiniAppPaymentCallBack(string? data, string? mac
         )
         {
