@@ -34,7 +34,6 @@
     <Folder Include="Payload\Response\Categories\" />
     <Folder Include="Payload\Response\PaymentTypes\" />
     <Folder Include="Validators\" />
-    <Folder Include="Payload\Request\Products\" />
     <Folder Include="Payload\Response\Promotion\" />
   </ItemGroup>
 

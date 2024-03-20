@@ -2,6 +2,7 @@
 using Pos_System.API.Payload.Request.Products;
 using Pos_System.Domain.Paginate;
 using Pos_System.API.Enums;
+using Pos_System.Domain.Models;
 
 namespace Pos_System.API.Services.Interfaces
 {
@@ -17,9 +18,24 @@ namespace Pos_System.API.Services.Interfaces
 
         Task<IEnumerable<GetProductDetailsResponse>> GetProductsInBrand(Guid brandId);
         Task<Guid> CreateNewGroupProduct(Guid brandId, CreateNewGroupProductRequest createUpdateNewGroupProductRequest);
-        Task<Guid> UpdateGroupProduct(Guid brandId, Guid groupProductId, UpdateGroupProductRequest updateGroupProductRequest);
+
+        Task<Guid> UpdateGroupProduct(Guid brandId, Guid groupProductId,
+            UpdateGroupProductRequest updateGroupProductRequest);
+
         Task<IEnumerable<GetGroupProductListResponse>> GetGroupProductListOfCombo(Guid brandId, Guid productId);
-        Task<Guid> UpdateProductInGroup(Guid groupProductId, Guid id, UpdateProductInGroupRequest updateProductInGroupRequest);
+
+        Task<Guid> UpdateProductInGroup(Guid groupProductId, Guid id,
+            UpdateProductInGroupRequest updateProductInGroupRequest);
+
+        Task<Guid?> CreateNewProductVariant(
+            CreatNewProductVariantRequest creatNewProductVariant);
+
+        Task<Variant> GetProductVariantByiD(Guid id);
+
+        Task<IPaginate<Variant>> GetProductVariants(string? name, int page,
+            int size);
+
+
+        Task<Guid> UpdateProductVariants(Guid productId, UpdateProductVariantRequest updateProductRequest);
     }
 }
-

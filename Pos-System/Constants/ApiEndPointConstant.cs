@@ -90,6 +90,12 @@ public static class ApiEndPointConstant
             ApiEndpoint + "/groupProducts/{groupProductId}/productInGroup/{id}";
     }
 
+    public static class ProductVariant
+    {
+        public const string ProductVariantsEndPoint = ApiEndpoint + "/variants";
+        public const string ProductVariantEndPoint = ProductVariantsEndPoint + "/{id}";
+    }
+
     public static class Menu
     {
         public const string MenusEndPoint = ApiEndpoint + "/menus";

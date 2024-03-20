@@ -833,12 +833,6 @@ namespace Pos_System.Domain.Models
                 entity.Property(e => e.Id).ValueGeneratedNever();
 
                 entity.Property(e => e.OptionName).HasMaxLength(200);
-
-                entity.HasOne(d => d.Variant)
-                    .WithMany(p => p.VariantOptions)
-                    .HasForeignKey(d => d.VariantId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("VariantOptions___fk_variant");
             });
 
             modelBuilder.Entity<VariantProductMapping>(entity =>

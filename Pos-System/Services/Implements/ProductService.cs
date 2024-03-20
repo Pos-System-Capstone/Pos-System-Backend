@@ -14,8 +14,8 @@ namespace Pos_System.API.Services.Implements
 {
     public class ProductService : BaseService<ProductService>, IProductService
     {
-
-        public ProductService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<ProductService> logger, IMapper mapper, IHttpContextAccessor httpContextAccessor) : base(unitOfWork, logger, mapper, httpContextAccessor)
+        public ProductService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<ProductService> logger, IMapper mapper,
+            IHttpContextAccessor httpContextAccessor) : base(unitOfWork, logger, mapper, httpContextAccessor)
         {
         }
 
@@ -27,11 +27,13 @@ namespace Pos_System.API.Services.Implements
             Brand brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
                 predicate: x => x.Id.Equals(brandId));
             if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
-            Category category = await _unitOfWork.GetRepository<Category>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(Guid.Parse(createNewProductRequest.CategoryId)));
+            Category category = await _unitOfWork.GetRepository<Category>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(Guid.Parse(createNewProductRequest.CategoryId)));
             if (category == null)
             {
                 throw new BadHttpRequestException(MessageConstant.Category.CategoryNotFoundMessage);
             }
+
             Product newProduct = new Product()
             {
                 Id = Guid.NewGuid(),
@@ -42,14 +44,19 @@ namespace Pos_System.API.Services.Implements
                 PicUrl = createNewProductRequest?.PicUrl,
                 Status = ProductStatus.Active.GetDescriptionFromEnum(),
                 CategoryId = Guid.Parse(createNewProductRequest.CategoryId),
-                Size = createNewProductRequest.Size != null ? createNewProductRequest.Size.GetDescriptionFromEnum() : null,
+                Size = createNewProductRequest.Size != null
+                    ? createNewProductRequest.Size.GetDescriptionFromEnum()
+                    : null,
                 HistoricalPrice = createNewProductRequest.HistoricalPrice,
                 SellingPrice = createNewProductRequest.SellingPrice,
-                DiscountPrice = (double)(createNewProductRequest.DiscountPrice == null ? 0 : createNewProductRequest.DiscountPrice),
+                DiscountPrice = (double) (createNewProductRequest.DiscountPrice == null
+                    ? 0
+                    : createNewProductRequest.DiscountPrice),
                 DisplayOrder = createNewProductRequest.DisplayOrder,
                 Type = createNewProductRequest.Type.GetDescriptionFromEnum(),
-                ParentProductId = createNewProductRequest.ParentProductId != null ? Guid.Parse(createNewProductRequest?.ParentProductId) : null
-
+                ParentProductId = createNewProductRequest.ParentProductId != null
+                    ? Guid.Parse(createNewProductRequest?.ParentProductId)
+                    : null
             };
             await _unitOfWork.GetRepository<Product>().InsertAsync(newProduct);
             bool isSuccessful = await _unitOfWork.CommitAsync() > 0;
@@ -57,35 +64,43 @@ namespace Pos_System.API.Services.Implements
             return new CreateNewProductResponse(newProduct.Id);
         }
 
-        public async Task<IPaginate<GetProductResponse>> GetProducts(string? name, ProductType? type, int page, int size)
+        public async Task<IPaginate<GetProductResponse>> GetProducts(string? name, ProductType? type, int page,
+            int size)
         {
             Guid brandId = Guid.Parse(GetBrandIdFromJwt());
             name = name?.Trim();
             if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
-            IPaginate<GetProductResponse> productsResponse = await _unitOfWork.GetRepository<Product>().GetPagingListAsync(
-                selector: x => new GetProductResponse(x.Id, x.Code, x.Name, x.PicUrl, x.SellingPrice, x.DiscountPrice, x.HistoricalPrice, x.Status, x.Type),
-                predicate: string.IsNullOrEmpty(name) && (type == null)
-                    ? x => x.BrandId.Equals(brandId)
-                    : ((type == null)
-                    ? x => x.BrandId.Equals(brandId) && x.Name.Contains(name)
-                    : (string.IsNullOrEmpty(name)
-                    ? x => x.BrandId.Equals(brandId) && x.Type.Equals(type.GetDescriptionFromEnum())
-                    : x => x.BrandId.Equals(brandId) && x.Name.ToLower().Contains(name) && x.Type.Equals(type.GetDescriptionFromEnum()))),
-                page: page,
-                size: size,
-                orderBy: x => x.OrderBy(x => x.Code)
+            IPaginate<GetProductResponse> productsResponse = await _unitOfWork.GetRepository<Product>()
+                .GetPagingListAsync(
+                    selector: x => new GetProductResponse(x.Id, x.Code, x.Name, x.PicUrl, x.SellingPrice,
+                        x.DiscountPrice, x.HistoricalPrice, x.Status, x.Type),
+                    predicate: string.IsNullOrEmpty(name) && (type == null)
+                        ? x => x.BrandId.Equals(brandId)
+                        : ((type == null)
+                            ? x => x.BrandId.Equals(brandId) && x.Name.Contains(name)
+                            : (string.IsNullOrEmpty(name)
+                                ? x => x.BrandId.Equals(brandId) && x.Type.Equals(type.GetDescriptionFromEnum())
+                                : x => x.BrandId.Equals(brandId) && x.Name.ToLower().Contains(name) &&
+                                       x.Type.Equals(type.GetDescriptionFromEnum()))),
+                    page: page,
+                    size: size,
+                    orderBy: x => x.OrderBy(x => x.Code)
                 );
             return productsResponse;
         }
+
         public async Task<GetProductDetailsResponse> GetProductById(Guid id)
         {
             if (id == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Product.EmptyProductIdMessage);
             Guid brandId = Guid.Parse(GetBrandIdFromJwt());
             GetProductDetailsResponse productResponse = await _unitOfWork.GetRepository<Product>().SingleOrDefaultAsync(
-            selector: x => new GetProductDetailsResponse(x.Id, x.Code, x.Name, x.SellingPrice, x.PicUrl, x.Status, x.HistoricalPrice, x.DiscountPrice, x.Description, x.DisplayOrder, x.Size, x.Type, x.ParentProductId, x.BrandId, x.CategoryId),
-            predicate: x => x.Id.Equals(id) && x.BrandId.Equals(brandId)
+                selector: x => new GetProductDetailsResponse(x.Id, x.Code, x.Name, x.SellingPrice, x.PicUrl, x.Status,
+                    x.HistoricalPrice, x.DiscountPrice, x.Description, x.DisplayOrder, x.Size, x.Type,
+                    x.ParentProductId, x.BrandId, x.CategoryId),
+                predicate: x => x.Id.Equals(id) && x.BrandId.Equals(brandId)
             );
-            if (productResponse == null) throw new BadHttpRequestException(MessageConstant.Product.ProductNotFoundMessage);
+            if (productResponse == null)
+                throw new BadHttpRequestException(MessageConstant.Product.ProductNotFoundMessage);
             return productResponse;
         }
 
@@ -94,28 +109,37 @@ namespace Pos_System.API.Services.Implements
             _logger.LogInformation($"Start updating product: {productId}");
             Guid brandId = Guid.Parse(GetBrandIdFromJwt());
             if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
-            Brand brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
+            Brand brand = await _unitOfWork.GetRepository<Brand>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
             if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
 
-            Category category = await _unitOfWork.GetRepository<Category>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(updateProductRequest.CategoryId));
+            Category category = await _unitOfWork.GetRepository<Category>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(updateProductRequest.CategoryId));
             if (category == null) throw new BadHttpRequestException(MessageConstant.Category.CategoryNotFoundMessage);
 
-            Product updateProduct = await _unitOfWork.GetRepository<Product>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(productId));
-            if (updateProduct == null) throw new BadHttpRequestException(MessageConstant.Product.ProductNotFoundMessage);
+            Product updateProduct = await _unitOfWork.GetRepository<Product>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(productId));
+            if (updateProduct == null)
+                throw new BadHttpRequestException(MessageConstant.Product.ProductNotFoundMessage);
 
             updateProduct.Code = updateProductRequest.Code;
             updateProduct.Name = updateProductRequest.Name;
             updateProduct.Description = updateProductRequest.Description;
             updateProduct.PicUrl = updateProductRequest.PicUrl;
             updateProduct.CategoryId = updateProductRequest.CategoryId;
-            updateProduct.Size = updateProductRequest.Size != null ? updateProductRequest.Size.GetDescriptionFromEnum() : null;
+            updateProduct.Size = updateProductRequest.Size != null
+                ? updateProductRequest.Size.GetDescriptionFromEnum()
+                : updateProduct.Size;
             updateProduct.HistoricalPrice = updateProductRequest.HistoricalPrice;
             updateProduct.SellingPrice = updateProductRequest.SellingPrice;
-            updateProduct.DiscountPrice = (double)(updateProductRequest.DiscountPrice == null ? 0 : updateProductRequest.DiscountPrice);
+            updateProduct.DiscountPrice =
+                (double) (updateProductRequest.DiscountPrice == null ? 0 : updateProductRequest.DiscountPrice);
             updateProduct.DisplayOrder = updateProductRequest.DisplayOrder;
             updateProduct.Type = updateProductRequest.Type.GetDescriptionFromEnum();
             updateProduct.ParentProductId = updateProductRequest.ParentProductId;
-            updateProduct.Status = string.IsNullOrEmpty(updateProductRequest.Status) ? updateProduct.Status : updateProductRequest.Status;
+            updateProduct.Status = string.IsNullOrEmpty(updateProductRequest.Status)
+                ? updateProduct.Status
+                : updateProductRequest.Status;
 
             _unitOfWork.GetRepository<Product>().UpdateAsync(updateProduct);
             await _unitOfWork.CommitAsync();
@@ -124,35 +148,39 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<IEnumerable<GetProductDetailsResponse>> GetProductsInBrand(Guid brandId)
         {
-            
-            if(brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
+            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
             Brand brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
                 predicate: x => x.Id.Equals(brandId)
             );
-            if(brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
             IEnumerable<GetProductDetailsResponse> products = await _unitOfWork.GetRepository<Product>().GetListAsync(
-                selector: x => new GetProductDetailsResponse(x.Id, x.Code, x.Name, x.SellingPrice, x.PicUrl, x.Status, x.HistoricalPrice, x.DiscountPrice, x.Description, x.DisplayOrder, x.Size, x.Type, x.ParentProductId, x.BrandId, x.CategoryId),
+                selector: x => new GetProductDetailsResponse(x.Id, x.Code, x.Name, x.SellingPrice, x.PicUrl, x.Status,
+                    x.HistoricalPrice, x.DiscountPrice, x.Description, x.DisplayOrder, x.Size, x.Type,
+                    x.ParentProductId, x.BrandId, x.CategoryId),
                 predicate: x => x.Id.Equals(brandId) && x.BrandId.Equals(brandId),
                 orderBy: x => x.OrderBy(x => x.Code)
             );
             return products;
         }
 
-        public async Task<Guid> CreateNewGroupProduct(Guid brandId, CreateNewGroupProductRequest createUpdateNewGroupProductRequest)
+        public async Task<Guid> CreateNewGroupProduct(Guid brandId,
+            CreateNewGroupProductRequest createUpdateNewGroupProductRequest)
         {
             Guid userBrandId = Guid.Parse(GetBrandIdFromJwt());
             if (userBrandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
-            if(!userBrandId.Equals(brandId)) throw new BadHttpRequestException(MessageConstant.GroupProduct.WrongComboInformationMessage);
+            if (!userBrandId.Equals(brandId))
+                throw new BadHttpRequestException(MessageConstant.GroupProduct.WrongComboInformationMessage);
 
             if (createUpdateNewGroupProductRequest.ComboProductId != null)
             {
                 Product product = await _unitOfWork.GetRepository<Product>().SingleOrDefaultAsync(
                     predicate: x => x.Id.Equals(createUpdateNewGroupProductRequest.ComboProductId)
-                        && x.Type.Equals(ProductType.COMBO.GetDescriptionFromEnum())
-                        && x.BrandId.Equals(userBrandId)
-                    );
+                                    && x.Type.Equals(ProductType.COMBO.GetDescriptionFromEnum())
+                                    && x.BrandId.Equals(userBrandId)
+                );
 
-                if (product == null) throw new BadHttpRequestException(MessageConstant.GroupProduct.WrongComboInformationMessage);
+                if (product == null)
+                    throw new BadHttpRequestException(MessageConstant.GroupProduct.WrongComboInformationMessage);
             }
 
             GroupProduct groupProductToInsert = new GroupProduct()
@@ -168,7 +196,8 @@ namespace Pos_System.API.Services.Implements
 
 
             List<ProductInGroup> productInGroupsToInsert = new List<ProductInGroup>();
-            if(createUpdateNewGroupProductRequest.ProductIds != null || createUpdateNewGroupProductRequest.ProductIds.Count > 0)
+            if (createUpdateNewGroupProductRequest.ProductIds != null ||
+                createUpdateNewGroupProductRequest.ProductIds.Count > 0)
             {
                 int defaultMin = 1;
                 int defaultMax = 1;
@@ -196,21 +225,24 @@ namespace Pos_System.API.Services.Implements
             return groupProductToInsert.Id;
         }
 
-        public async Task<Guid> UpdateGroupProduct(Guid brandId, Guid groupProductId, UpdateGroupProductRequest updateGroupProductRequest)
+        public async Task<Guid> UpdateGroupProduct(Guid brandId, Guid groupProductId,
+            UpdateGroupProductRequest updateGroupProductRequest)
         {
             Guid userBrandId = Guid.Parse(GetBrandIdFromJwt());
             if (userBrandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
-            if (!userBrandId.Equals(brandId)) throw new BadHttpRequestException(MessageConstant.GroupProduct.WrongComboInformationMessage);
+            if (!userBrandId.Equals(brandId))
+                throw new BadHttpRequestException(MessageConstant.GroupProduct.WrongComboInformationMessage);
 
             if (updateGroupProductRequest.ComboProductId != null)
             {
                 Product product = await _unitOfWork.GetRepository<Product>().SingleOrDefaultAsync(
                     predicate: x => x.Id.Equals(updateGroupProductRequest.ComboProductId)
-                        && x.Type.Equals(ProductType.COMBO.GetDescriptionFromEnum())
-                        && x.BrandId.Equals(userBrandId)
-                    );
+                                    && x.Type.Equals(ProductType.COMBO.GetDescriptionFromEnum())
+                                    && x.BrandId.Equals(userBrandId)
+                );
 
-                if (product == null) throw new BadHttpRequestException(MessageConstant.GroupProduct.WrongComboInformationMessage);
+                if (product == null)
+                    throw new BadHttpRequestException(MessageConstant.GroupProduct.WrongComboInformationMessage);
             }
 
             GroupProduct groupProductToUpdate = await _unitOfWork.GetRepository<GroupProduct>().SingleOrDefaultAsync(
@@ -230,7 +262,8 @@ namespace Pos_System.API.Services.Implements
             if (updateGroupProductRequest.Products != null)
             {
                 //Update Product In Group
-                List<ProductInGroup> currentProductInGroup = (List<ProductInGroup>)await _unitOfWork.GetRepository<ProductInGroup>()
+                List<ProductInGroup> currentProductInGroup = (List<ProductInGroup>) await _unitOfWork
+                    .GetRepository<ProductInGroup>()
                     .GetListAsync(predicate: x => x.GroupProductId.Equals(groupProductId));
                 List<Guid> newProductIds = updateGroupProductRequest.Products.Select(x => x.Id).ToList();
                 List<Guid> oldProductIds = currentProductInGroup.Select(x => x.ProductId).ToList();
@@ -276,7 +309,8 @@ namespace Pos_System.API.Services.Implements
                     List<ProductInGroup> prepareDataToUpdate = new List<ProductInGroup>();
                     productsToUpdate.ForEach(x =>
                     {
-                        ProductInGroupRequest requestProductData = productDataFromRequest.Find(y => y.Id.Equals(x.ProductId));
+                        ProductInGroupRequest requestProductData =
+                            productDataFromRequest.Find(y => y.Id.Equals(x.ProductId));
                         if (requestProductData == null) return;
                         x.Priority = requestProductData.Priority ?? x.Priority;
                         x.AdditionalPrice = requestProductData.AdditionalPrice ?? x.AdditionalPrice;
@@ -304,78 +338,178 @@ namespace Pos_System.API.Services.Implements
                         productInGroupToChangeStatus.Status = ProductInGroupStatus.Deactivate.GetDescriptionFromEnum();
                         finalDataToRemove.Add(productInGroupToChangeStatus);
                     }
+
                     _unitOfWork.GetRepository<ProductInGroup>().UpdateRange(finalDataToRemove);
                 }
             }
+
             await _unitOfWork.CommitAsync();
             return groupProductId;
         }
 
-        public async Task<IEnumerable<GetGroupProductListResponse>> GetGroupProductListOfCombo(Guid brandId, Guid productId)
+        public async Task<IEnumerable<GetGroupProductListResponse>> GetGroupProductListOfCombo(Guid brandId,
+            Guid productId)
         {
             Guid userBrandId = Guid.Parse(GetBrandIdFromJwt());
             if (userBrandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
-            if (!userBrandId.Equals(brandId)) throw new BadHttpRequestException(MessageConstant.GroupProduct.WrongComboInformationMessage);
+            if (!userBrandId.Equals(brandId))
+                throw new BadHttpRequestException(MessageConstant.GroupProduct.WrongComboInformationMessage);
 
-            if (productId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Product.EmptyProductIdMessage);
+            if (productId == Guid.Empty)
+                throw new BadHttpRequestException(MessageConstant.Product.EmptyProductIdMessage);
             Product currentProduct = await _unitOfWork.GetRepository<Product>().SingleOrDefaultAsync(
                 predicate: x => x.Id.Equals(productId) && x.Type.Equals(ProductType.COMBO.GetDescriptionFromEnum())
-                );
-            if (currentProduct == null) throw new BadHttpRequestException(MessageConstant.Product.ProductNotFoundMessage);
+            );
+            if (currentProduct == null)
+                throw new BadHttpRequestException(MessageConstant.Product.ProductNotFoundMessage);
 
-            List<GetGroupProductListResponse> response = (List<GetGroupProductListResponse>)await _unitOfWork.GetRepository<GroupProduct>().GetListAsync(
-                selector: x => new GetGroupProductListResponse
-                {
-                    Id = x.Id,
-                    ComboProductId = (Guid)x.ComboProductId,
-                    Name = x.Name,
-                    CombinationMode = EnumUtil.ParseEnum<GroupCombinationMode>(x.CombinationMode),
-                    Priority = x.Priority,
-                    Quantity = x.Quantity,
-                    Status = EnumUtil.ParseEnum<GroupProductStatus>(x.Status),
-                    ProductsInGroups = (List<ProductsInGroupResponse>)x.ProductInGroups.Select(productInGroup => new ProductsInGroupResponse
+            List<GetGroupProductListResponse> response = (List<GetGroupProductListResponse>) await _unitOfWork
+                .GetRepository<GroupProduct>().GetListAsync(
+                    selector: x => new GetGroupProductListResponse
                     {
-                        Id = productInGroup.Id,
-                        GroupProductId = productInGroup.GroupProductId,
-                        ProductId = productInGroup.ProductId,
-                        Priority = productInGroup.Priority,
-                        AdditionalPrice = productInGroup.AdditionalPrice,
-                        Min = productInGroup.Min,
-                        Max = productInGroup.Max,
-                        Quantity = productInGroup.Quantity,
-                        Status = EnumUtil.ParseEnum<ProductInGroupStatus>(productInGroup.Status)
-                    })
-                },
-                predicate: x => x.ComboProductId.Equals(productId),
-                include: groupProduct => groupProduct.Include(groupProduct => groupProduct.ProductInGroups),
-                orderBy: x => x.OrderBy(x => x.Priority));
+                        Id = x.Id,
+                        ComboProductId = (Guid) x.ComboProductId,
+                        Name = x.Name,
+                        CombinationMode = EnumUtil.ParseEnum<GroupCombinationMode>(x.CombinationMode),
+                        Priority = x.Priority,
+                        Quantity = x.Quantity,
+                        Status = EnumUtil.ParseEnum<GroupProductStatus>(x.Status),
+                        ProductsInGroups = (List<ProductsInGroupResponse>) x.ProductInGroups.Select(productInGroup =>
+                            new ProductsInGroupResponse
+                            {
+                                Id = productInGroup.Id,
+                                GroupProductId = productInGroup.GroupProductId,
+                                ProductId = productInGroup.ProductId,
+                                Priority = productInGroup.Priority,
+                                AdditionalPrice = productInGroup.AdditionalPrice,
+                                Min = productInGroup.Min,
+                                Max = productInGroup.Max,
+                                Quantity = productInGroup.Quantity,
+                                Status = EnumUtil.ParseEnum<ProductInGroupStatus>(productInGroup.Status)
+                            })
+                    },
+                    predicate: x => x.ComboProductId.Equals(productId),
+                    include: groupProduct => groupProduct.Include(groupProduct => groupProduct.ProductInGroups),
+                    orderBy: x => x.OrderBy(x => x.Priority));
 
             return response;
         }
 
-        public async Task<Guid> UpdateProductInGroup(Guid groupProductId, Guid id, UpdateProductInGroupRequest updateProductInGroupRequest)
+        public async Task<Guid> UpdateProductInGroup(Guid groupProductId, Guid id,
+            UpdateProductInGroupRequest updateProductInGroupRequest)
         {
             Guid userBrandId = Guid.Parse(GetBrandIdFromJwt());
             if (userBrandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
-            if (id == Guid.Empty) throw new BadHttpRequestException(MessageConstant.ProductInGroup.EmptyProductInGroupId);
-            ProductInGroup currentProductInGroup = await _unitOfWork.GetRepository<ProductInGroup>().SingleOrDefaultAsync(
-                predicate: x => x.Id.Equals(id) && x.Product.BrandId.Equals(userBrandId)
+            if (id == Guid.Empty)
+                throw new BadHttpRequestException(MessageConstant.ProductInGroup.EmptyProductInGroupId);
+            ProductInGroup currentProductInGroup = await _unitOfWork.GetRepository<ProductInGroup>()
+                .SingleOrDefaultAsync(
+                    predicate: x => x.Id.Equals(id) && x.Product.BrandId.Equals(userBrandId)
                 );
 
-            if (currentProductInGroup == null) throw new BadHttpRequestException(MessageConstant.ProductInGroup.ProductInGroupNotFound);
+            if (currentProductInGroup == null)
+                throw new BadHttpRequestException(MessageConstant.ProductInGroup.ProductInGroupNotFound);
 
             currentProductInGroup.Priority = updateProductInGroupRequest.Priority ?? currentProductInGroup.Priority;
-            currentProductInGroup.AdditionalPrice = updateProductInGroupRequest.AdditionalPrice ?? currentProductInGroup.AdditionalPrice;
+            currentProductInGroup.AdditionalPrice =
+                updateProductInGroupRequest.AdditionalPrice ?? currentProductInGroup.AdditionalPrice;
             currentProductInGroup.Min = updateProductInGroupRequest?.Min ?? currentProductInGroup.Min;
             currentProductInGroup.Max = updateProductInGroupRequest.Max ?? currentProductInGroup.Max;
             currentProductInGroup.Quantity = updateProductInGroupRequest.Quantity ?? currentProductInGroup.Quantity;
-            currentProductInGroup.Status = updateProductInGroupRequest.Status.GetDescriptionFromEnum() ?? currentProductInGroup.Status;
+            currentProductInGroup.Status = updateProductInGroupRequest.Status.GetDescriptionFromEnum() ??
+                                           currentProductInGroup.Status;
 
             _unitOfWork.GetRepository<ProductInGroup>().UpdateAsync(currentProductInGroup);
             await _unitOfWork.CommitAsync();
 
             return id;
         }
+
+        public async Task<Guid?> CreateNewProductVariant(
+            CreatNewProductVariantRequest creatNewProductVariant)
+        {
+            _logger.LogInformation($"Start create new : {creatNewProductVariant}");
+            Guid brandId = Guid.Parse(GetBrandIdFromJwt());
+            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
+            Brand brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
+                predicate: x => x.Id.Equals(brandId));
+            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+
+            Variant newVariant = new Variant()
+            {
+                Id = Guid.NewGuid(),
+
+                Name = creatNewProductVariant.Name,
+                Value = creatNewProductVariant.Value,
+                BrandId = brandId,
+                Status = ProductStatus.Active.GetDescriptionFromEnum(),
+            };
+            await _unitOfWork.GetRepository<Variant>().InsertAsync(newVariant);
+            var isSuccessful = await _unitOfWork.CommitAsync() > 0;
+            if (!isSuccessful) return null;
+            return newVariant.Id;
+        }
+
+
+        public async Task<IPaginate<Variant>> GetProductVariants(string? name, int page,
+            int size)
+        {
+            Guid brandId = Guid.Parse(GetBrandIdFromJwt());
+            name = name?.Trim();
+            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
+            IPaginate<Variant> variants = await _unitOfWork.GetRepository<Variant>()
+                .GetPagingListAsync(
+                    predicate: (string.IsNullOrEmpty(name)
+                        ? x => x.BrandId.Equals(brandId)
+                        : x => x.BrandId.Equals(brandId) && x.Name.ToLower().Contains(name)),
+                    page:
+                    page,
+                    size:
+                    size,
+                    orderBy:
+                    x => x.OrderBy(x => x.Name)
+                );
+            return variants;
+        }
+
+        public async Task<Variant> GetProductVariantByiD(Guid id)
+        {
+            if (id == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Product.EmptyProductIdMessage);
+            Guid brandId = Guid.Parse(GetBrandIdFromJwt());
+            var productResponse = await _unitOfWork.GetRepository<Variant>().SingleOrDefaultAsync(
+                predicate: x => x.Id.Equals(id) && x.BrandId.Equals(brandId)
+            );
+            if (productResponse == null)
+                throw new BadHttpRequestException(MessageConstant.ProductVariant.ProductVariantNotFoundMessage);
+            return productResponse;
+        }
+
+        public async Task<Guid> UpdateProductVariants(Guid productId, UpdateProductVariantRequest updateProductRequest)
+        {
+            _logger.LogInformation("Start updating product: {ProductId}", productId);
+            Guid brandId = Guid.Parse(GetBrandIdFromJwt());
+            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
+            Brand brand = await _unitOfWork.GetRepository<Brand>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(brandId));
+            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+
+
+            Variant updateProduct = await _unitOfWork.GetRepository<Variant>()
+                .SingleOrDefaultAsync(predicate: x => x.Id.Equals(productId));
+            if (updateProduct == null)
+                throw new BadHttpRequestException(MessageConstant.Product.ProductNotFoundMessage);
+
+
+            updateProduct.Name = updateProductRequest.Name ?? updateProduct.Name;
+            updateProduct.Value = updateProductRequest.Value ?? updateProduct.Value;
+
+            updateProduct.Status = string.IsNullOrEmpty(updateProductRequest.Status.GetDescriptionFromEnum())
+                ? updateProduct.Status
+                : updateProductRequest.Status.GetDescriptionFromEnum();
+
+            _unitOfWork.GetRepository<Variant>().UpdateAsync(updateProduct);
+            await _unitOfWork.CommitAsync();
+            return productId;
+        }
     }
 }
-

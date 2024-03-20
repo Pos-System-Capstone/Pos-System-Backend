@@ -86,6 +86,14 @@ public static class MessageConstant
         public const string ProductNotFoundMessage = "Product không tồn tại trong hệ thống";
     }
 
+    public static class ProductVariant
+    {
+        public const string CreateNewProductVariantFailedMessage = "Tạo mới product variant thất bại";
+        public const string UpdateProductVariantFailedMessage = "Cập nhật thông tin product variant thất bại";
+        public const string EmptyProductVariantIdMessage = "Product variant Id bị trống";
+        public const string ProductVariantNotFoundMessage = "Product variant không tồn tại trong hệ thống";
+    }
+
     public static class Menu
     {
         public const string CreateNewMenuFailedMessage = "Tạo mới Menu thất bại";
