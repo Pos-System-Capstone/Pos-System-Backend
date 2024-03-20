@@ -32,6 +32,6 @@ namespace Pos_System.API.Services.Interfaces
         Task<GetMenuDetailForStaffResponse> GetMenuDetailFromStore(Guid storeId);
 
         Task<SignInResponse> LoginUserMiniApp(LoginMiniApp req);
-        Task<ZaloCallbackResponse> ZaloNotifyPayment(ZaloCallbackRequest data, string mac);
+        Task<ZaloCallbackResponse> ZaloNotifyPayment(ZaloCallbackRequest data);
     }
 }

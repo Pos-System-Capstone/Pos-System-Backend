@@ -206,11 +206,10 @@ namespace Pos_System.API.Controllers
 
         [HttpPost(ApiEndPointConstant.User.NotifyCallBack)]
         [ProducesResponseType(typeof(ZaloCallbackResponse), StatusCodes.Status200OK)]
-        public async Task<IActionResult> ZaloMiniAppPaymentNotify([FromQuery] ZaloCallbackRequest data,
-            [FromQuery] string mac
+        public async Task<IActionResult> ZaloMiniAppPaymentNotify([FromBody] ZaloCallbackRequest data
         )
         {
-            var res = await _userService.ZaloNotifyPayment(data, mac);
+            var res = await _userService.ZaloNotifyPayment(data);
             return Ok(res);
         }
     }
