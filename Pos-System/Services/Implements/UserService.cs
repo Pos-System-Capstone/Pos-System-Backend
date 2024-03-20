@@ -1076,23 +1076,23 @@ namespace Pos_System.API.Services.Implements
                     ReturnCode = 0,
                     ReturnMessage = "Thất bại"
                 };
-            var url =
-                $"https://payment-mini.zalo.me/api/transaction/1838228208681717250/cod-callback-payment?appId=1838228208681717250&orderId={data.Data.OrderId}&resultCode={1}&privateKey=c876b6b2e0906a5413e9dd328b5de6b0";
-            var httpClient = new HttpClient();
-            var response = await httpClient.PostAsync(url, content: null);
-            if (!response.StatusCode.Equals(HttpStatusCode.OK))
-            {
-                return new ZaloCallbackResponse()
-                {
-                    ReturnCode = 1,
-                    ReturnMessage = "Thành công"
-                };
-            }
+            // var url =
+            //     $"https://payment-mini.zalo.me/api/transaction/1838228208681717250/cod-callback-payment?appId=1838228208681717250&orderId={data.Data.OrderId}&resultCode={1}&privateKey=c876b6b2e0906a5413e9dd328b5de6b0";
+            // var httpClient = new HttpClient();
+            // var response = await httpClient.PostAsync(url, content: null);
+            // if (!response.StatusCode.Equals(HttpStatusCode.OK))
+            // {
+            //     return new ZaloCallbackResponse()
+            //     {
+            //         ReturnCode = 1,
+            //         ReturnMessage = "Thành công"
+            //     };
+            // }
 
             return new ZaloCallbackResponse()
             {
-                ReturnCode = 0,
-                ReturnMessage = "Thất bại"
+                ReturnCode = 1,
+                ReturnMessage = "Thành công"
             };
         }
     }
