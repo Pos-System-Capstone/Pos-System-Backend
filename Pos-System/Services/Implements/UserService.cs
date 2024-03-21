@@ -22,6 +22,7 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 using Pos_System.API.Payload.Response.Menus;
 using Pos_System.API.Helpers;
 using Pos_System.API.Payload.Response.Products;
+using ProductInMenu = Pos_System.API.Payload.Response.Menus.ProductInMenu;
 
 namespace Pos_System.API.Services.Implements
 {
@@ -917,9 +918,9 @@ namespace Pos_System.API.Services.Implements
                 );
             if (!allMenuAvailable.Any()) throw new BadHttpRequestException(MessageConstant.Menu.NoMenusFoundMessage);
 
-            var currentSEATime = TimeUtils.GetCurrentSEATime();
-            var currentDay = DateTimeHelper.GetDateFromDateTime(currentSEATime);
-            var currentTime = TimeOnly.FromDateTime(currentSEATime);
+            var currentSeaTime = TimeUtils.GetCurrentSEATime();
+            var currentDay = DateTimeHelper.GetDateFromDateTime(currentSeaTime);
+            var currentTime = TimeOnly.FromDateTime(currentSeaTime);
 
             List<MenuStore> menusAvailableInDay = (from menu in allMenuAvailable
                 let menuAvailableDays = DateTimeHelper.GetDatesFromDateFilter(menu.Menu.DateFilter)
@@ -934,12 +935,12 @@ namespace Pos_System.API.Services.Implements
                 menusAvailableInDay.MaxBy(x => x.Menu.Priority);
             if (menuAvailableWithHighestPriority == null)
                 throw new BadHttpRequestException(MessageConstant.Menu.NoMenusAvailableMessage);
-            Guid menuOfStoreId = menuAvailableWithHighestPriority.MenuId;
+            var menuOfStoreId = menuAvailableWithHighestPriority.MenuId;
 
-            Guid userBrandId = await _unitOfWork.GetRepository<Store>()
+            var userBrandId = await _unitOfWork.GetRepository<Store>()
                 .SingleOrDefaultAsync(selector: x => x.BrandId, predicate: x => x.Id.Equals(storeId));
 
-            GetMenuDetailForStaffResponse menuOfStore = await _unitOfWork.GetRepository<Menu>().SingleOrDefaultAsync(
+            var menuOfStore = await _unitOfWork.GetRepository<Menu>().SingleOrDefaultAsync(
                 selector: x => new GetMenuDetailForStaffResponse(
                     x.Id,
                     x.BrandId,
@@ -986,7 +987,7 @@ namespace Pos_System.API.Services.Implements
                         .ThenInclude(product => product.Category)
                         .ThenInclude(category => category.ExtraCategoryProductCategories)
                 );
-
+            menuOfStore.CategoriesOfBrand = new List<CategoryOfBrand>();
             menuOfStore.CollectionsOfBrand = (List<CollectionOfBrand>) await _unitOfWork.GetRepository<Collection>()
                 .GetListAsync(selector: x => new CollectionOfBrand(
                         x.Id,
@@ -998,7 +999,7 @@ namespace Pos_System.API.Services.Implements
                     predicate: x =>
                         x.BrandId.Equals(userBrandId) && x.Status == CollectionStatus.Active.GetDescriptionFromEnum());
 
-            menuOfStore.CategoriesOfBrand = (List<CategoryOfBrand>) await _unitOfWork.GetRepository<Category>()
+            var listCategory = (List<CategoryOfBrand>) await _unitOfWork.GetRepository<Category>()
                 .GetListAsync(selector: x => new CategoryOfBrand(
                         x.Id,
                         x.Code,
@@ -1013,57 +1014,46 @@ namespace Pos_System.API.Services.Implements
                         x.BrandId.Equals(userBrandId) &&
                         x.Status.Equals(CategoryStatus.Active.GetDescriptionFromEnum()) && x.DisplayOrder > 0);
 
-            //Use to filter which productInGroups is added to menu
-            var productIdsInMenu = menuOfStore.ProductsInMenu.Select(x => x.Id).ToList();
-
-            menuOfStore.groupProductInMenus = (List<GroupProductInMenu>) await _unitOfWork.GetRepository<GroupProduct>()
-                .GetListAsync(
-                    x => new GroupProductInMenu
-                    {
-                        Id = x.Id,
-                        ComboProductId = (Guid) x.ComboProductId,
-                        Name = x.Name,
-                        CombinationMode = EnumUtil.ParseEnum<GroupCombinationMode>(x.CombinationMode),
-                        Priority = x.Priority,
-                        Quantity = x.Quantity,
-                        Status = EnumUtil.ParseEnum<GroupProductStatus>(x.Status),
-                    },
-                    predicate: x =>
-                        x.ComboProduct.BrandId.Equals(userBrandId) &&
-                        x.Status.Equals(GroupProductStatus.Active.GetDescriptionFromEnum()),
-                    include: x => x.Include(x => x.ComboProduct)
-                );
-
-            menuOfStore.productInGroupList = (List<ProductsInGroupResponse>) await _unitOfWork
-                .GetRepository<ProductInGroup>().GetListAsync(
-                    selector: x => new ProductsInGroupResponse
-                    {
-                        Id = x.Id,
-                        GroupProductId = x.GroupProductId,
-                        ProductId = x.ProductId,
-                        Priority = x.Priority,
-                        AdditionalPrice = x.AdditionalPrice,
-                        Min = x.Min,
-                        Max = x.Max,
-                        Quantity = x.Quantity,
-                        Status = EnumUtil.ParseEnum<ProductInGroupStatus>(x.Status)
-                    },
-                    predicate: x => x.Product.BrandId.Equals(userBrandId)
-                                    && productIdsInMenu.Contains(x.ProductId)
-                                    && x.Status.Equals(ProductInGroupStatus.Active.GetDescriptionFromEnum())
-                                    && x.Product.Status.Equals(ProductStatus.Active.GetDescriptionFromEnum()),
-                    include: x => x.Include(x => x.Product)
-                );
-
-            foreach (GroupProductInMenu groupProduct in menuOfStore.groupProductInMenus)
+            foreach (var category in listCategory)
             {
-                groupProduct.ProductsInGroupIds = (List<Guid>) menuOfStore.productInGroupList
-                    .Where(x => x.GroupProductId.Equals(groupProduct.Id))
-                    .Select(x => x.Id).ToList();
+                if (category.Type.Equals(CategoryType.Child))
+                {
+                    var res = menuOfStore.ProductsInMenu.Exists(p => p.CategoryId.Equals(category.Id));
+                    if (res)
+                    {
+                        menuOfStore.CategoriesOfBrand.Add(category);
+                    }
+                }
+                else if (category.Type.Equals(CategoryType.Normal))
+                {
+                    var res = menuOfStore.ProductsInMenu.Exists(p => p.CategoryId.Equals(category.Id));
+                    switch (res)
+                    {
+                        case true:
+                            menuOfStore.CategoriesOfBrand.Add(category);
+                            break;
+                        case false when category.ChildCategoryIds is {Count: > 0}:
+                        {
+                            if (category.ChildCategoryIds.Select(childCategoryId =>
+                                    menuOfStore.ProductsInMenu.Exists(p => p.CategoryId.Equals(childCategoryId)))
+                                .Any(result => result))
+                            {
+                                menuOfStore.CategoriesOfBrand.Add(category);
+                            }
+
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    menuOfStore.CategoriesOfBrand.Add(category);
+                }
             }
 
             return menuOfStore;
         }
+
 
         public async Task<ZaloCallbackResponse> ZaloNotifyPayment(ZaloCallbackRequest data)
         {

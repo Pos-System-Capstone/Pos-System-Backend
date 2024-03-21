@@ -94,7 +94,7 @@ namespace Pos_System.API.Services.Implements
 
             await _unitOfWork.GetRepository<Menu>().InsertAsync(newMenu);
             await _unitOfWork.GetRepository<MenuProduct>().InsertRangeAsync(menuProductsToInsert);
-            bool isSuccessfully = await _unitOfWork.CommitAsync() > 0;
+            var isSuccessfully = await _unitOfWork.CommitAsync() > 0;
             if (isSuccessfully) return newMenu.Id;
             return Guid.Empty;
         }

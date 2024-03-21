@@ -319,7 +319,6 @@ public class StoreService : BaseService<StoreService>, IStoreService
                                 && x.Product.Status.Equals(ProductStatus.Active.GetDescriptionFromEnum()),
                 include: x => x.Include(x => x.Product)
             );
-
         foreach (GroupProductInMenu groupProduct in menuOfStore.groupProductInMenus)
         {
             groupProduct.ProductsInGroupIds = (List<Guid>) menuOfStore.productInGroupList
