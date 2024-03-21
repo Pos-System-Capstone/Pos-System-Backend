@@ -1058,23 +1058,23 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<ZaloCallbackResponse> ZaloNotifyPayment(ZaloCallbackRequest data)
         {
-            var APP_ID = "1838228208681717250";
-            var SECRET_KEY = "c876b6b2e0906a5413e9dd328b5de6b0";
+            var appId = "1838228208681717250";
+            var secretKey = "c876b6b2e0906a5413e9dd328b5de6b0";
             var dataReq = $"appId={data.Data.AppId}&orderId={data.Data.OrderId}&method={data.Data.Method}";
-            var reqmac = EnCodeBase64.GenerateHmacSha256(dataReq, SECRET_KEY);
-            var httpClient = new HttpClient();
+            var reqmac = EnCodeBase64.GenerateHmacSha256(dataReq, secretKey);
             var url =
-                $"https://payment-mini.zalo.me/api/transaction/{APP_ID}/cod-callback-payment";
+                "https://payment-mini.zalo.me/api/transaction/1838228208681717250/cod-callback-payment";
+
             var dataCallback =
-                $"appId={APP_ID}&orderId={data.Data.OrderId}&resultCode=-1&privateKey={SECRET_KEY}";
-            ;
+                $"appId={appId}&orderId={data.Data.OrderId}&resultCode=1&privateKey={secretKey}";
             var updateOrderCallBack = new UpdateOrderZaloPayment()
             {
-                AppId = APP_ID,
+                AppId = appId,
                 OrderId = data.Data.OrderId,
                 ResultCode = 1,
-                Mac = EnCodeBase64.GenerateHmacSha256(dataCallback, SECRET_KEY)
+                Mac = EnCodeBase64.GenerateHmacSha256(dataCallback, secretKey)
             };
+
             if (reqmac != data.Mac)
             {
                 _logger.LogInformation($"Notify to zalo fail");
@@ -1098,9 +1098,25 @@ namespace Pos_System.API.Services.Implements
                 };
             }
 
+            var zaloBaseCallbackResponse =
+                JsonConvert.DeserializeObject<ZaloBaseCallbackResponse>(response.Content
+                    .ReadAsStringAsync().Result);
+
+            if (zaloBaseCallbackResponse != null && zaloBaseCallbackResponse.Error != 0)
+            {
+                _logger.LogInformation(
+                    "Notify to zalo fail with status:  {ResponseStatusCode} and message: {@ResponseContent}",
+                    zaloBaseCallbackResponse.Error, zaloBaseCallbackResponse.Msg);
+                return new ZaloCallbackResponse()
+                {
+                    ReturnCode = 3,
+                    ReturnMessage = $"Thanh toán thất bại , {zaloBaseCallbackResponse.Msg}"
+                };
+            }
+
             _logger.LogInformation(
                 "Notify to zalo success with status:  {ResponseStatusCode} and message: {@ResponseContent}",
-                response.StatusCode, response.Content);
+                zaloBaseCallbackResponse.Error, zaloBaseCallbackResponse.Msg);
             return new ZaloCallbackResponse()
             {
                 ReturnCode = 1,

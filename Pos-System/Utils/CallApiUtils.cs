@@ -4,7 +4,7 @@ using System.Text;
 namespace Pos_System.API.Utils
 {
     public class CallApiUtils
-    { 
+    {
         public static async Task<HttpResponseMessage> CallApiEndpoint(string url, object? data)
         {
             var json = System.Text.Json.JsonSerializer.Serialize(data);
@@ -13,7 +13,7 @@ namespace Pos_System.API.Utils
             var response = await httpClient.PostAsync(url, content);
             return response;
         }
-        
+
         public static async Task<Object> GenerateObjectFromResponse(HttpResponseMessage response)
         {
             var responseString = await response.Content.ReadAsStringAsync();
