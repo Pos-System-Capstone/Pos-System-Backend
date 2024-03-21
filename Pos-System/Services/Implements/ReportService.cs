@@ -83,9 +83,10 @@ namespace Pos_System.API.Services.Implements
                     new List<ProductReport>()));
             }
 
+            var promotionListReport = new List<PromotionReport>();
             foreach (var promotion in promotions)
             {
-                report.PromotionReports.Add(new PromotionReport(promotion.Id, promotion.Name, 0, 0));
+                promotionListReport.Add(new PromotionReport(promotion.Id, promotion.Name, 0, 0));
             }
 
 
@@ -96,12 +97,12 @@ namespace Pos_System.API.Services.Implements
                     foreach (var promotionInOrder in item.PromotionOrderMappings)
                     {
                         report.TotalPromotionUsed += (promotionInOrder.Quantity ?? 1);
-                        var idx = report.PromotionReports.FindIndex(element =>
+                        var idx = promotionListReport.FindIndex(element =>
                             element.Id.Equals(promotionInOrder.PromotionId));
                         if (idx != -1)
                         {
-                            report.PromotionReports[idx].Quantity += (promotionInOrder.Quantity ?? 1);
-                            report.PromotionReports[idx].TotalDiscount +=
+                            promotionListReport[idx].Quantity += (promotionInOrder.Quantity ?? 1);
+                            promotionListReport[idx].TotalDiscount +=
                                 (promotionInOrder.DiscountAmount ?? item.Discount);
                         }
                     }
@@ -271,6 +272,8 @@ namespace Pos_System.API.Services.Implements
                 report.AverageBill = report.FinalAmount / report.TotalOrder;
             }
 
+            report.PromotionReports = new List<PromotionReport>();
+            report.PromotionReports = promotionListReport.Where(x => x.Quantity > 0).ToList();
             report.TotalRevenue = report.FinalAmount - report.ProductCosAmount;
             return report;
         }
