@@ -1062,66 +1062,68 @@ namespace Pos_System.API.Services.Implements
             var secretKey = "c876b6b2e0906a5413e9dd328b5de6b0";
             var dataReq = $"appId={data.Data.AppId}&orderId={data.Data.OrderId}&method={data.Data.Method}";
             var reqmac = EnCodeBase64.GenerateHmacSha256(dataReq, secretKey);
-            var url =
-                "https://payment-mini.zalo.me/api/transaction/1838228208681717250/cod-callback-payment";
+            // var url =
+            //     "https://payment-mini.zalo.me/api/transaction/1838228208681717250/cod-callback-payment";
+            //
+            // var dataCallback =
+            //     $"appId={appId}&orderId={data.Data.OrderId}&resultCode=1&privateKey={secretKey}";
+            // var updateOrderCallBack = new UpdateOrderZaloPayment()
+            // {
+            //     AppId = appId,
+            //     OrderId = data.Data.OrderId,
+            //     ResultCode = 1,
+            //     Mac = EnCodeBase64.GenerateHmacSha256(dataCallback, secretKey)
+            // };
 
-            var dataCallback =
-                $"appId={appId}&orderId={data.Data.OrderId}&resultCode=1&privateKey={secretKey}";
-            var updateOrderCallBack = new UpdateOrderZaloPayment()
+            if (reqmac == data.Mac)
             {
-                AppId = appId,
-                OrderId = data.Data.OrderId,
-                ResultCode = 1,
-                Mac = EnCodeBase64.GenerateHmacSha256(dataCallback, secretKey)
-            };
-
-            if (reqmac != data.Mac)
-            {
-                _logger.LogInformation($"Notify to zalo fail");
+                _logger.LogInformation($"Notify to zalo success");
                 return new ZaloCallbackResponse()
                 {
-                    ReturnCode = 0,
-                    ReturnMessage = "Xác nhận thanh toán thất bại"
+                    ReturnCode = 1,
+                    ReturnMessage = "Thanh toán thành công"
                 };
             }
 
-            var response = await CallApiUtils.CallApiEndpoint(url, updateOrderCallBack);
-            if (!response.StatusCode.Equals(HttpStatusCode.OK))
-            {
-                _logger.LogInformation(
-                    "Call back to zalo fail with status:  {ResponseStatusCode} and message {@ResponseContent}",
-                    response.StatusCode, response.Content);
-                return new ZaloCallbackResponse()
-                {
-                    ReturnCode = 2,
-                    ReturnMessage = "Xác nhận thanh toán thất bại, Khônng kết nối được với hệ thống ZALO  "
-                };
-            }
-
-            var zaloBaseCallbackResponse =
-                JsonConvert.DeserializeObject<ZaloBaseCallbackResponse>(response.Content
-                    .ReadAsStringAsync().Result);
-
-            if (zaloBaseCallbackResponse != null && zaloBaseCallbackResponse.Error != 0)
-            {
-                _logger.LogInformation(
-                    "Notify to zalo fail with status:  {ResponseStatusCode} and message: {@ResponseContent}",
-                    zaloBaseCallbackResponse.Error, zaloBaseCallbackResponse.Msg);
-                return new ZaloCallbackResponse()
-                {
-                    ReturnCode = 3,
-                    ReturnMessage = $"Thanh toán thất bại , {zaloBaseCallbackResponse.Msg}"
-                };
-            }
-
-            _logger.LogInformation(
-                "Notify to zalo success with status:  {ResponseStatusCode} and message: {@ResponseContent}",
-                zaloBaseCallbackResponse.Error, zaloBaseCallbackResponse.Msg);
+            _logger.LogInformation($"Notify to zalo fail");
             return new ZaloCallbackResponse()
             {
-                ReturnCode = 1,
-                ReturnMessage = "Thanh toán thành công"
+                ReturnCode = 0,
+                ReturnMessage = "Xác nhận thanh toán thất bại"
             };
+
+            // var response = await CallApiUtils.CallApiEndpoint(url, updateOrderCallBack);
+            // if (!response.StatusCode.Equals(HttpStatusCode.OK))
+            // {
+            //     _logger.LogInformation(
+            //         "Call back to zalo fail with status:  {ResponseStatusCode} and message {@ResponseContent}",
+            //         response.StatusCode, response.Content);
+            //     return new ZaloCallbackResponse()
+            //     {
+            //         ReturnCode = 2,
+            //         ReturnMessage = "Xác nhận thanh toán thất bại, Khônng kết nối được với hệ thống ZALO  "
+            //     };
+            // }
+            //
+            // var zaloBaseCallbackResponse =
+            //     JsonConvert.DeserializeObject<ZaloBaseCallbackResponse>(response.Content
+            //         .ReadAsStringAsync().Result);
+            //
+            // if (zaloBaseCallbackResponse != null && zaloBaseCallbackResponse.Error != 0)
+            // {
+            //     _logger.LogInformation(
+            //         "Notify to zalo fail with status:  {ResponseStatusCode} and message: {@ResponseContent}",
+            //         zaloBaseCallbackResponse.Error, zaloBaseCallbackResponse.Msg);
+            //     return new ZaloCallbackResponse()
+            //     {
+            //         ReturnCode = 3,
+            //         ReturnMessage = $"Thanh toán thất bại , {zaloBaseCallbackResponse.Msg}"
+            //     };
+            // }
+            //
+            // _logger.LogInformation(
+            //     "Notify to zalo success with status:  {ResponseStatusCode} and message: {@ResponseContent}",
+            //     zaloBaseCallbackResponse.Error, zaloBaseCallbackResponse.Msg);
         }
     }
 }
