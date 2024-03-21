@@ -22,6 +22,7 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 using Pos_System.API.Payload.Response.Menus;
 using Pos_System.API.Helpers;
 using Pos_System.API.Payload.Response.Products;
+using Pos_System.API.Payload.ZaloMiniApp;
 using ProductInMenu = Pos_System.API.Payload.Response.Menus.ProductInMenu;
 
 namespace Pos_System.API.Services.Implements
@@ -1057,19 +1058,53 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<ZaloCallbackResponse> ZaloNotifyPayment(ZaloCallbackRequest data)
         {
+            var APP_ID = "1838228208681717250";
+            var SECRET_KEY = "c876b6b2e0906a5413e9dd328b5de6b0";
             var dataReq = $"appId={data.Data.AppId}&orderId={data.Data.OrderId}&method={data.Data.Method}";
-            var reqmac = EnCodeBase64.GenerateHmacSha256(dataReq, "c876b6b2e0906a5413e9dd328b5de6b0");
+            var reqmac = EnCodeBase64.GenerateHmacSha256(dataReq, SECRET_KEY);
+            var httpClient = new HttpClient();
+            var url =
+                $"https://payment-mini.zalo.me/api/transaction/{APP_ID}/cod-callback-payment";
+            var dataCallback =
+                $"appId={APP_ID}&orderId={data.Data.OrderId}&resultCode=-1&privateKey={SECRET_KEY}";
+            ;
+            var updateOrderCallBack = new UpdateOrderZaloPayment()
+            {
+                AppId = APP_ID,
+                OrderId = data.Data.OrderId,
+                ResultCode = 1,
+                Mac = EnCodeBase64.GenerateHmacSha256(dataCallback, SECRET_KEY)
+            };
             if (reqmac != data.Mac)
+            {
+                _logger.LogInformation($"Notify to zalo fail");
                 return new ZaloCallbackResponse()
                 {
                     ReturnCode = 0,
                     ReturnMessage = "Xác nhận thanh toán thất bại"
                 };
+            }
 
+            var response = await CallApiUtils.CallApiEndpoint(url, updateOrderCallBack);
+            if (!response.StatusCode.Equals(HttpStatusCode.OK))
+            {
+                _logger.LogInformation(
+                    "Call back to zalo fail with status:  {ResponseStatusCode} and message {@ResponseContent}",
+                    response.StatusCode, response.Content);
+                return new ZaloCallbackResponse()
+                {
+                    ReturnCode = 2,
+                    ReturnMessage = "Xác nhận thanh toán thất bại, Khônng kết nối được với hệ thống ZALO  "
+                };
+            }
+
+            _logger.LogInformation(
+                "Notify to zalo success with status:  {ResponseStatusCode} and message: {@ResponseContent}",
+                response.StatusCode, response.Content);
             return new ZaloCallbackResponse()
             {
                 ReturnCode = 1,
-                ReturnMessage = "Thành công"
+                ReturnMessage = "Thanh toán thành công"
             };
         }
     }
