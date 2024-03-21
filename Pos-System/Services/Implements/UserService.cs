@@ -594,18 +594,24 @@ namespace Pos_System.API.Services.Implements
                 };
                 var url = "https://api-pointify.reso.vn/api/member-action";
                 var response = await CallApiUtils.CallApiEndpoint(url, request);
-                if (response.StatusCode.Equals(HttpStatusCode.OK))
+                if (!response.StatusCode.Equals(HttpStatusCode.OK))
                 {
-                    orderSource.PaymentStatus = PaymentStatusEnum.SUCCESS.GetDescriptionFromEnum();
+                    throw new BadHttpRequestException(MessageConstant.User.PaymentUserFail);
                 }
 
                 var actionResponse =
                     JsonConvert.DeserializeObject<MemberActionResponse>(response.Content
                         .ReadAsStringAsync().Result);
                 if (actionResponse != null &&
+                    actionResponse.Status.Equals(MemberActionStatus.FAIL.GetDescriptionFromEnum()))
+                {
+                    throw new BadHttpRequestException(actionResponse.Description);
+                }
+
+                if (actionResponse != null &&
                     actionResponse.Status.Equals(MemberActionStatus.SUCCESS.GetDescriptionFromEnum()))
                 {
-                    Transaction transaction = new Transaction()
+                    var transaction = new Transaction()
                     {
                         Id = Guid.NewGuid(),
                         BrandId = user.BrandId,
@@ -622,6 +628,10 @@ namespace Pos_System.API.Services.Implements
                     };
                     await _unitOfWork.GetRepository<Transaction>().InsertAsync(transaction);
                     await _unitOfWork.CommitAsync();
+                }
+                else
+                {
+                    throw new BadHttpRequestException(MessageConstant.User.PaymentUserFail);
                 }
             }
 
@@ -695,7 +705,8 @@ namespace Pos_System.API.Services.Implements
                         }
                     }
 
-                    if (promotion.ListVoucher != null) promotion.CurrentVoucherQuantity = promotion.ListVoucher.Count;
+                    if (promotion.ListVoucher != null)
+                        promotion.CurrentVoucherQuantity = promotion.ListVoucher.Count;
                 }
 
                 foreach (var promotionRemove in listPromotionToRemove)
@@ -738,7 +749,8 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<TopUpUserWalletResponse> TopUpUserWallet(TopUpUserWalletRequest req)
         {
-            if (req.StoreId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
+            if (req.StoreId == Guid.Empty)
+                throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
             Store store = await _unitOfWork.GetRepository<Store>()
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(req.StoreId));
             if (store == null) throw new BadHttpRequestException(MessageConstant.Store.StoreNotFoundMessage);
@@ -748,10 +760,11 @@ namespace Pos_System.API.Services.Implements
             string currentTimeStamp = TimeUtils.GetTimestamp(currentTime);
             Account currentUser = await _unitOfWork.GetRepository<Account>()
                 .SingleOrDefaultAsync(predicate: x => x.Username.Equals(currentUserName));
-            Session currentUserSession = await _unitOfWork.GetRepository<Session>().SingleOrDefaultAsync(predicate: x =>
-                x.StoreId.Equals(req.StoreId)
-                && DateTime.Compare(x.StartDateTime, currentTime) < 0
-                && DateTime.Compare(x.EndDateTime, currentTime) > 0);
+            Session currentUserSession = await _unitOfWork.GetRepository<Session>().SingleOrDefaultAsync(
+                predicate: x =>
+                    x.StoreId.Equals(req.StoreId)
+                    && DateTime.Compare(x.StartDateTime, currentTime) < 0
+                    && DateTime.Compare(x.EndDateTime, currentTime) > 0);
 
             if (currentUserSession == null)
                 throw new BadHttpRequestException(MessageConstant.Order.UserNotInSessionMessage);
@@ -917,7 +930,8 @@ namespace Pos_System.API.Services.Implements
                         .Include(x => x.Menu)
                         .Include(x => x.Store).ThenInclude(x => x.Brand)
                 );
-            if (!allMenuAvailable.Any()) throw new BadHttpRequestException(MessageConstant.Menu.NoMenusFoundMessage);
+            if (!allMenuAvailable.Any())
+                throw new BadHttpRequestException(MessageConstant.Menu.NoMenusFoundMessage);
 
             var currentSeaTime = TimeUtils.GetCurrentSEATime();
             var currentDay = DateTimeHelper.GetDateFromDateTime(currentSeaTime);
@@ -974,7 +988,8 @@ namespace Pos_System.API.Services.Implements
                         x.Product.BrandId,
                         x.Product.CategoryId,
                         (List<Guid>) x.Product.CollectionProducts.Select(x => x.CollectionId),
-                        (List<Guid>) x.Product.Category.ExtraCategoryProductCategories.Select(x => x.ExtraCategoryId),
+                        (List<Guid>) x.Product.Category.ExtraCategoryProductCategories.Select(
+                            x => x.ExtraCategoryId),
                         x.Id //This is the menuProductId in response body
                     ),
                     predicate: x =>
@@ -998,7 +1013,8 @@ namespace Pos_System.API.Services.Implements
                         x.Description
                     ),
                     predicate: x =>
-                        x.BrandId.Equals(userBrandId) && x.Status == CollectionStatus.Active.GetDescriptionFromEnum());
+                        x.BrandId.Equals(userBrandId) &&
+                        x.Status == CollectionStatus.Active.GetDescriptionFromEnum());
 
             var listCategory = (List<CategoryOfBrand>) await _unitOfWork.GetRepository<Category>()
                 .GetListAsync(selector: x => new CategoryOfBrand(

@@ -184,6 +184,7 @@ public static class MessageConstant
         public const string UpdateUserFailedMessage = "Cập nhật thông tin Người dùng thất bại";
         public const string UpdateUserSuccessfulMessage = "Cập nhật thông tin Người dùng thành công";
         public const string EmptyUserId = "Id của Người dùng bị trống";
+        public const string PaymentUserFail = "Thanh toán đơn hàng thất bại, lỗi hệ thống, vui lòng thửu lại sau";
 
         public const string UserNotFound =
             "Người dùng không tồn tại trong hệ thống hoặc ngừng hoạt động, vui lòng đăng ký tài khoản";
