@@ -84,6 +84,8 @@ public static class MessageConstant
         public const string UpdateProductFailedMessage = "Cập nhật thông tin product thất bại";
         public const string EmptyProductIdMessage = "Product Id bị trống";
         public const string ProductNotFoundMessage = "Product không tồn tại trong hệ thống";
+        public const string UpdateVariantToProductFail = "Variant Và sản phẩm cập nhật thất bại";
+        public const string UpdateVariantToProductSuccess = "Thêm variant vào sản phẩm thành công";
     }
 
     public static class ProductVariant

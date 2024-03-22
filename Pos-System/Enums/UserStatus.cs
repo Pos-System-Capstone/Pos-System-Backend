@@ -5,4 +5,12 @@
         Active,
         Deactive,
     }
+
+
+    public enum UserGender
+    {
+        MALE,
+        FEMALE,
+        ORTHER
+    }
 }

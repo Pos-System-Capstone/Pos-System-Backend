@@ -840,6 +840,18 @@ namespace Pos_System.Domain.Models
                 entity.ToTable("VariantProductMapping");
 
                 entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.VariantProductMappings)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("VariantProductMapping_Product_Id_fk");
+
+                entity.HasOne(d => d.Variant)
+                    .WithMany(p => p.VariantProductMappings)
+                    .HasForeignKey(d => d.VariantId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("VariantProductMapping___fk_variant");
             });
 
             OnModelCreatingPartial(modelBuilder);

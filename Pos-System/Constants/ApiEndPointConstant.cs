@@ -88,6 +88,8 @@ public static class ApiEndPointConstant
 
         public const string ProductInGroupEndPoint =
             ApiEndpoint + "/groupProducts/{groupProductId}/productInGroup/{id}";
+        
+        public const string VariantInProductEndpoint = ProductEndPoint + "/variants";
     }
 
     public static class ProductVariant

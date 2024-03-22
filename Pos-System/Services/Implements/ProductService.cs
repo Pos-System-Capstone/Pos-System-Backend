@@ -441,6 +441,7 @@ namespace Pos_System.API.Services.Implements
 
                 Name = creatNewProductVariant.Name,
                 Value = creatNewProductVariant.Value,
+                DisplayOrder = creatNewProductVariant.DisplayOrder,
                 BrandId = brandId,
                 Status = ProductStatus.Active.GetDescriptionFromEnum(),
             };
@@ -451,14 +452,22 @@ namespace Pos_System.API.Services.Implements
         }
 
 
-        public async Task<IPaginate<Variant>> GetProductVariants(string? name, int page,
+        public async Task<IPaginate<VariantDetailsResponse>> GetProductVariants(string? name, int page,
             int size)
         {
             Guid brandId = Guid.Parse(GetBrandIdFromJwt());
             name = name?.Trim();
             if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
-            IPaginate<Variant> variants = await _unitOfWork.GetRepository<Variant>()
+            IPaginate<VariantDetailsResponse> variants = await _unitOfWork.GetRepository<Variant>()
                 .GetPagingListAsync(
+                    selector: x => new VariantDetailsResponse()
+                    {
+                        Id = x.Id,
+                        DisplayOrder = x.DisplayOrder,
+                        Name = x.Name,
+                        Value = x.Value,
+                        Status = x.Status
+                    },
                     predicate: (string.IsNullOrEmpty(name)
                         ? x => x.BrandId.Equals(brandId)
                         : x => x.BrandId.Equals(brandId) && x.Name.ToLower().Contains(name)),
@@ -467,16 +476,24 @@ namespace Pos_System.API.Services.Implements
                     size:
                     size,
                     orderBy:
-                    x => x.OrderBy(x => x.Name)
+                    x => x.OrderBy(x => x.DisplayOrder)
                 );
             return variants;
         }
 
-        public async Task<Variant> GetProductVariantByiD(Guid id)
+        public async Task<VariantDetailsResponse> GetProductVariantByiD(Guid id)
         {
             if (id == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Product.EmptyProductIdMessage);
             Guid brandId = Guid.Parse(GetBrandIdFromJwt());
             var productResponse = await _unitOfWork.GetRepository<Variant>().SingleOrDefaultAsync(
+                selector: x => new VariantDetailsResponse()
+                {
+                    Id = x.Id,
+                    DisplayOrder = x.DisplayOrder,
+                    Name = x.Name,
+                    Value = x.Value,
+                    Status = x.Status
+                },
                 predicate: x => x.Id.Equals(id) && x.BrandId.Equals(brandId)
             );
             if (productResponse == null)
@@ -502,6 +519,7 @@ namespace Pos_System.API.Services.Implements
 
             updateProduct.Name = updateProductRequest.Name ?? updateProduct.Name;
             updateProduct.Value = updateProductRequest.Value ?? updateProduct.Value;
+            updateProduct.DisplayOrder = updateProductRequest.DisplayOrder ?? updateProduct.DisplayOrder;
 
             updateProduct.Status = string.IsNullOrEmpty(updateProductRequest.Status.GetDescriptionFromEnum())
                 ? updateProduct.Status
@@ -510,6 +528,55 @@ namespace Pos_System.API.Services.Implements
             _unitOfWork.GetRepository<Variant>().UpdateAsync(updateProduct);
             await _unitOfWork.CommitAsync();
             return productId;
+        }
+
+        public async Task<bool> AddVariantToProduct(Guid productId, List<Guid> request)
+        {
+            _logger.LogInformation($"Add Variant to Product: {productId}");
+            var brandId = Guid.Parse(GetBrandIdFromJwt());
+            if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.EmptyBrandIdMessage);
+            var brand = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
+                predicate: x => x.Id.Equals(brandId));
+            if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
+
+            var currentVariantIds = (List<Guid>) await _unitOfWork.GetRepository<VariantProductMapping>()
+                .GetListAsync(
+                    selector: x => x.VariantId,
+                    predicate: x => x.ProductId.Equals(productId)
+                );
+            var splittedVariantIds =
+                CustomListUtil.splitIdsToAddAndRemove(currentVariantIds, request);
+            //Handle add and remove to database
+            if (splittedVariantIds.idsToAdd.Count > 0)
+            {
+                var variantToInsert = new List<VariantProductMapping>();
+                splittedVariantIds.idsToAdd.ForEach(id => variantToInsert.Add(new VariantProductMapping()
+                {
+                    Id = Guid.NewGuid(),
+                    VariantId = id,
+                    ProductId = productId
+                }));
+                await _unitOfWork.GetRepository<VariantProductMapping>().InsertRangeAsync(variantToInsert);
+            }
+
+            if (splittedVariantIds.idsToRemove.Count > 0)
+            {
+                var variantsToDelete = (List<VariantProductMapping>) await _unitOfWork
+                    .GetRepository<VariantProductMapping>()
+                    .GetListAsync(predicate: x =>
+                        x.ProductId.Equals(productId) &&
+                        splittedVariantIds.idsToRemove.Contains(x.VariantId));
+
+                _unitOfWork.GetRepository<VariantProductMapping>().DeleteRangeAsync(variantsToDelete);
+            }
+
+            var isSuccesful = await _unitOfWork.CommitAsync() > 0;
+            if (!isSuccesful)
+            {
+                throw new HttpRequestException(MessageConstant.Product.UpdateVariantToProductFail);
+            }
+
+            return isSuccesful;
         }
     }
 }

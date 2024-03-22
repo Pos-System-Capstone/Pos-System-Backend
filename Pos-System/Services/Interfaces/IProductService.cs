@@ -30,12 +30,14 @@ namespace Pos_System.API.Services.Interfaces
         Task<Guid?> CreateNewProductVariant(
             CreatNewProductVariantRequest creatNewProductVariant);
 
-        Task<Variant> GetProductVariantByiD(Guid id);
+        Task<VariantDetailsResponse> GetProductVariantByiD(Guid id);
 
-        Task<IPaginate<Variant>> GetProductVariants(string? name, int page,
+        Task<IPaginate<VariantDetailsResponse>> GetProductVariants(string? name, int page,
             int size);
 
 
         Task<Guid> UpdateProductVariants(Guid productId, UpdateProductVariantRequest updateProductRequest);
+
+        Task<bool> AddVariantToProduct(Guid productId, List<Guid> request);
     }
 }

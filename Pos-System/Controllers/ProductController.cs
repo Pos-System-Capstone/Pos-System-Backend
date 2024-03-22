@@ -142,7 +142,7 @@ namespace Pos_System.API.Controllers
 
         [CustomAuthorize(RoleEnum.BrandAdmin)]
         [HttpGet(ApiEndPointConstant.ProductVariant.ProductVariantsEndPoint)]
-        [ProducesResponseType(typeof(IPaginate<Variant>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IPaginate<VariantDetailsResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetProductVarians([FromQuery] string? name,
             [FromQuery] int page, [FromQuery] int size)
         {
@@ -153,7 +153,7 @@ namespace Pos_System.API.Controllers
 
         [CustomAuthorize(RoleEnum.BrandAdmin)]
         [HttpGet(ApiEndPointConstant.ProductVariant.ProductVariantEndPoint)]
-        [ProducesResponseType(typeof(Variant), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(VariantDetailsResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetProductVariantById(Guid id)
         {
             _logger.LogInformation($"Get pRODUCT vARIANT by Id: {id}");
@@ -173,6 +173,15 @@ namespace Pos_System.API.Controllers
             _logger.LogInformation(
                 $"Update product VARIANT failed: {updateProductRequest.Name}");
             return Ok(MessageConstant.ProductVariant.UpdateProductVariantFailedMessage);
+        }
+
+        [CustomAuthorize(RoleEnum.BrandAdmin)]
+        [HttpPost(ApiEndPointConstant.Product.VariantInProductEndpoint)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> AddVariantToProduct(Guid productId, List<Guid> request)
+        {
+            await _productService.AddVariantToProduct(productId, request);
+            return Ok(MessageConstant.Category.UpdateExtraCategorySuccessfulMessage);
         }
     }
 }

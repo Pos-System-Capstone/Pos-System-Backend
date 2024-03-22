@@ -446,6 +446,9 @@ namespace Pos_System.API.Services.Implements
             currentMenu.DateFilter = updateMenuInformationRequest.DateFilter ?? currentMenu.DateFilter;
             currentMenu.StartTime = updateMenuInformationRequest.StartTime ?? currentMenu.StartTime;
             currentMenu.EndTime = updateMenuInformationRequest.EndTime ?? currentMenu.EndTime;
+            currentMenu.Status = updateMenuInformationRequest.Status != null
+                ? updateMenuInformationRequest.Status.GetDescriptionFromEnum()
+                : currentMenu.Status;
             _unitOfWork.GetRepository<Menu>().UpdateAsync(currentMenu);
             bool isSuccessful = await _unitOfWork.CommitAsync() > 0;
             return isSuccessful;

@@ -13,6 +13,7 @@ namespace Pos_System.Domain.Models
             MenuProducts = new HashSet<MenuProduct>();
             ProductInGroups = new HashSet<ProductInGroup>();
             PromotionProductMappings = new HashSet<PromotionProductMapping>();
+            VariantProductMappings = new HashSet<VariantProductMapping>();
         }
 
         public Guid Id { get; set; }
@@ -40,5 +41,6 @@ namespace Pos_System.Domain.Models
         public virtual ICollection<MenuProduct> MenuProducts { get; set; }
         public virtual ICollection<ProductInGroup> ProductInGroups { get; set; }
         public virtual ICollection<PromotionProductMapping> PromotionProductMappings { get; set; }
+        public virtual ICollection<VariantProductMapping> VariantProductMappings { get; set; }
     }
 }
