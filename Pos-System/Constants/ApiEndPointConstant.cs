@@ -52,6 +52,7 @@ public static class ApiEndPointConstant
         public const string GetListPromotion = StoreEndpoint + "/promotions";
         public const string ScanUserFromStore = StoreEndpoint + "/scan-user";
         public const string ScanUserCodeFromStore = StoresEndpoint + "/scan-code";
+        public const string GetListPayment = StoreEndpoint + "/payment-types";
     }
 
     public static class Account

@@ -15,6 +15,7 @@ using Pos_System.API.Payload.Response.User;
 using Pos_System.API.Services.Interfaces;
 using Pos_System.API.Utils;
 using Pos_System.API.Validators;
+using Pos_System.Domain.Models;
 using Pos_System.Domain.Paginate;
 
 namespace Pos_System.API.Controllers
@@ -218,6 +219,14 @@ namespace Pos_System.API.Controllers
         {
             var userResponse = await _userService.ScanUser(code);
             return Ok(userResponse);
+        }
+
+        [HttpGet(ApiEndPointConstant.Store.GetListPayment)]
+        [ProducesResponseType(typeof(List<PaymentType>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetPaymentTypeInStore(Guid id)
+        {
+            var res = await _storeService.GetPaymentsInStore(id);
+            return Ok(res);
         }
     }
 }

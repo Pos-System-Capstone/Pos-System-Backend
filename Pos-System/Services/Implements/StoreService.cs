@@ -268,15 +268,17 @@ public class StoreService : BaseService<StoreService>, IStoreService
 
         menuOfStore.CategoriesOfBrand = (List<CategoryOfBrand>) await _unitOfWork.GetRepository<Category>()
             .GetListAsync(selector: x => new CategoryOfBrand(
-                x.Id,
-                x.Code,
-                x.Name,
-                EnumUtil.ParseEnum<CategoryType>(x.Type),
-                (List<Guid>) x.ExtraCategoryProductCategories.Select(e => e.ExtraCategoryId),
-                x.DisplayOrder,
-                x.Description,
-                x.PicUrl
-            ), predicate: x => x.BrandId.Equals(userBrandId)&&x.Status.Equals(CategoryStatus.Active.GetDescriptionFromEnum()));
+                    x.Id,
+                    x.Code,
+                    x.Name,
+                    EnumUtil.ParseEnum<CategoryType>(x.Type),
+                    (List<Guid>) x.ExtraCategoryProductCategories.Select(e => e.ExtraCategoryId),
+                    x.DisplayOrder,
+                    x.Description,
+                    x.PicUrl
+                ),
+                predicate: x =>
+                    x.BrandId.Equals(userBrandId) && x.Status.Equals(CategoryStatus.Active.GetDescriptionFromEnum()));
 
         //Use to filter which productInGroups is added to menu
         List<Guid> productIdsInMenu = menuOfStore.ProductsInMenu.Select(x => x.Id).ToList();
@@ -398,5 +400,13 @@ public class StoreService : BaseService<StoreService>, IStoreService
             JsonConvert.DeserializeObject<IEnumerable<PromotionPointifyResponse>>(response.Content
                 .ReadAsStringAsync().Result);
         return responseContent;
+    }
+
+    public async Task<List<PaymentType>?> GetPaymentsInStore(Guid storeId)
+    {
+        if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
+        var paymentList = (List<PaymentType>) await _unitOfWork.GetRepository<PaymentType>().GetListAsync(
+            predicate: x => x.Status.Equals("Active"));
+        return paymentList;
     }
 }
