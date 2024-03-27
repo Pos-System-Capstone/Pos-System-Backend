@@ -31,13 +31,14 @@ namespace Pos_System.API.Services.Implements
     {
         public const double VAT_PERCENT = 0.08;
         public const double VAT_STANDARD = 1.08;
-
+        // public readonly IOrderService _orderService;
 
         public UserService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<UserService> logger,
             IMapper mapper, IHttpContextAccessor httpContextAccessor) : base(
             unitOfWork, logger, mapper,
             httpContextAccessor)
         {
+            // _orderService = orderService;
         }
 
 
@@ -51,6 +52,7 @@ namespace Pos_System.API.Services.Implements
                 PhoneNumber = newUserRequest.PhoneNunmer,
                 Status = UserStatus.Active.GetDescriptionFromEnum(),
                 FullName = newUserRequest.FullName,
+                Email = newUserRequest.Email,
                 BrandId = brandId,
                 Gender = newUserRequest.Gender,
                 Fcmtoken = newUserRequest.FcmToken,
@@ -119,12 +121,12 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<SignInResponse?> LoginUser(MemberLoginRequest req)
         {
-            string modifiedPhoneNumber = Regex.Replace(req.Phone, @"^0", "+84");
-            Guid brandId = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
+            var modifiedPhoneNumber = Regex.Replace(req.Phone, @"^0", "+84");
+            var brandId = await _unitOfWork.GetRepository<Brand>().SingleOrDefaultAsync(
                 selector: brand => brand.Id,
                 predicate: brand => brand.BrandCode.Equals(req.BrandCode));
             if (brandId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
-            User userLogin = await _unitOfWork.GetRepository<User>()
+            var userLogin = await _unitOfWork.GetRepository<User>()
                 .SingleOrDefaultAsync(predicate: x => x.PhoneNumber.Equals(modifiedPhoneNumber)
                                                       && x.Status.Equals("Active") && x.BrandId.Equals(brandId));
 
@@ -225,8 +227,9 @@ namespace Pos_System.API.Services.Implements
                     CreateNewUserRequest newUserRequest = new CreateNewUserRequest()
                     {
                         PhoneNunmer = modifiedPhoneNumber,
-                        FullName = "Người dùng",
-                        Gender = "ORTHER",
+                        FullName = req.FullName ?? "Người dùng",
+                        Gender = req.Gender ?? "ORTHER",
+                        Email = req.Email ?? null,
                         FireBaseUid = "",
                         FcmToken = "",
                         PinCode = req.PinCode
@@ -576,6 +579,9 @@ namespace Pos_System.API.Services.Implements
 
             newOrder.OrderSourceId = orderSource.Id;
             await _unitOfWork.GetRepository<Order>().InsertAsync(newOrder);
+            // await _orderService.CreateOrderHistory(newOrder.Id, OrderStatus.NEW,
+            //     OrderStatus.NEW,
+            //     createNewOrderRequest.CustomerId);
             await _unitOfWork.GetRepository<OrderDetail>().InsertRangeAsync(orderDetails);
             await _unitOfWork.GetRepository<OrderUser>().InsertAsync(orderSource);
             var result = await _unitOfWork.CommitAsync();
@@ -895,6 +901,7 @@ namespace Pos_System.API.Services.Implements
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId)
                 );
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
+            var fromStatus = EnumUtil.ParseEnum<OrderStatus>(order.Status);
             order.PaymentType = updateOrderRequest.PaymentType != null
                 ? updateOrderRequest.PaymentType.GetDescriptionFromEnum()
                 : order.PaymentType;
@@ -910,6 +917,12 @@ namespace Pos_System.API.Services.Implements
                         );
                     orderUser.Status = updateOrderRequest.DeliStatus.GetDescriptionFromEnum();
                     _unitOfWork.GetRepository<OrderUser>().UpdateAsync(orderUser);
+                    // if (updateOrderRequest.Status != null && !updateOrderRequest.Status.Equals(fromStatus))
+                    // {
+                    //     await _orderService.CreateOrderHistory(order.Id, fromStatus,
+                    //         updateOrderRequest.Status ?? fromStatus,
+                    //         orderUser.UserId);
+                    // }
                 }
             }
 

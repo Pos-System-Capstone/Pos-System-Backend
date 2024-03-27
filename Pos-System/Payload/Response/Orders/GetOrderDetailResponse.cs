@@ -17,7 +17,9 @@ namespace Pos_System.API.Payload.Response.Orders
         public OrderType OrderType { get; set; }
         public PaymentTypeEnum PaymentType { get; set; }
         public DateTime CheckInDate { get; set; }
-        
+
+        public DateTime? CheckOutDate { get; set; }
+
         public string? Notes { get; set; }
 
         public int? CustomerNumber { get; set; }
@@ -39,7 +41,7 @@ namespace Pos_System.API.Payload.Response.Orders
         public double FinalAmount { get; set; }
         public double Discount { get; set; }
         public string Note { get; set; }
-        
+
         public string? PicUrl { get; set; }
 
 

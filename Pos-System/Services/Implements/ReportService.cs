@@ -280,21 +280,15 @@ namespace Pos_System.API.Services.Implements
 
         public async Task<SessionReport> GetSessionReportDetail(Guid sessionId)
         {
-            Guid userStoreId = Guid.Parse(GetStoreIdFromJwt());
             if (sessionId == Guid.Empty)
                 throw new BadHttpRequestException(MessageConstant.Session.EmptySessionIdMessage);
 
-            Session session = await _unitOfWork.GetRepository<Session>()
-                .SingleOrDefaultAsync(predicate: x => x.StoreId.Equals(userStoreId) && x.Id.Equals(sessionId));
-            if (session == null) throw new BadHttpRequestException(MessageConstant.Session.SessionNotFoundMessage);
-
-
-            List<Order> orders = (List<Order>) await _unitOfWork.GetRepository<Order>().GetListAsync(
+            var orders = (List<Order>) await _unitOfWork.GetRepository<Order>().GetListAsync(
                 include: x => x.Include(order => order.Session),
                 predicate: p =>
                     p.SessionId.Equals(sessionId) && p.Status.Equals(OrderStatus.PAID.GetDescriptionFromEnum())
             );
-            SessionReport report = new SessionReport(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            var report = new SessionReport(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
             foreach (var item in orders)
             {
                 report.TotalAmount += item.TotalAmount;

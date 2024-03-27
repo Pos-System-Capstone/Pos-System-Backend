@@ -175,6 +175,7 @@ namespace Pos_System.API.Services.Implements
                 ? PaymentTypeEnum.CASH
                 : EnumUtil.ParseEnum<PaymentTypeEnum>(order.PaymentType);
             orderDetailResponse.CheckInDate = order.CheckInDate;
+            orderDetailResponse.CheckOutDate = order.CheckOutDate;
 
             if (order.PromotionOrderMappings.Any())
             {
@@ -402,13 +403,14 @@ namespace Pos_System.API.Services.Implements
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(storeId));
             if (store == null) throw new BadHttpRequestException(MessageConstant.Store.StoreNotFoundMessage);
             string currentUserName = GetUsernameFromJwt();
-            Account currentUser = await _unitOfWork.GetRepository<Account>()
+            var currentUser = await _unitOfWork.GetRepository<Account>()
                 .SingleOrDefaultAsync(predicate: x => x.Username.Equals(currentUserName));
             DateTime currentTime = TimeUtils.GetCurrentSEATime();
             Order order = await _unitOfWork.GetRepository<Order>()
                 .SingleOrDefaultAsync(predicate: x => x.Id.Equals(orderId),
                     include: x => x.Include(p => p.PromotionOrderMappings));
             if (order == null) throw new BadHttpRequestException(MessageConstant.Order.OrderNotFoundMessage);
+            var fromStatus = EnumUtil.ParseEnum<OrderStatus>(order.Status);
             order.PaymentType = updateOrderRequest.PaymentType.GetDescriptionFromEnum();
             order.Status = updateOrderRequest.Status.GetDescriptionFromEnum();
             if (updateOrderRequest.GuestNumber.HasValue)
@@ -433,6 +435,13 @@ namespace Pos_System.API.Services.Implements
                     {
                         checkOutPointify.UserId = orderUser.UserId;
                     }
+
+                    // if (updateOrderRequest.Status != null && !updateOrderRequest.Status.Equals(fromStatus))
+                    // {
+                    //     await CreateOrderHistory(order.Id, fromStatus,
+                    //         updateOrderRequest.Status ?? fromStatus,
+                    //         currentUser.Id);
+                    // }
 
                     orderUser.Status = OrderSourceStatus.DELIVERING.GetDescriptionFromEnum();
                     _unitOfWork.GetRepository<OrderUser>().UpdateAsync(orderUser);
@@ -884,6 +893,7 @@ namespace Pos_System.API.Services.Implements
                 ? PaymentTypeEnum.CASH
                 : EnumUtil.ParseEnum<PaymentTypeEnum>(order.PaymentType);
             orderDetailResponse.CheckInDate = order.CheckInDate;
+            orderDetailResponse.CheckOutDate = order.CheckOutDate;
 
             if (order.PromotionOrderMappings.Any())
             {
@@ -1294,6 +1304,13 @@ namespace Pos_System.API.Services.Implements
 
             await _unitOfWork.GetRepository<Order>().InsertAsync(newOrder);
             await _unitOfWork.GetRepository<OrderDetail>().InsertRangeAsync(orderDetails);
+            // if (newOrder.OrderSourceId != null)
+            // {
+            //     await CreateOrderHistory(newOrder.Id, OrderStatus.NEW,
+            //         OrderStatus.PENDING,
+            //         currentUserSession.Id);
+            // }
+
             await _unitOfWork.CommitAsync();
             return newOrder.Id;
         }
@@ -1321,5 +1338,23 @@ namespace Pos_System.API.Services.Implements
             };
             return response;
         }
+
+        // public async Task<bool> CreateOrderHistory(Guid orderId, OrderStatus fromStatus, OrderStatus toStatus,
+        //     Guid? changeBy
+        // )
+        // {
+        //     var currentTime = TimeUtils.GetCurrentSEATime();
+        //     var orderHistory = new OrderHistory()
+        //     {
+        //         Id = Guid.NewGuid(),
+        //         OrderId = orderId,
+        //         FromStatus = fromStatus.GetDescriptionFromEnum(),
+        //         ToStatus = toStatus.GetDescriptionFromEnum(),
+        //         CreatedTime = currentTime,
+        //         ChangedBy = changeBy
+        //     };
+        //     await _unitOfWork.GetRepository<OrderHistory>().InsertAsync(orderHistory);
+        //     return await _unitOfWork.CommitAsync() > 0;
+        // }
     }
 }

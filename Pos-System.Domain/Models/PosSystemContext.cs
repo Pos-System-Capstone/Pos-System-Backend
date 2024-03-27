@@ -34,6 +34,7 @@ namespace Pos_System.Domain.Models
         public virtual DbSet<OrderHistory> OrderHistories { get; set; } = null!;
         public virtual DbSet<OrderUser> OrderUsers { get; set; } = null!;
         public virtual DbSet<Payment> Payments { get; set; } = null!;
+        public virtual DbSet<PaymentType> PaymentTypes { get; set; } = null!;
         public virtual DbSet<Product> Products { get; set; } = null!;
         public virtual DbSet<ProductInGroup> ProductInGroups { get; set; } = null!;
         public virtual DbSet<Promotion> Promotions { get; set; } = null!;
@@ -43,6 +44,7 @@ namespace Pos_System.Domain.Models
         public virtual DbSet<Session> Sessions { get; set; } = null!;
         public virtual DbSet<Store> Stores { get; set; } = null!;
         public virtual DbSet<StoreAccount> StoreAccounts { get; set; } = null!;
+        public virtual DbSet<StorePaymentMapping> StorePaymentMappings { get; set; } = null!;
         public virtual DbSet<Transaction> Transactions { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
         public virtual DbSet<Variant> Variants { get; set; } = null!;
@@ -509,6 +511,30 @@ namespace Pos_System.Domain.Models
                     .IsUnicode(false);
             });
 
+            modelBuilder.Entity<PaymentType>(entity =>
+            {
+                entity.HasKey(e => e.Type)
+                    .HasName("PaymentType_pk");
+
+                entity.ToTable("PaymentType");
+
+                entity.Property(e => e.Type)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Name).HasMaxLength(100);
+
+                entity.Property(e => e.PaymentCode)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.PicUrl).IsUnicode(false);
+
+                entity.Property(e => e.Status)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+            });
+
             modelBuilder.Entity<Product>(entity =>
             {
                 entity.ToTable("Product");
@@ -734,6 +760,33 @@ namespace Pos_System.Domain.Models
                     .HasForeignKey(d => d.StoreId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_StoreAccount_Store");
+            });
+
+            modelBuilder.Entity<StorePaymentMapping>(entity =>
+            {
+                entity.ToTable("StorePaymentMapping");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.PaymentType)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Status)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.PaymentTypeNavigation)
+                    .WithMany(p => p.StorePaymentMappings)
+                    .HasForeignKey(d => d.PaymentType)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("StorePaymentMapping_PaymentType_Type_fk");
+
+                entity.HasOne(d => d.Store)
+                    .WithMany(p => p.StorePaymentMappings)
+                    .HasForeignKey(d => d.StoreId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("StorePaymentMapping_Store_Id_fk");
             });
 
             modelBuilder.Entity<Transaction>(entity =>
