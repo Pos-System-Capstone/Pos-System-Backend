@@ -178,9 +178,9 @@ namespace Pos_System.API.Controllers
         [CustomAuthorize(RoleEnum.BrandAdmin)]
         [HttpPost(ApiEndPointConstant.Product.VariantInProductEndpoint)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> AddVariantToProduct(Guid productId, List<Guid> request)
+        public async Task<IActionResult> AddVariantToProduct(Guid id, List<Guid> request)
         {
-            await _productService.AddVariantToProduct(productId, request);
+            await _productService.AddVariantToProduct(id, request);
             return Ok(MessageConstant.Category.UpdateExtraCategorySuccessfulMessage);
         }
     }

@@ -82,11 +82,10 @@ namespace Pos_System.API.Services.Implements
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             var httpClient = new HttpClient();
             var response = await httpClient.PostAsync(createMemberPromoUrl, content);
-            if (!response.StatusCode.Equals(200))
+            if (!response.StatusCode.Equals(HttpStatusCode.OK))
             {
                 throw new BadHttpRequestException(MessageConstant.User.CreateNewUserFailedMessage);
             }
-
             var isSuccessful = await _unitOfWork.CommitAsync() > 0;
             CreateNewUserResponse createNewUserResponse = null;
             if (isSuccessful)
