@@ -63,7 +63,7 @@ namespace Pos_System.API.Services.Implements
             };
 
             await _unitOfWork.GetRepository<User>().InsertAsync(newUser);
-            bool isSuccessful = await _unitOfWork.CommitAsync() > 0;
+
 
             //tạo membership bên pointify
             string createMemberPromoUrl = $"https://api-pointify.reso.vn/api/memberships?apiKey={brandId}";
@@ -82,6 +82,12 @@ namespace Pos_System.API.Services.Implements
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             var httpClient = new HttpClient();
             var response = await httpClient.PostAsync(createMemberPromoUrl, content);
+            if (!response.StatusCode.Equals(200))
+            {
+                throw new BadHttpRequestException(MessageConstant.User.CreateNewUserFailedMessage);
+            }
+
+            var isSuccessful = await _unitOfWork.CommitAsync() > 0;
             CreateNewUserResponse createNewUserResponse = null;
             if (isSuccessful)
             {
