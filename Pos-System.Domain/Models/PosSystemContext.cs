@@ -21,6 +21,7 @@ namespace Pos_System.Domain.Models
         public virtual DbSet<Brand> Brands { get; set; } = null!;
         public virtual DbSet<BrandAccount> BrandAccounts { get; set; } = null!;
         public virtual DbSet<BrandPartner> BrandPartners { get; set; } = null!;
+        public virtual DbSet<BrandPaymentMapping> BrandPaymentMappings { get; set; } = null!;
         public virtual DbSet<Category> Categories { get; set; } = null!;
         public virtual DbSet<Collection> Collections { get; set; } = null!;
         public virtual DbSet<CollectionProduct> CollectionProducts { get; set; } = null!;
@@ -44,7 +45,6 @@ namespace Pos_System.Domain.Models
         public virtual DbSet<Session> Sessions { get; set; } = null!;
         public virtual DbSet<Store> Stores { get; set; } = null!;
         public virtual DbSet<StoreAccount> StoreAccounts { get; set; } = null!;
-        public virtual DbSet<StorePaymentMapping> StorePaymentMappings { get; set; } = null!;
         public virtual DbSet<Transaction> Transactions { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
         public virtual DbSet<Variant> Variants { get; set; } = null!;
@@ -179,6 +179,33 @@ namespace Pos_System.Domain.Models
                     .HasForeignKey(d => d.MasterBrandId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("BrandPartner_Brand_Id_fk");
+            });
+
+            modelBuilder.Entity<BrandPaymentMapping>(entity =>
+            {
+                entity.ToTable("BrandPaymentMapping");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.Property(e => e.PaymentType)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Status)
+                    .HasMaxLength(20)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.Brand)
+                    .WithMany(p => p.BrandPaymentMappings)
+                    .HasForeignKey(d => d.BrandId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("BrandPaymentMapping_Brand_Id_fk");
+
+                entity.HasOne(d => d.PaymentTypeNavigation)
+                    .WithMany(p => p.BrandPaymentMappings)
+                    .HasForeignKey(d => d.PaymentType)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("BrandPaymentMapping_PaymentType_Type_fk");
             });
 
             modelBuilder.Entity<Category>(entity =>
@@ -760,33 +787,6 @@ namespace Pos_System.Domain.Models
                     .HasForeignKey(d => d.StoreId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_StoreAccount_Store");
-            });
-
-            modelBuilder.Entity<StorePaymentMapping>(entity =>
-            {
-                entity.ToTable("StorePaymentMapping");
-
-                entity.Property(e => e.Id).ValueGeneratedNever();
-
-                entity.Property(e => e.PaymentType)
-                    .HasMaxLength(20)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.Status)
-                    .HasMaxLength(20)
-                    .IsUnicode(false);
-
-                entity.HasOne(d => d.PaymentTypeNavigation)
-                    .WithMany(p => p.StorePaymentMappings)
-                    .HasForeignKey(d => d.PaymentType)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("StorePaymentMapping_PaymentType_Type_fk");
-
-                entity.HasOne(d => d.Store)
-                    .WithMany(p => p.StorePaymentMappings)
-                    .HasForeignKey(d => d.StoreId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("StorePaymentMapping_Store_Id_fk");
             });
 
             modelBuilder.Entity<Transaction>(entity =>

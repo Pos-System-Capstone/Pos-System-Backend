@@ -10,6 +10,7 @@ namespace Pos_System.Domain.Models
             BrandAccounts = new HashSet<BrandAccount>();
             BrandPartnerBrandPartnerNavigations = new HashSet<BrandPartner>();
             BrandPartnerMasterBrands = new HashSet<BrandPartner>();
+            BrandPaymentMappings = new HashSet<BrandPaymentMapping>();
             Categories = new HashSet<Category>();
             Collections = new HashSet<Collection>();
             Menus = new HashSet<Menu>();
@@ -33,6 +34,7 @@ namespace Pos_System.Domain.Models
         public virtual ICollection<BrandAccount> BrandAccounts { get; set; }
         public virtual ICollection<BrandPartner> BrandPartnerBrandPartnerNavigations { get; set; }
         public virtual ICollection<BrandPartner> BrandPartnerMasterBrands { get; set; }
+        public virtual ICollection<BrandPaymentMapping> BrandPaymentMappings { get; set; }
         public virtual ICollection<Category> Categories { get; set; }
         public virtual ICollection<Collection> Collections { get; set; }
         public virtual ICollection<Menu> Menus { get; set; }

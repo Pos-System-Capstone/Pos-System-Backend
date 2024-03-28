@@ -26,8 +26,7 @@ namespace Pos_System.API.Services.Interfaces
         Task<Guid> CheckoutOrder(Guid storeId, Guid orderId, UpdateOrderRequest updateOrderRequest);
         public Task<NewUserOrderResponse> GetNewUserOrderInStore(Guid storeId);
 
-        // public Task<bool> CreateOrderHistory(Guid orderId, OrderStatus fromStatus, OrderStatus toStatus,
-        //     Guid? changeBy
-        // );
+        Task<bool> CreateOrderHistory(Guid orderId, OrderStatus fromStatus, OrderStatus toStatus, Guid? changeBy
+        );
     }
 }

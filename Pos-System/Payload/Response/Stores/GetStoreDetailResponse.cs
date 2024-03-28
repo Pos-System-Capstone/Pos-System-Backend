@@ -6,10 +6,11 @@ public class GetStoreDetailResponse : GetStoreResponse
     public string? BrandPicUrl { get; set; }
 
     public GetStoreDetailResponse(Guid id, Guid brandId, string name, string shortname, string email, string address,
+        string locationNearby,
         string status, string phone, string code, string brandPicUrl, string wifiName, string wifiPassword, string lat,
         string lon) : base(id,
         brandId, name, shortname, code, email,
-        address, status, wifiName, wifiPassword, lat, lon)
+        address, locationNearby, status, wifiName, wifiPassword, lat, lon)
     {
         Phone = phone;
         BrandPicUrl = brandPicUrl;

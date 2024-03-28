@@ -222,7 +222,7 @@ namespace Pos_System.API.Controllers
         }
 
         [HttpGet(ApiEndPointConstant.Store.GetListPayment)]
-        [ProducesResponseType(typeof(List<PaymentType>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<PaymentTypeResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPaymentTypeInStore(Guid id)
         {
             var res = await _storeService.GetPaymentsInStore(id);

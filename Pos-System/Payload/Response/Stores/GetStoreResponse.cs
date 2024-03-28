@@ -12,6 +12,7 @@ public class GetStoreResponse
     public string Code { get; set; }
     public string Email { get; set; }
     public string? Address { get; set; }
+    public string? LocationNearby { get; set; }
     public StoreStatus Status { get; set; }
     public string? WifiName { get; set; }
     public string? WifiPassword { get; set; }
@@ -19,7 +20,7 @@ public class GetStoreResponse
     public string? Long { get; set; }
 
     public GetStoreResponse(Guid id, Guid brandId, string name, string shortname, string code, string email,
-        string address,
+        string address, string locationNearby,
         string status, string wifiName, string wifiPassword, string lat, string lon)
     {
         Id = id;
@@ -29,6 +30,7 @@ public class GetStoreResponse
         Code = code;
         Email = email;
         Address = address;
+        LocationNearby = locationNearby;
         Status = EnumUtil.ParseEnum<StoreStatus>(status);
         WifiName = wifiName;
         WifiPassword = wifiPassword;

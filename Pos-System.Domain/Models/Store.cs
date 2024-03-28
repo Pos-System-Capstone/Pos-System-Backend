@@ -10,7 +10,6 @@ namespace Pos_System.Domain.Models
             MenuStores = new HashSet<MenuStore>();
             Sessions = new HashSet<Session>();
             StoreAccounts = new HashSet<StoreAccount>();
-            StorePaymentMappings = new HashSet<StorePaymentMapping>();
         }
 
         public Guid Id { get; set; }
@@ -27,11 +26,11 @@ namespace Pos_System.Domain.Models
         public string? Lat { get; set; }
         public string? Long { get; set; }
         public int? Index { get; set; }
+        public string? LocationNearby { get; set; }
 
         public virtual Brand Brand { get; set; } = null!;
         public virtual ICollection<MenuStore> MenuStores { get; set; }
         public virtual ICollection<Session> Sessions { get; set; }
         public virtual ICollection<StoreAccount> StoreAccounts { get; set; }
-        public virtual ICollection<StorePaymentMapping> StorePaymentMappings { get; set; }
     }
 }

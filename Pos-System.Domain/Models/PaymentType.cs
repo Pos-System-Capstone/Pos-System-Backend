@@ -7,7 +7,7 @@ namespace Pos_System.Domain.Models
     {
         public PaymentType()
         {
-            StorePaymentMappings = new HashSet<StorePaymentMapping>();
+            BrandPaymentMappings = new HashSet<BrandPaymentMapping>();
         }
 
         public string Type { get; set; } = null!;
@@ -16,6 +16,6 @@ namespace Pos_System.Domain.Models
         public string PaymentCode { get; set; } = null!;
         public string Status { get; set; } = null!;
 
-        public virtual ICollection<StorePaymentMapping> StorePaymentMappings { get; set; }
+        public virtual ICollection<BrandPaymentMapping> BrandPaymentMappings { get; set; }
     }
 }

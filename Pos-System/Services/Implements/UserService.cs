@@ -31,14 +31,12 @@ namespace Pos_System.API.Services.Implements
     {
         public const double VAT_PERCENT = 0.08;
         public const double VAT_STANDARD = 1.08;
-        // public readonly IOrderService _orderService;
 
         public UserService(IUnitOfWork<PosSystemContext> unitOfWork, ILogger<UserService> logger,
             IMapper mapper, IHttpContextAccessor httpContextAccessor) : base(
             unitOfWork, logger, mapper,
             httpContextAccessor)
         {
-            // _orderService = orderService;
         }
 
 
@@ -86,6 +84,7 @@ namespace Pos_System.API.Services.Implements
             {
                 throw new BadHttpRequestException(MessageConstant.User.CreateNewUserFailedMessage);
             }
+
             var isSuccessful = await _unitOfWork.CommitAsync() > 0;
             CreateNewUserResponse createNewUserResponse = null;
             if (isSuccessful)
@@ -584,14 +583,27 @@ namespace Pos_System.API.Services.Implements
 
             newOrder.OrderSourceId = orderSource.Id;
             await _unitOfWork.GetRepository<Order>().InsertAsync(newOrder);
-            // await _orderService.CreateOrderHistory(newOrder.Id, OrderStatus.NEW,
-            //     OrderStatus.NEW,
-            //     createNewOrderRequest.CustomerId);
+
             await _unitOfWork.GetRepository<OrderDetail>().InsertRangeAsync(orderDetails);
             await _unitOfWork.GetRepository<OrderUser>().InsertAsync(orderSource);
             var result = await _unitOfWork.CommitAsync();
-            if (result > 0 && createNewOrderRequest.CustomerId != null &&
-                newOrder.PaymentType.Equals(PaymentTypeEnum.POINTIFY.GetDescriptionFromEnum()))
+            if (result > 0)
+            {
+                var orderHistory = new OrderHistory()
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = newOrder.Id,
+                    FromStatus = OrderStatus.NEW.GetDescriptionFromEnum(),
+                    ToStatus = OrderStatus.NEW.GetDescriptionFromEnum(),
+                    CreatedTime = currentTime,
+                    ChangedBy = createNewOrderRequest.CustomerId
+                };
+                await _unitOfWork.GetRepository<OrderHistory>().InsertAsync(orderHistory);
+                await _unitOfWork.CommitAsync();
+            }
+
+            if (result <= 0 || createNewOrderRequest.CustomerId == null ||
+                !newOrder.PaymentType.Equals(PaymentTypeEnum.POINTIFY.GetDescriptionFromEnum())) return newOrder.Id;
             {
                 var user = await _unitOfWork.GetRepository<User>().SingleOrDefaultAsync(
                     predicate: x => x.Id.Equals(createNewOrderRequest.CustomerId));
@@ -922,12 +934,21 @@ namespace Pos_System.API.Services.Implements
                         );
                     orderUser.Status = updateOrderRequest.DeliStatus.GetDescriptionFromEnum();
                     _unitOfWork.GetRepository<OrderUser>().UpdateAsync(orderUser);
-                    // if (updateOrderRequest.Status != null && !updateOrderRequest.Status.Equals(fromStatus))
-                    // {
-                    //     await _orderService.CreateOrderHistory(order.Id, fromStatus,
-                    //         updateOrderRequest.Status ?? fromStatus,
-                    //         orderUser.UserId);
-                    // }
+                    if (updateOrderRequest.Status != null && !updateOrderRequest.Status.Equals(fromStatus))
+                    {
+                        var currentTime = TimeUtils.GetCurrentSEATime();
+                        var orderHistory = new OrderHistory()
+                        {
+                            Id = Guid.NewGuid(),
+                            OrderId = order.Id,
+                            FromStatus = fromStatus.GetDescriptionFromEnum(),
+                            ToStatus = (updateOrderRequest.Status ?? fromStatus).GetDescriptionFromEnum(),
+                            CreatedTime = currentTime,
+                            ChangedBy = orderUser.UserId
+                        };
+                        await _unitOfWork.GetRepository<OrderHistory>().InsertAsync(orderHistory);
+                        await _unitOfWork.CommitAsync();
+                    }
                 }
             }
 

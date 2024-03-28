@@ -25,5 +25,5 @@ public interface IStoreService
 
     public Task<IPaginate<GetStoreResponse>> GetStoresInBrandByBrandCode(string? brandCode, int page, int size);
     public Task<IEnumerable<PromotionPointifyResponse>?> GetPromotionInStore(Guid storeId);
-    public Task<List<PaymentType>?> GetPaymentsInStore(Guid storeId);
+    public Task<List<PaymentTypeResponse>?> GetPaymentsInStore(Guid storeId);
 }

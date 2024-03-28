@@ -436,12 +436,12 @@ namespace Pos_System.API.Services.Implements
                         checkOutPointify.UserId = orderUser.UserId;
                     }
 
-                    // if (updateOrderRequest.Status != null && !updateOrderRequest.Status.Equals(fromStatus))
-                    // {
-                    //     await CreateOrderHistory(order.Id, fromStatus,
-                    //         updateOrderRequest.Status ?? fromStatus,
-                    //         currentUser.Id);
-                    // }
+                    if (updateOrderRequest.Status != null && !updateOrderRequest.Status.Equals(fromStatus))
+                    {
+                        await CreateOrderHistory(order.Id, fromStatus,
+                            updateOrderRequest.Status ?? fromStatus,
+                            currentUser.Id);
+                    }
 
                     orderUser.Status = OrderSourceStatus.DELIVERING.GetDescriptionFromEnum();
                     _unitOfWork.GetRepository<OrderUser>().UpdateAsync(orderUser);
@@ -1304,12 +1304,12 @@ namespace Pos_System.API.Services.Implements
 
             await _unitOfWork.GetRepository<Order>().InsertAsync(newOrder);
             await _unitOfWork.GetRepository<OrderDetail>().InsertRangeAsync(orderDetails);
-            // if (newOrder.OrderSourceId != null)
-            // {
-            //     await CreateOrderHistory(newOrder.Id, OrderStatus.NEW,
-            //         OrderStatus.PENDING,
-            //         currentUserSession.Id);
-            // }
+            if (newOrder.OrderSourceId != null)
+            {
+                await CreateOrderHistory(newOrder.Id, OrderStatus.NEW,
+                    OrderStatus.PENDING,
+                    currentUserSession.Id);
+            }
 
             await _unitOfWork.CommitAsync();
             return newOrder.Id;
@@ -1339,22 +1339,22 @@ namespace Pos_System.API.Services.Implements
             return response;
         }
 
-        // public async Task<bool> CreateOrderHistory(Guid orderId, OrderStatus fromStatus, OrderStatus toStatus,
-        //     Guid? changeBy
-        // )
-        // {
-        //     var currentTime = TimeUtils.GetCurrentSEATime();
-        //     var orderHistory = new OrderHistory()
-        //     {
-        //         Id = Guid.NewGuid(),
-        //         OrderId = orderId,
-        //         FromStatus = fromStatus.GetDescriptionFromEnum(),
-        //         ToStatus = toStatus.GetDescriptionFromEnum(),
-        //         CreatedTime = currentTime,
-        //         ChangedBy = changeBy
-        //     };
-        //     await _unitOfWork.GetRepository<OrderHistory>().InsertAsync(orderHistory);
-        //     return await _unitOfWork.CommitAsync() > 0;
-        // }
+        public async Task<bool> CreateOrderHistory(Guid orderId, OrderStatus fromStatus, OrderStatus toStatus,
+            Guid? changeBy
+        )
+        {
+            var currentTime = TimeUtils.GetCurrentSEATime();
+            var orderHistory = new OrderHistory()
+            {
+                Id = Guid.NewGuid(),
+                OrderId = orderId,
+                FromStatus = fromStatus.GetDescriptionFromEnum(),
+                ToStatus = toStatus.GetDescriptionFromEnum(),
+                CreatedTime = currentTime,
+                ChangedBy = changeBy
+            };
+            await _unitOfWork.GetRepository<OrderHistory>().InsertAsync(orderHistory);
+            return await _unitOfWork.CommitAsync() > 0;
+        }
     }
 }

@@ -36,6 +36,7 @@ public class StoreService : BaseService<StoreService>, IStoreService
         searchShortName = searchShortName?.Trim().ToLower();
         IPaginate<GetStoreResponse> storesInBrandResponse = await _unitOfWork.GetRepository<Store>().GetPagingListAsync(
             selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Code, x.Email, x.Address,
+                x.LocationNearby,
                 x.Status,
                 x.WifiName, x.WifiPassword, x.Lat, x.Long),
             predicate: string.IsNullOrEmpty(searchShortName)
@@ -53,6 +54,7 @@ public class StoreService : BaseService<StoreService>, IStoreService
         if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
         GetStoreDetailResponse storeDetailResponse = await _unitOfWork.GetRepository<Store>().SingleOrDefaultAsync(
             selector: x => new GetStoreDetailResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Email, x.Address,
+                x.LocationNearby,
                 x.Status,
                 x.Phone, x.Code, x.Brand.PicUrl, x.WifiName, x.WifiPassword, x.Lat, x.Long),
             include: x => x.Include(x => x.Brand),
@@ -370,13 +372,18 @@ public class StoreService : BaseService<StoreService>, IStoreService
         if (brand == null) throw new BadHttpRequestException(MessageConstant.Brand.BrandNotFoundMessage);
 
         IPaginate<GetStoreResponse> storesInBrandResponse = await _unitOfWork.GetRepository<Store>().GetPagingListAsync(
-            selector: x => new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Code, x.Email, x.Address,
-                x.Status,
-                x.WifiName, x.WifiPassword, x.Lat, x.Long),
-            predicate: x => x.BrandId.Equals(brand.Id) && x.Status.Equals(StoreStatus.Active.GetDescriptionFromEnum()),
-            orderBy: x => x.OrderBy(x => x.ShortName),
-            page: page,
-            size: size
+            selector: x =>
+                new GetStoreResponse(x.Id, x.BrandId, x.Name, x.ShortName, x.Code, x.Email, x.Address, x.LocationNearby,
+                    x.Status,
+                    x.WifiName, x.WifiPassword, x.Lat, x.Long),
+            predicate:
+            x => x.BrandId.Equals(brand.Id) && x.Status.Equals(StoreStatus.Active.GetDescriptionFromEnum()),
+            orderBy:
+            x => x.OrderBy(x => x.ShortName),
+            page:
+            page,
+            size:
+            size
         );
         return storesInBrandResponse;
     }
@@ -402,11 +409,22 @@ public class StoreService : BaseService<StoreService>, IStoreService
         return responseContent;
     }
 
-    public async Task<List<PaymentType>?> GetPaymentsInStore(Guid storeId)
+    public async Task<List<PaymentTypeResponse>?> GetPaymentsInStore(Guid storeId)
     {
         if (storeId == Guid.Empty) throw new BadHttpRequestException(MessageConstant.Store.EmptyStoreIdMessage);
-        var paymentList = (List<PaymentType>) await _unitOfWork.GetRepository<PaymentType>().GetListAsync(
-            predicate: x => x.Status.Equals("Active"));
+        var store = await _unitOfWork.GetRepository<Store>().SingleOrDefaultAsync(predicate: x => x.Id.Equals(storeId));
+        var paymentList = (List<PaymentTypeResponse>) await _unitOfWork.GetRepository<BrandPaymentMapping>()
+            .GetListAsync(
+                include: x => x.Include(p => p.PaymentTypeNavigation),
+                selector: s => new PaymentTypeResponse()
+                {
+                    Type = s.PaymentTypeNavigation.Type,
+                    PicUrl = s.PaymentTypeNavigation.PicUrl,
+                    Name = s.PaymentTypeNavigation.Name
+                },
+                predicate:
+                x => x.Status.Equals("Active") && x.BrandId.Equals(store.BrandId),
+                orderBy: o => o.OrderByDescending(x => x.DisplayOrder));
         return paymentList;
     }
 }

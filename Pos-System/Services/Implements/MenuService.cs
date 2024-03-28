@@ -470,6 +470,7 @@ namespace Pos_System.API.Services.Implements
                     selector: menuStore => new GetStoreDetailResponse(menuStore.Store.Id, menuStore.Store.BrandId,
                         menuStore.Store.Name, menuStore.Store.ShortName, menuStore.Store.Email,
                         menuStore.Store.Address,
+                        menuStore.Store.LocationNearby,
                         menuStore.Store.Status, menuStore.Store.Phone, menuStore.Store.Code,
                         menuStore.Store.Brand.PicUrl, menuStore.Store.WifiName, menuStore.Store.WifiPassword,
                         menuStore.Store.Lat, menuStore.Store.Long),
